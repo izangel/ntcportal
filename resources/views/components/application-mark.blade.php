@@ -1,0 +1,1 @@
+<img src="{{ asset('images/ntc_logo.png') }}" alt="Northlink Technological College" {{ $attributes->merge(['class' => 'h-9 w-auto']) }}>
