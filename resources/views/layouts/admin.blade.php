@@ -96,6 +96,10 @@
                                 <i class="fas fa-credit-card mr-3 text-lg"></i>
                                 {{ __('View All Remaining Leave Credits') }}
                             </x-nav-link>
+                            <x-nav-link href="{{ route('faculty-loadings.index') }}" :active="request()->routeIs('faculty-loadings.*')">
+                                <i class="fas fa-chalkboard-teacher mr-3 text-lg"></i>
+                                {{ __('Faculty Loading') }}
+                            </x-nav-link>
                         </div>
                     @endif
 

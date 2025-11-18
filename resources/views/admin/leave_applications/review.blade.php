@@ -21,6 +21,8 @@
                         @endif
                     @endif
 
+                
+
                     {{-- Display classes to miss --}}
                     @if($leaveApplication->classesToMiss->isNotEmpty())
                         <h4 class="font-semibold text-md mt-4">Classes to Miss:</h4>

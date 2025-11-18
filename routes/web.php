@@ -27,6 +27,7 @@ use App\Http\Controllers\EmployeeLeaveController;
 use App\Http\Controllers\HrController;
 
 use App\Http\Controllers\ChangePasswordController;
+use App\Http\Controllers\FacultyLoadingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -173,6 +174,8 @@ Route::middleware('auth')->group(function () {
 
     Route::put('/profile/password', [ChangePasswordController::class, 'update'])
         ->name('profile.password.update');
+
+    Route::resource('faculty-loadings', FacultyLoadingController::class);
 });
 
 // Standard Jetstream authentication routes

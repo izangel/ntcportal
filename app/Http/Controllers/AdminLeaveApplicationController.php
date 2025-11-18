@@ -45,6 +45,7 @@ class AdminLeaveApplicationController extends Controller
 
         // Load related data
         $leaveApplication->load(['employee', 'classesToMiss.substituteTeacher']);
+         
 
         return view('admin.leave_applications.review', compact('leaveApplication'));
     }
