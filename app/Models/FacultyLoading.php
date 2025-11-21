@@ -24,4 +24,6 @@ class FacultyLoading extends Model
     public function faculty() { return $this->belongsTo(Employee::class, 'id'); } // Assuming User model for faculty
     public function academicYear() { return $this->belongsTo(AcademicYear::class); }
     public function section() { return $this->belongsTo(Section::class); }
+
+   
 }

@@ -94,4 +94,21 @@ class Employee extends Model
         return $this->hasMany(LeaveCredit::class);
     }
 
+    public function courses(): BelongsToMany
+    {
+        
+        return $this->belongsToMany(
+            Course::class,
+            'faculty_loadings', // Pivot table name (assuming 'course_loading' from your image)
+            'faculty_id',     // Foreign key on the pivot table pointing to the User/Faculty ID
+            'course_id'       // Foreign key on the pivot table pointing to the Course ID
+        )->withPivot('academic_year_id', 'semester', 'section_id', 'room', 'schedule');
+    }
+
+    public function loadings()
+    {
+        // This links the faculty user to all their loading records
+        return $this->hasMany(FacultyLoading::class, 'faculty_id');
+    }
+
 }

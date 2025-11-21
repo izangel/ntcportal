@@ -120,6 +120,10 @@
                                 <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                                 {{ __('My Leave Applications') }}
                             </x-nav-link>
+                            <x-nav-link href="{{ route('faculty.course_load') }}" :active="request()->routeIs('faculty.*')">
+                                <i class="fas fa-calendar-minus mr-3 text-lg"></i>
+                                {{ __('My Course Load') }}
+                            </x-nav-link>
                         </div>
                     @endif
                 </nav>

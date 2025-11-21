@@ -28,6 +28,7 @@ use App\Http\Controllers\HrController;
 
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\FacultyLoadingController;
+use App\Http\Controllers\FacultyCourseController;
 
 /*
 |--------------------------------------------------------------------------
@@ -176,6 +177,14 @@ Route::middleware('auth')->group(function () {
         ->name('profile.password.update');
 
     Route::resource('faculty-loadings', FacultyLoadingController::class);
+
+    // 1. Route to show the initial page with filters (No results yet)
+    Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])
+        ->name('faculty.course_load');
+        
+    // 2. Route to show the filtered results
+    Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
+        ->name('faculty.course_load.show');
 });
 
 // Standard Jetstream authentication routes
