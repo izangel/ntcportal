@@ -40,7 +40,8 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ $load->schedule }}</td>
                         <td class="px-6 py-4 whitespace-nowrap">{{ $load->room }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <a href="{{ route('faculty-loadings.edit', $load->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                            <a href="{{ route('faculty-loadings.edit', $load->id) }}" class="text-indigo-600 hover:text-indigo-900">Edit</a> | 
+                            <a href="{{ route('faculty-loadings.delete', $load->id) }}" class="text-red-600 hover:text-red-900">Delete</a>
                             </td>
                     </tr>
                 @endforeach
