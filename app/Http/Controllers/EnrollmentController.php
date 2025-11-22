@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Enrollment;
 use App\Models\Student;
-use App\Models\Course;
+use App\Models\Section;
 use App\Models\Semester; // <-- ADD THIS LINE
 use App\Models\AcademicYear; // <-- ADD THIS LINE for filtering
 use Illuminate\Http\Request;
@@ -21,7 +21,7 @@ class EnrollmentController extends Controller
         $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
         $semestersList = Semester::orderBy('name')->get(); // Use a different name to avoid conflict with `semesters` variable below
 
-        $enrollmentsQuery = Enrollment::with(['student', 'course', 'semester.academicYear']);
+        $enrollmentsQuery = Enrollment::with(['student', 'section', 'semester.academicYear']);
 
         // Apply filters
         if ($request->filled('academic_year_id')) {
@@ -48,7 +48,7 @@ class EnrollmentController extends Controller
     public function create()
     {
         $students = Student::orderBy('last_name')->get();
-        $courses = Course::orderBy('name')->get();
+        $sections = Section::with('program')->orderBy('name')->get();
         $activeSemester = Semester::getActiveSemester(); // Get the currently active semester
 
         // If no active semester, prevent enrollment creation and inform the user
@@ -56,7 +56,7 @@ class EnrollmentController extends Controller
             return redirect()->route('enrollments.index')->with('error', 'No active academic semester found. Please set one as active before enrolling students.');
         }
 
-        return view('enrollments.create', compact('students', 'courses', 'activeSemester'));
+        return view('enrollments.create', compact('students', 'sections', 'activeSemester'));
     }
 
     /**
@@ -74,14 +74,14 @@ class EnrollmentController extends Controller
             'student_id' => [
                 'required',
                 'exists:students,id',
-                // This unique rule ensures a student is only enrolled in a course once per semester
+                // This unique rule ensures a student is only enrolled in a section once per semester
                 Rule::unique('enrollments')->where(function ($query) use ($request, $activeSemester) {
                     return $query->where('student_id', $request->student_id)
-                                 ->where('course_id', $request->course_id)
+                                 ->where('section_id', $request->section_id)
                                  ->where('semester_id', $activeSemester->id);
                 })
             ],
-            'course_id' => 'required|exists:courses,id',
+            'section_id' => 'required|exists:sections,id',
         ]);
 
         // Assign the active semester ID to the validated data
@@ -100,12 +100,12 @@ class EnrollmentController extends Controller
      */
     public function edit(Enrollment $enrollment)
     {
-        $students = Student::orderBy('name')->get();
-        $courses = Course::orderBy('name')->get();
+        $students = Student::orderBy('last_name')->get();
+        $sections = Section::with('program')->orderBy('name')->get();
         // For editing, allow selecting any semester, not just active ones
         $semesters = Semester::with('academicYear')->orderBy('academic_year_id', 'desc')->orderBy('name')->get();
 
-        return view('enrollments.edit', compact('enrollment', 'students', 'courses', 'semesters'));
+        return view('enrollments.edit', compact('enrollment', 'students', 'sections', 'semesters'));
     }
 
     /**
@@ -117,14 +117,14 @@ class EnrollmentController extends Controller
             'student_id' => [
                 'required',
                 'exists:students,id',
-                // Ensure unique combination of student, course, semester, excluding current enrollment
+                // Ensure unique combination of student, section, semester, excluding current enrollment
                 Rule::unique('enrollments')->where(function ($query) use ($request) {
                     return $query->where('student_id', $request->student_id)
-                                 ->where('course_id', $request->course_id)
+                                 ->where('section_id', $request->section_id)
                                  ->where('semester_id', $request->semester_id); // Use selected semester ID
                 })->ignore($enrollment->id)
             ],
-            'course_id' => 'required|exists:courses,id',
+            'section_id' => 'required|exists:sections,id',
             'semester_id' => 'required|exists:semesters,id', // Now required as it's manually selected for edit
         ]);
 

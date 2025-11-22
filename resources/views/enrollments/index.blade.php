@@ -76,8 +76,8 @@
                             @forelse ($enrollments as $enrollment)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->student->name ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->course->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->student->last_name ?? 'N/A' }}, {{ $enrollment->student->first_name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->section->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {{ $enrollment->semester->academicYear->start_year ?? 'N/A' }} - {{ $enrollment->semester->academicYear->end_year ?? 'N/A' }}
                                     </td>
