@@ -176,6 +176,9 @@ Route::middleware('auth')->group(function () {
     Route::put('/profile/password', [ChangePasswordController::class, 'update'])
         ->name('profile.password.update');
 
+    Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])
+    ->name('faculty-loadings.delete');
+
     Route::resource('faculty-loadings', FacultyLoadingController::class);
 
     // 1. Route to show the initial page with filters (No results yet)
