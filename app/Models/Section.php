@@ -26,4 +26,10 @@ class Section extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    // Define hasMany relationship with Enrollment model
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 }

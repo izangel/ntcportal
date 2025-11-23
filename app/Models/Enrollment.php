@@ -11,7 +11,7 @@ class Enrollment extends Model
 
     protected $fillable = [
         'student_id',
-        'course_id',
+        'section_id',
         'grade',
         'semester_id',
         'is_new_student',
@@ -28,9 +28,9 @@ class Enrollment extends Model
     }
 
     // Define relationship with Course
-    public function course()
+    public function section()
     {
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(Section::class);
     }
 
     /**

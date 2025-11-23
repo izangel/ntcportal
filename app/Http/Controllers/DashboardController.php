@@ -67,7 +67,7 @@ class DashboardController extends Controller
         // Fetch some recent activities (optional)
         $recentStudents = Student::latest()->take(5)->get();
         $recentCourses = Course::latest()->take(5)->get();
-        $recentEnrollments = Enrollment::latest()->with(['student', 'course'])->take(5)->get();
+        $recentEnrollments = Enrollment::latest()->with(['student', 'section'])->take(5)->get();
 
         return view('dashboard', compact(
             'user',
