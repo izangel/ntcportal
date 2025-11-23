@@ -190,6 +190,7 @@ Route::middleware('auth')->group(function () {
     // 2. Route to show the filtered results
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
         ->name('faculty.course_load.show');
+  
 });
 
 // Standard Jetstream authentication routes

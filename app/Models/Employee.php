@@ -58,15 +58,12 @@ class Employee extends Model
 
 
    public function getRemainingLeaveCredits()
-    {
-    // Fetch the single LeaveCredit model for the employee.
-    // The `first()` method ensures you get a single model, not a collection.
+{
     $leavecredit = $this->leaveCredits()->first(); 
 
-    
-
+    // If no leave credits, return an empty array
     if (!$leavecredit) {
-        return 'No leave credits found for this employee. Please contact HR.'; 
+        return []; 
     }
     
     $remainingCredits = [];
@@ -78,16 +75,14 @@ class Employee extends Model
             ->where('approval_status', 'approved_with_pay')
             ->sum('total_days');
 
-        // Dynamically create the key based on the leave type name
         $key = strtolower(str_replace(' ', '_', $leaveType->name));
-        
-        // This line now works because $leavecredit is a single model instance.
+
         $remainingCredits[$key] = $leavecredit->{$key} - $taken;
     }
 
-    
     return $remainingCredits;
 }
+
 
     public function leaveCredits()
     {

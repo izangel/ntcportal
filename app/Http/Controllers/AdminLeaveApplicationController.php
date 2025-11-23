@@ -9,6 +9,8 @@ use Illuminate\Support\Carbon;
 use App\Notifications\LeaveApplicationDecision; // We'll create this next
 use Illuminate\Notifications\DatabaseNotification;
 
+
+
 class AdminLeaveApplicationController extends Controller
 {
    // Optional: Middleware to ensure only HR can access
@@ -44,10 +46,15 @@ class AdminLeaveApplicationController extends Controller
         // }
 
         // Load related data
-        $leaveApplication->load(['employee', 'classesToMiss.substituteTeacher']);
-         
+        /** @var \App\Models\Employee $employee */
+       $employee = Auth::user()->employee;
 
-        return view('admin.leave_applications.review', compact('leaveApplication'));
+      $remainingCredits = $employee->getRemainingLeaveCredits();
+      $message = empty($remainingCredits)
+      ? 'No leave credits found for this employee. Please contact HR.'
+      : null;
+
+return view('admin.leave_applications.review', compact('leaveApplication', 'remainingCredits', 'message'));
     }
 
     /**

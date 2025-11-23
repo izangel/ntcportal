@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\CourseToSection;
 use App\Models\Course;
 use App\Models\Section;
+use App\Models\Student;
+use App\Models\Semester;
 
 use App\Models\AcademicYear; // <-- ADD THIS LINE for filtering
 use Illuminate\Http\Request;
@@ -83,10 +85,11 @@ class CourseToSectionController extends Controller
     {
         $students = Student::orderBy('last_name')->get();
         $sections = Section::with('program')->orderBy('name')->get();
+        $courses = Course::orderBy('code')->get();
         // For editing, allow selecting any semester, not just active ones
         $semesters = Semester::with('academicYear')->orderBy('academic_year_id', 'desc')->orderBy('name')->get();
 
-        return view('coursetosections.edit', compact('coursetosection', 'students', 'sections', 'semesters'));
+        return view('coursetosections.edit', compact('coursetosection', 'students', 'sections', 'semesters','courses'));
     }
 
     /**
@@ -95,9 +98,11 @@ class CourseToSectionController extends Controller
     public function update(Request $request, coursetosection $coursetosection)
     {
         $validatedData = $request->validate([
-            'student_id' => [
-                'required',
-                'exists:students,id',
+                 'student_id' => [
+                'academic_year_id' => 'required|exists:academic_years,id',
+                'semester_id' => 'required|exists:semesters,id',
+                'course_id' => 'required|exists:courses,id',
+                'section_id' => 'required|exists:sections,id',
                 // Ensure unique combination of student, section, semester, excluding current coursetosection
                 Rule::unique('coursetosections')->where(function ($query) use ($request) {
                     return $query->where('student_id', $request->student_id)

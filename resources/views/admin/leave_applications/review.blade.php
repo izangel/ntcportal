@@ -20,9 +20,19 @@
                             <p class="text-sm text-gray-600">Remarks: "{{ $leaveApplication->admin_remarks }}"</p>
                         @endif
                     @endif
-
+                    
+             <div class="mb-6">
                 
 
+                   @if(!empty($remainingCredits))
+                        @foreach ($remainingCredits as $type => $credits)
+                        <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ $credits }} remaining</p>
+                   @endforeach
+                @else
+                  <p>{{ $message }}</p>
+                       @endif
+
+                </div>
                     {{-- Display classes to miss --}}
                     @if($leaveApplication->classesToMiss->isNotEmpty())
                         <h4 class="font-semibold text-md mt-4">Classes to Miss:</h4>
