@@ -81,6 +81,11 @@ class CourseToSectionController extends Controller
     /**
      * Show the form for editing the specified coursetosection.
      */
+    public function show(coursetosection $coursetosection)
+{
+    return view('coursetosections.show', compact('coursetosection'));
+}
+
     public function edit(coursetosection $coursetosection)
     {
         $students = Student::orderBy('last_name')->get();
@@ -95,29 +100,29 @@ class CourseToSectionController extends Controller
     /**
      * Update the specified coursetosection in storage.
      */
-    public function update(Request $request, coursetosection $coursetosection)
-    {
-        $validatedData = $request->validate([
-                 'student_id' => [
-                'academic_year_id' => 'required|exists:academic_years,id',
-                'semester_id' => 'required|exists:semesters,id',
-                'course_id' => 'required|exists:courses,id',
-                'section_id' => 'required|exists:sections,id',
-                // Ensure unique combination of student, section, semester, excluding current coursetosection
-                Rule::unique('coursetosections')->where(function ($query) use ($request) {
-                    return $query->where('student_id', $request->student_id)
-                                 ->where('section_id', $request->section_id)
-                                 ->where('semester_id', $request->semester_id); // Use selected semester ID
-                })->ignore($coursetosection->id)
-            ],
-            'section_id' => 'required|exists:sections,id',
-            'semester_id' => 'required|exists:semesters,id', // Now required as it's manually selected for edit
-        ]);
+   public function update(Request $request, CourseToSection $coursetosection)
+{
+    $validatedData = $request->validate([
+        'academic_year_id' => 'required|exists:academic_years,id',
+        'semester' => 'required|string|max:50',
+        'course_id' => 'required|exists:courses,id',
+        'section_id' => 'required|exists:sections,id',
 
-        $coursetosection->update($validatedData);
+        // UNIQUE: Combination of academic_year + semester + course + section must be unique
+        Rule::unique('coursetosections')->where(function ($query) use ($request) {
+            return $query->where('academic_year_id', $request->academic_year_id)
+                         ->where('semester', $request->semester)
+                         ->where('course_id', $request->course_id)
+                         ->where('section_id', $request->section_id);
+        })->ignore($coursetosection->id),
+    ]);
 
-        return redirect()->route('coursetosections.index')->with('success', 'coursetosection updated successfully.');
-    }
+    $coursetosection->update($validatedData);
+
+    return redirect()->route('coursetosections.index')
+                     ->with('success', 'Course assignment updated successfully.');
+}
+
 
     /**
      * Remove the specified coursetosection from storage.
