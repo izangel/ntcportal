@@ -38,6 +38,10 @@
                     @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar'))
                         <div class="mt-4 space-y-1">
                             <h3 class="text-xs font-semibold uppercase text-gray-400 mb-2 px-3">Academic Management</h3>
+                            <x-nav-link href="{{ route('coursetosections.index') }}" :active="request()->routeIs('coursetosections.*')">
+                                <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                                {{ __('Course To Sections') }}
+                            </x-nav-link>
                             <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
                                 <i class="fas fa-user-graduate mr-3 text-lg"></i>
                                 {{ __('Manage Students') }}

@@ -29,6 +29,7 @@ use App\Http\Controllers\HrController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
+use App\Http\Controllers\CourseToSectionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,6 +68,7 @@ Route::middleware([
         
         Route::resource('courses', CourseController::class);
         Route::resource('enrollments', EnrollmentController::class);
+         Route::resource('coursetosections', CourseToSectionController::class);
         Route::resource('programs', ProgramController::class);
         Route::resource('sections', SectionController::class);
         Route::resource('academic_years', AcademicYearController::class);
@@ -188,6 +190,7 @@ Route::middleware('auth')->group(function () {
     // 2. Route to show the filtered results
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
         ->name('faculty.course_load.show');
+  
 });
 
 // Standard Jetstream authentication routes
