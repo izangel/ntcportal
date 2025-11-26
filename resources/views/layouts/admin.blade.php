@@ -153,6 +153,8 @@
 
                 {{-- Main Content Area --}}
                 <main class="flex-1 p-6 sm:p-8">
+
+    
                     @yield('content')
                 </main>
             </div>

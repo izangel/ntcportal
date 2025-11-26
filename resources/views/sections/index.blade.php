@@ -31,8 +31,8 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Section Name</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academic Year</th>
+                                  <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program-Section</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
@@ -40,9 +40,9 @@
                             @forelse ($sections as $section)
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $section->id }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $section->name }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $section->academicYear->start_year }}-{{ $section->academicYear->end_year }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $section->program->name ?? 'N/A' }} {{-- Display program name --}}
+                                        {{ $section->program->name ?? 'N/A' }}-{{ $section->name }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <a href="{{ route('sections.edit', $section) }}" class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>
