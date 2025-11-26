@@ -31,6 +31,7 @@ use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
 use App\Http\Controllers\CourseToSectionController;
 use App\Livewire\AssignCourses;
+use App\Livewire\AssignedCoursesIndex;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,6 +79,7 @@ Route::middleware([
         Route::post('/students/import', [StudentController::class, 'import'])->name('students.import');
         Route::resource('students', StudentController::class);
         Route::get('/portal/assign-courses', AssignCourses::class)->name('assign.courses');
+        Route::get('/portal/assigned-courses', AssignedCoursesIndex::class)->name('assigned_courses.index');
 
     });
 

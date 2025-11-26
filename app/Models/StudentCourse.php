@@ -28,10 +28,10 @@ class StudentCourse extends Model
     ];
     
     // Relationships (optional but highly recommended for Eloquent)
-    public function student() { return $this->belongsTo(Student::class); }
+    public function student() { return $this->belongsTo(Student::class,); }
      public function section() { return $this->belongsTo(Section::class); }
-      public function acadYear() { return $this->belongsTo(AcademicYear::class); }
-       public function validatedby() { return $this->belongsTo(User::class); }
+      public function acadYear() { return $this->belongsTo(AcademicYear::class, 'academic_year_id'); }
+       public function validatedby() { return $this->belongsTo(User::class, 'validated_by'); }
     public function course() { return $this->belongsTo(Course::class); }
     // ... other relationships (section, academicYear, validatorUser)
 }

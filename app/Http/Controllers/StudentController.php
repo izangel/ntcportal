@@ -77,7 +77,7 @@ class StudentController extends Controller
         $validatedData = $request->validate([
             'first_name' => 'required|string|max:255',
              'last_name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'email' => 'required|string|email|max:255|unique:users,email|unique:students,email',
             'user_id' => 'nullable|exists:users,id',
            // 'section_id' => 'nullable|exists:sections,id', // <-- ADD VALIDATION
             // Add any other student-specific fields (e.g., date_of_birth if you have it)
@@ -133,6 +133,7 @@ class StudentController extends Controller
                 'email',
                 'max:255',
                 Rule::unique('users')->ignore($student->user_id, 'id'), // Unique email for users table, ignoring current user
+                Rule::unique('students')->ignore($student->id),
             ],
             'user_id' => 'nullable|exists:users,id',
            // 'section_id' => 'nullable|exists:sections,id', // <-- ADD VALIDATION
@@ -209,7 +210,11 @@ class StudentController extends Controller
                 ];
             }
 
-            DB::table('students')->insert($studentsToInsert);
+            DB::table('students')->upsert(
+                $studentsToInsert, 
+                ['email'], 
+                ['first_name', 'last_name', 'updated_at']
+            );
 
             return redirect()->back()->with('success', 'Students imported successfully! 🎉');
 
