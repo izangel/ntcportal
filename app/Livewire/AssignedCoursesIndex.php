@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\Attributes\On;
 use App\Models\StudentCourse;
 use App\Models\AcademicYear;
 use App\Models\Section;
@@ -19,6 +20,7 @@ class AssignedCoursesIndex extends Component
     
     public $selectedAssignments = [];
     public $selectAll = false;
+    public $showIrregularForm = false; // Add this property
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -34,6 +36,17 @@ class AssignedCoursesIndex extends Component
         } else {
             $this->selectedAssignments = [];
         }
+    }
+
+    public function toggleIrregularForm()
+    {
+        $this->showIrregularForm = !$this->showIrregularForm;
+    }
+
+    #[On('assignment-created')]
+    public function refreshList()
+    {
+        // This method handles the event and triggers a re-render
     }
 
     public function validateSelected()

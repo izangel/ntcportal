@@ -4,10 +4,21 @@
             <h2 class="text-2xl font-bold text-gray-800">Assigned Courses List</h2>
             <p class="text-sm text-gray-500">Manage student course assignments</p>
         </div>
-        <a href="{{ route('assign.courses') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
-            <i class="fas fa-plus mr-2"></i> Assign New
-        </a>
+        <div>
+            <a href="{{ route('assign.courses') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded shadow">
+                <i class="fas fa-plus mr-2"></i> Assign New
+            </a>
+            <button wire:click="toggleIrregularForm" class="ml-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-4 rounded shadow">
+                <i class="fas fa-user-plus mr-2"></i> Assign Irregular
+            </button>
+        </div>
     </div>
+
+    @if($showIrregularForm)
+        <div class="mb-6">
+            <livewire:assign-irregular-student />
+        </div>
+    @endif
 
     @if (session()->has('success'))
         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
