@@ -30,6 +30,7 @@ use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
 use App\Http\Controllers\CourseToSectionController;
+use App\Livewire\AssignCourses;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +77,7 @@ Route::middleware([
         Route::get('/students/upload', [StudentController::class, 'showUploadForm'])->name('students.upload.form');
         Route::post('/students/import', [StudentController::class, 'import'])->name('students.import');
         Route::resource('students', StudentController::class);
+        Route::get('/portal/assign-courses', AssignCourses::class)->name('assign.courses');
 
     });
 

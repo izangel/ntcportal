@@ -23,6 +23,15 @@ class AcademicYear extends Model
         return $this->hasMany(Semester::class);
     }
 
+     /**
+     * Get the sections for the academic year.
+     */
+    public function sections()
+    {
+        return $this->hasMany(Section::class);
+    }
+
+
     /**
      * Get the semesters for the academic year.
      */

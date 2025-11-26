@@ -18,6 +18,20 @@
                     @csrf
                     @method('PUT') {{-- Use PUT method for updates --}}
 
+                     <div class="mt-4">
+                        <x-label for="academic_year_id" value="{{ __('Academic Year') }}" />
+                        <select id="academic_year_id" name="academic_year_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <option value="">-- Select Academic Year --</option>
+                            @foreach ($ays as $ay)
+                                <option value="{{ $ay->id }}" {{ old('academic_year_id', $section->academic_year_id) == $ay->id ? 'selected' : '' }}>
+                                    {{ $ay->start_year }}-{{ $ay->end_year }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error for="academic_year_id" class="mt-2" />
+                    </div>
+
+
                     <div class="mt-4">
                         <x-label for="program_id" value="{{ __('Program') }}" />
                         <select id="program_id" name="program_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">

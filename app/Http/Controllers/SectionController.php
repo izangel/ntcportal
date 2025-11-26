@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Section;    // Import the Section model
 use App\Models\Program;    // Import the Program model for dropdowns
+use App\Models\AcademicYear; 
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule; // To use unique validation rule
 
@@ -15,7 +16,7 @@ class SectionController extends Controller
     public function index()
     {
         // Eager load the program relationship to avoid N+1 query problem
-        $sections = Section::with('program')->paginate(10);
+        $sections = Section::with(['program','academicYear'])->paginate(10);
         return view('sections.index', compact('sections'));
     }
 
@@ -24,8 +25,9 @@ class SectionController extends Controller
      */
     public function create()
     {
+        $ays = AcademicYear::orderBy('start_year')->get(); // Get all programs for the dropdown
         $programs = Program::orderBy('name')->get(); // Get all programs for the dropdown
-        return view('sections.create', compact('programs'));
+        return view('sections.create', compact('programs','ays'));
     }
 
     /**
@@ -34,6 +36,7 @@ class SectionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
+            'academic_year_id' =>  'required|exists:academic_years,id',
             'program_id' => 'required|exists:programs,id', // Ensure selected program exists
             'name' => [
                 'required',
@@ -66,8 +69,9 @@ class SectionController extends Controller
      */
     public function edit(Section $section)
     {
+         $ays = AcademicYear::orderBy('start_year')->get();
         $programs = Program::orderBy('name')->get(); // Get all programs for the dropdown
-        return view('sections.edit', compact('section', 'programs'));
+        return view('sections.edit', compact('section', 'programs', 'ays'));
     }
 
     /**
@@ -76,6 +80,7 @@ class SectionController extends Controller
     public function update(Request $request, Section $section)
     {
         $validatedData = $request->validate([
+             'academic_year_id' => 'required|exists:academic_years,id',
             'program_id' => 'required|exists:programs,id',
             'name' => [
                 'required',
