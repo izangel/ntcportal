@@ -133,6 +133,8 @@ class AssignCourses extends Component
             session()->flash('success', 
                 "Successfully assigned $assignedCount records. Students in the section are now enrolled in the selected courses.");
 
+            return redirect()->route('assigned_courses.index');
+
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Bulk Assignment Error: ' . $e->getMessage());

@@ -110,7 +110,7 @@ class AssignIrregularStudent extends Component
 
         session()->flash('success', 'Student assigned to course successfully.');
         
-        $this->dispatch('assignment-created');
+        return redirect()->route('assigned_courses.index');
 
         // Reset form fields except context
         $this->selectedStudentId = null;
