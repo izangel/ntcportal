@@ -14,7 +14,7 @@ return new class extends Migration
             // Foreign Keys and Context
             $table->foreignId('student_id')->constrained('students')->onDelete('cascade');
             $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
-            $table->foreignId('section_id')->constrained('sections')->onDelete('cascade');
+            //$table->foreignId('section_id')->constrained('sections')->onDelete('cascade');
             $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
             $table->string('semester'); // e.g., '1st Semester', '2nd Semester'
             
@@ -24,8 +24,8 @@ return new class extends Migration
             
             $table->timestamps();
             
-            // Ensure a student isn't assigned the same course in the same section/semester context
-            $table->unique(['student_id', 'course_id', 'section_id', 'academic_year_id', 'semester'], 'student_course_unique');
+            // Ensure a student isn't assigned the same course in the same semester context
+            $table->unique(['student_id', 'course_id', 'academic_year_id', 'semester'], 'student_course_unique');
         });
     }
 

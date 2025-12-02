@@ -22,9 +22,9 @@ class Enrollment extends Model
     ];
 
     // Define relationship with Student
-    public function student()
+    public function students()
     {
-        return $this->belongsTo(Student::class);
+        return $this->hasMany(Student::class);
     }
 
     // Define relationship with Course
