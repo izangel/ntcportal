@@ -13,8 +13,14 @@ class Enrollment extends Model
         'student_id',
         'section_id',
         'grade',
-        'semester_id',
+        'academic_year_id',
+        'semester',
         'is_new_student',
+
+        // New audit fields
+        'original_grade', 
+        'resolution_date',
+        'resolved_by_user_id',
     ];
 
     protected $casts = [
@@ -22,9 +28,9 @@ class Enrollment extends Model
     ];
 
     // Define relationship with Student
-    public function students()
+    public function student()
     {
-        return $this->hasMany(Student::class);
+        return $this->belongsTo(Student::class);
     }
 
     // Define relationship with Course
@@ -39,5 +45,10 @@ class Enrollment extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class);
+    }
+
+     public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 }

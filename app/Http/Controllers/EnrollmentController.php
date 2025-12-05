@@ -49,14 +49,14 @@ class EnrollmentController extends Controller
     {
         $students = Student::orderBy('last_name')->get();
         $sections = Section::with('program')->orderBy('name')->get();
-        $activeSemester = Semester::getActiveSemester(); // Get the currently active semester
+        $activeAY = AcademicYear::getActiveAcademicYear(); // Get the currently active AY
 
         // If no active semester, prevent enrollment creation and inform the user
-        if (!$activeSemester) {
-            return redirect()->route('enrollments.index')->with('error', 'No active academic semester found. Please set one as active before enrolling students.');
+        if (!$activeAY) {
+            return redirect()->route('enrollments.index')->with('error', 'No active academic AY found. Please set one as active before enrolling students.');
         }
 
-        return view('enrollments.create', compact('students', 'sections', 'activeSemester'));
+        return view('enrollments.create', compact('students', 'sections', 'activeAY'));
     }
 
     /**
@@ -64,10 +64,10 @@ class EnrollmentController extends Controller
      */
     public function store(Request $request)
     {
-        $activeSemester = Semester::getActiveSemester();
+        $activeAY = AcademicYear::getActiveAcademicYear();
 
-        if (!$activeSemester) {
-            return redirect()->route('enrollments.index')->with('error', 'No active academic semester found. Enrollment failed.');
+        if (!$activeAY) {
+            return redirect()->route('enrollments.index')->with('error', 'No active academic year found. Enrollment failed.');
         }
 
         $validatedData = $request->validate([
@@ -75,21 +75,22 @@ class EnrollmentController extends Controller
                 'required',
                 'exists:students,id',
                 // This unique rule ensures a student is only enrolled in a section once per semester
-                Rule::unique('enrollments')->where(function ($query) use ($request, $activeSemester) {
+                Rule::unique('enrollments')->where(function ($query) use ($request, $activeAY) {
                     return $query->where('student_id', $request->student_id)
                                  ->where('section_id', $request->section_id)
-                                 ->where('semester_id', $activeSemester->id);
+                                 ->where('academic_year_id', $activeAY->id);
                 })
             ],
             'section_id' => 'required|exists:sections,id',
+             'semester' => 'required|string|max:50',
         ]);
 
         // Assign the active semester ID to the validated data
-        $validatedData['semester_id'] = $activeSemester->id;
+        $validatedData['academic_year_id'] = $activeAY->id;
 
         // Determine if the student is new for this semester
-        $student = Student::find($validatedData['student_id']);
-        $validatedData['is_new_student'] = $student->isNewStudentForSemester($activeSemester); // <-- ADD THIS LINE
+      //  $student = Student::find($validatedData['student_id']);
+      //  $validatedData['is_new_student'] = $student->isNewStudentForSemester($activeSemester); // <-- ADD THIS LINE
 
         Enrollment::create($validatedData);
 

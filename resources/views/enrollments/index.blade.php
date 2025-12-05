@@ -65,7 +65,7 @@
                             <tr>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course/Section</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academic Year</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
                                 <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Type</th> {{-- ADD THIS HEADER --}}
@@ -77,11 +77,11 @@
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->id }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->student->last_name ?? 'N/A' }}, {{ $enrollment->student->first_name ?? 'N/A' }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->section->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->section->program->name ?? 'N/A' }}-{{ $enrollment->section->name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $enrollment->semester->academicYear->start_year ?? 'N/A' }} - {{ $enrollment->semester->academicYear->end_year ?? 'N/A' }}
+                                        {{ $enrollment->academicYear->start_year ?? 'N/A' }} - {{ $enrollment->academicYear->end_year ?? 'N/A' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->semester->name ?? 'N/A' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">{{ $enrollment->semester ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         @if ($enrollment->is_new_student) {{-- ADD THIS CELL --}}
                                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">New</span>
@@ -109,7 +109,7 @@
 
                 {{-- Pagination Links (if you've implemented it on enrollments.index) --}}
                 <div class="mt-4">
-                    {{-- $enrollments->links() --}}
+                    {{ $enrollments->links() }}
                 </div>
             </div>
         </div>

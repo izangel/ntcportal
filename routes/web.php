@@ -34,6 +34,7 @@ use App\Livewire\AssignCourses;
 use App\Livewire\AssignCoursesIndividual;
 use App\Livewire\CourseBlockManager;
 
+use App\Livewire\FacultyCourseBlockView;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -81,7 +82,8 @@ Route::middleware([
         Route::resource('students', StudentController::class);
         Route::get('/assignment/assign-courses', AssignCourses::class)->name('assign.courses');
         Route::get('/assignment/individual', AssignCoursesIndividual::class)->name('assign.individual');
-        Route::get('course-blocks', CourseBlockManager::class);
+       Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
+       Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
 
     });
 
@@ -196,6 +198,8 @@ Route::middleware('auth')->group(function () {
     // 2. Route to show the filtered results
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
         ->name('faculty.course_load.show');
+
+      Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
   
 });
 

@@ -106,4 +106,10 @@ class Employee extends Model
         return $this->hasMany(FacultyLoading::class, 'faculty_id');
     }
 
+
+    public function courseBlocks()
+    {
+        return $this->hasMany(CourseBlock::class, 'faculty_id');
+    }
+
 }

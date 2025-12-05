@@ -38,6 +38,14 @@
                     @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar'))
                         <div class="mt-4 space-y-1">
                             <h3 class="text-xs font-semibold uppercase text-gray-400 mb-2 px-3">Academic Management</h3>
+                            <x-nav-link href="{{ route('course-blocks') }}" :active="request()->routeIs('course-blocks')">
+                                <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                                {{ __('Course Blocks') }}
+                            </x-nav-link>
+                             <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
+                                <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                                {{ __('Faculty Course Blocks') }}
+                            </x-nav-link>
                             <x-nav-link href="{{ route('coursetosections.index') }}" :active="request()->routeIs('coursetosections.*')">
                                 <i class="fas fa-user-graduate mr-3 text-lg"></i>
                                 {{ __('Course To Sections') }}
@@ -136,6 +144,10 @@
                                 <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                                 {{ __('My Course Load') }}
                             </x-nav-link>
+                            <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
+                                <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                                {{ __('Faculty Course Blocks') }}
+                            </x-nav-link>
                         </div>
                     @endif
                 </nav>
@@ -164,6 +176,8 @@
 
     
                     @yield('content')
+
+                    
                 </main>
             </div>
         </div>

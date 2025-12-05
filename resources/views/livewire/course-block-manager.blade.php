@@ -1,148 +1,216 @@
 <div class="p-6 bg-gray-50 min-h-screen">
-    <h2 class="text-3xl font-bold text-gray-800 mb-6">Course Block Assignment</h2>
-    
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">🗓️ Course Block & Enrollment Manager</h2>
+
+    {{-- --- CONTEXT SELECTION BLOCK --- --}}
     <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-indigo-500">
+        <h3 class="text-xl font-semibold mb-4 text-gray-700">Select Context</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
+
             <div>
                 <label for="ay" class="block text-sm font-medium text-gray-700">Academic Year</label>
-                <select id="ay" wire:model.live="academicYearId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select id="ay" wire:model.live="academicYearId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Select AY</option>
                     @foreach ($academicYears as $ay)
-                        <option value="{{ $ay->id }}">{{ $ay->start_year }} - {{ $ay->end_year }}</option> 
+                        <option value="{{ $ay->id }}">{{ $ay->start_year }} - {{ $ay->end_year }}</option>
                     @endforeach
                 </select>
+                @error('academicYearId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
             </div>
-            
+
             <div>
                 <label for="sem" class="block text-sm font-medium text-gray-700">Semester</label>
-                <select id="sem" wire:model.live="semester" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select id="sem" wire:model.live="semester" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Select Semester</option>
                     @foreach ($semesters as $sem)
-                        <option value="{{ $sem }}">{{ $sem }} Semester</option>
+                        <option value="{{ $sem }}">{{ $sem }}</option>
                     @endforeach
                 </select>
+                @error('semester') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
             </div>
 
             <div>
                 <label for="section" class="block text-sm font-medium text-gray-700">Section</label>
-                <select id="section" wire:model.live="sectionId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select id="section" wire:model.live="sectionId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Select Section</option>
                     @foreach ($sections as $section)
                         <option value="{{ $section['id'] }}">{{ $section['name'] }}</option>
                     @endforeach
                 </select>
+                @error('sectionId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
             </div>
         </div>
     </div>
+
+    {{-- --- MESSAGES --- --}}
+    @if (session()->has('error') && !str_contains(session('error'), 'required'))
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded" role="alert">
+            <p>{{ session('error') }}</p>
+        </div>
+    @endif
     
-    @if ($sectionId && $selectedSection)
-    
-        @if (session()->has('message'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded" role="alert">
-                <p class="font-bold">Success</p>
-                <p>{{ session('message') }}</p>
-            </div>
-        @endif
-    
-        <div class="flex flex-col lg:flex-row gap-8">
+    @if (session()->has('message'))
+        @php
+            $isEnrollmentMessage = str_contains(session('message'), 'enrollment') || str_contains(session('message'), 'enrolled') || str_contains(session('message'), 'All students are already enrolled');
+            $alertClass = $isEnrollmentMessage ? 'bg-green-100 border-green-500 text-green-700' : 'bg-blue-100 border-blue-500 text-blue-700';
+        @endphp
+        <div class="border-l-4 {{ $alertClass }} p-4 mb-4 rounded" role="alert">
+            <p>{!! session('message') !!}</p>
+        </div>
+    @endif
+
+    {{-- --- MAIN CONTENT (Conditional on Context Selection) --- --}}
+    @if ($academicYearId && $semester && $sectionId)
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             
-            <div class="w-full lg:w-1/3">
-                <div class="bg-white shadow-lg rounded-xl p-4 border border-gray-200">
-                    <h3 class="text-xl font-semibold text-gray-700 mb-4">Students in {{ $selectedSection->name }} ({{ count($students) }})</h3>
-                    <ul class="space-y-2 overflow-y-auto max-h-96">
-                        @forelse ($students as $student)
-                            <li class="p-2 text-sm border-b last:border-b-0">{{ $student->last_name}}, {{ $student->first_name}} {{ $student->mid_name}}</li>
-                        @empty
-                            <li class="text-gray-500 p-2 italic">No students found for this section.</li>
-                        @endforelse
-                    </ul>
-                </div>
+            {{-- 1. Student List for Section --}}
+            <div class="lg:col-span-1 bg-white shadow-lg rounded-xl p-6 border-t-4 border-emerald-500 h-fit">
+                <h3 class="text-xl font-semibold mb-4 text-gray-700 flex justify-between items-center">
+                    👥 Students in Section 
+                    @if ($selectedSection)
+                        <span class="text-sm font-medium text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                            {{ $selectedSection->name }}
+                        </span>
+                    @endif
+                </h3>
+
+                @if ($students->isNotEmpty())
+                    <p class="text-sm text-gray-500 mb-3">Total Students: **{{ $students->count() }}**</p>
+                    <div class="max-h-96 overflow-y-auto border p-3 rounded-md bg-white">
+                        <ul class="divide-y divide-gray-100">
+                            @foreach ($students as $student)
+                                <li class="py-2 text-sm text-gray-800">
+                                    {{ $student->last_name }}, {{ $student->first_name }} {{ $student->mid_name }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @else
+                    <p class="text-sm text-gray-500 italic p-3 border rounded">
+                        No students are currently enrolled in this Section/AY/Semester context.
+                    </p>
+                @endif
             </div>
 
-            <div class="w-full lg:w-2/3 space-y-8">
-
-                <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-                    <h3 class="text-xl font-semibold text-indigo-600 mb-4">Existing Course Blocks</h3>
+            {{-- 2. Course Blocks List & Mass Enrollment Action --}}
+            <div class="lg:col-span-2">
+                <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-gray-500">
+                    <h3 class="text-xl font-semibold mb-4">📚 Existing Course Blocks ({{ $courseBlocks->count() }})</h3>
                     
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($courseBlocks as $block)
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $block->course->code }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->room_name }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->schedule_string }}</td>
-                                </tr>
-                                @empty
+                    {{-- Mass Enrollment Button (Placed prominently above the list) --}}
+                    @if ($courseBlocks->isNotEmpty() && $students->isNotEmpty())
+                        <div class="mb-4 pb-4 border-b border-gray-200 flex justify-start">
+                            <button 
+                                wire:click="enrollAllSectionStudents"
+                                wire:confirm="Are you sure you want to enroll ALL {{ $students->count() }} students into ALL {{ $courseBlocks->count() }} course blocks? This will only add missing enrollments and may take a moment."
+                                class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out">
+                                🚀 Enroll All Students to All Blocks
+                            </button>
+                        </div>
+                    @else
+                        <div class="mb-4 pb-4 border-b border-gray-200">
+                            <p class="text-sm text-red-500">
+                                Cannot perform mass enrollment: Must have at least one **Student** and one **Course Block** defined.
+                            </p>
+                        </div>
+                    @endif
+
+                    @if ($courseBlocks->isNotEmpty())
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 italic">No course blocks assigned yet for this section, AY, and Semester.</td>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
                                     </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach ($courseBlocks as $block)
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <p class="text-sm font-medium text-gray-900">{{ $block->course->code }}</p>
+                                                <p class="text-xs text-gray-500">{{ $block->course->name }}</p>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ $block->schedule_string }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->room_name }}</td>
+                                            {{-- Removed Action column/button: select for enrollment --}}
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <p class="text-center text-gray-500 italic p-3 border rounded">
+                            No course blocks defined yet for this Academic Period and Section.
+                        </p>
+                    @endif
+                </div>
+            </div> {{-- End Course Blocks Column --}}
+        </div> {{-- End Grid Container --}}
+
+        {{-- --- CREATE NEW COURSE BLOCK SECTION --- --}}
+        <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-purple-500">
+            <h3 class="text-xl font-semibold mb-4">➕ Create New Course Block</h3>
+            
+            <form wire:submit.prevent="saveCourseBlock">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Course</label>
+                        <select wire:model.defer="newCourseBlock.course_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">Select Course</option>
+                            @foreach ($allCourses as $course)
+                                <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('newCourseBlock.course_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Faculty</label>
+                        <select wire:model.defer="newCourseBlock.faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            <option value="">Select Faculty</option>
+                            @foreach ($allFaculty as $faculty)
+                                <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('newCourseBlock.faculty_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Room Name</label>
+                        <input type="text" wire:model.defer="newCourseBlock.room_name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="e.g., L201, Online">
+                        @error('newCourseBlock.room_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Schedule String</label>
+                        <input type="text" wire:model.defer="newCourseBlock.schedule_string" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="e.g., MW 10:00-11:30AM">
+                        @error('newCourseBlock.schedule_string') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
                 </div>
                 
-                <div class="bg-white shadow-lg rounded-xl p-6 border border-gray-200">
-                    <h3 class="text-xl font-semibold text-green-600 mb-4">Add New Course Block</h3>
-
-                    <form wire:submit.prevent="saveCourseBlock">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label for="course_id" class="block text-sm font-medium text-gray-700">Course</label>
-                                <select id="course_id" wire:model.change="newCourseBlock.course_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="">Select Course</option>
-                                    @foreach ($allCourses as $course)
-                                        <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('newCourseBlock.course_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label for="faculty_id" class="block text-sm font-medium text-gray-700">Faculty</label>
-                                <select id="faculty_id" wire:model.change="newCourseBlock.faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="">Select Faculty</option>
-                                    @foreach ($allFaculty as $faculty)
-                                        <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
-                                    @endforeach
-                                </select>
-                                @error('newCourseBlock.faculty_id') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
+                <div class="mt-6 text-right flex justify-end items-center space-x-4">
+                    {{-- Success Message for New Block (optional inline display) --}}
+                    @if (session()->has('message') && session('message') === 'Course block added successfully!')
+                        <div class="text-green-600 font-semibold text-sm">
+                            {{ session('message') }}
                         </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div>
-                                <label for="room_name" class="block text-sm font-medium text-gray-700">Room Name</label>
-                                <input type="text" id="room_name" wire:model="newCourseBlock.room_name" placeholder="e.g., C305 or Gym" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                @error('newCourseBlock.room_name') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-                            <div>
-                                <label for="schedule_string" class="block text-sm font-medium text-gray-700">Schedule (e.g., MW 1-3PM)</label>
-                                <input type="text" id="schedule_string" wire:model="newCourseBlock.schedule_string" placeholder="e.g., MW 1:00 PM - 3:00 PM" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                @error('newCourseBlock.schedule_string') <span class="text-red-500 text-xs mt-1">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                            Save Course Block
-                        </button>
-                    </form>
+                    @endif
+                    
+                    <button type="submit" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
+                        Create Course Block
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
+        
     @else
         <p class="text-center text-gray-500 mt-10 p-6 bg-white shadow-lg rounded-xl">
-            Please select an **Academic Year**, **Semester**, and **Section** above to view and assign course blocks.
+            Please select an **Academic Year**, **Semester**, and **Section** above to view, create, and manage enrollments.
         </p>
     @endif
 </div>

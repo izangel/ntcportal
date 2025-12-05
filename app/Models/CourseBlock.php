@@ -16,6 +16,7 @@ class CourseBlock extends Model
         'semester',
         'room_name',
         'schedule_string',
+        'finalized',
     ];
 
     // Relationships

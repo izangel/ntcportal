@@ -10,29 +10,27 @@ use App\Models\Employee;
 use App\Models\Enrollment; 
 use App\Models\AcademicYear;
 use App\Models\CourseBlock;
+use Illuminate\Support\Facades\DB; // Required for bulk operations
 
 class CourseBlockManager extends Component
 {
     // --- Selection State ---
-    // These public properties drive the form inputs (Academic Year, Semester, Section).
-    // Livewire automatically handles synchronization with wire:model.live.
     public $academicYearId; 
     public $semester;
     public $sectionId;
 
     // --- Data for Dropdowns ---
-    // $sections is deliberately an array (using toArray() in mount) for simple dropdown options.
     public $sections = [];
     public $academicYears = []; 
     public $semesters = ['1st', '2nd', 'Summer'];
-    public $allCourses; // Collection
-    public $allFaculty; // Collection
+    public $allCourses; 
+    public $allFaculty; 
 
-    // --- Student & Block Data ---
-    // These are loaded when a section is selected. They must be collections for model access.
-    public $students = [];
+    // --- Data for Lists ---
+    // $students now holds the list of all students in the selected section (for display and mass enrollment)
+    public $students = []; 
     public $courseBlocks = [];
-    public $selectedSection; // Single Section Model instance
+    public $selectedSection;
 
     // --- Form Data for New Block ---
     public $newCourseBlock = [
@@ -43,24 +41,20 @@ class CourseBlockManager extends Component
     ];
 
     /**
-     * Runs once when the component is initialized. Used to populate static dropdown data.
+     * Runs once when the component is initialized.
      */
     public function mount()
     {
-        // Load Academic Years as a Collection
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); 
-        
-        // Load Sections, converted to an array for simple dropdown display (this is fine)
         $this->sections = Section::all()->map->only(['id', 'name'])->toArray();
-        
-        // Load related data as Collections
         $this->allCourses = Course::all();
         $this->allFaculty = Employee::all();
     }
 
+    // --- Lifecycle Hooks ---
+
     public function updatedSectionId($value)
     {
-        // Simply trigger the main check. No need for complex IF statements here.
         $this->handleDropdownChange();
     }
 
@@ -90,30 +84,31 @@ class CourseBlockManager extends Component
     }
 
     /**
-     * Loads the students and existing course blocks for the selected criteria.
+     * Loads the pool of students and existing course blocks for the selected criteria.
      */
     protected function loadSectionData()
     {
-        // Find the selected section
-        // Make sure to find the Section Model, not the Enrollment Model!
         $this->selectedSection = Section::find($this->sectionId);
 
         if (!$this->selectedSection) {
-            // If section ID is invalid, clear lists and return.
             $this->clearDynamicData();
             return; 
         }
         
-        // ... student loading logic ...
-        $studentIds = \DB::table('enrollments')
+        // 1. Load ALL students enrolled in the section (POOL for enrollment)
+        $studentIds = DB::table('enrollments')
                         ->where('section_id', $this->sectionId)
                         ->where('academic_year_id', $this->academicYearId)
                         ->where('semester', $this->semester)
+                        // Grouping and selecting distinct student IDs assuming initial enrollment is per section, not course
+                        ->groupBy('student_id') 
                         ->pluck('student_id');
 
-        $this->students = Student::whereIn('id', $studentIds)->get();
+        $this->students = Student::whereIn('id', $studentIds)
+            ->orderBy('last_name')
+            ->get();
 
-        // ... course block loading logic ...
+        // 2. Load Course Blocks for the selected context
         $this->courseBlocks = CourseBlock::where('section_id', $this->sectionId)
                                         ->where('academic_year_id', $this->academicYearId)
                                         ->where('semester', $this->semester)
@@ -121,13 +116,14 @@ class CourseBlockManager extends Component
                                         ->get();
     }
 
+
     /**
      * Resets student and course block data lists.
      */
     protected function clearDynamicData()
     {
-        $this->students = collect(); // Initialize as an empty Collection
-        $this->courseBlocks = collect(); // Initialize as an empty Collection
+        $this->students = collect(); 
+        $this->courseBlocks = collect();
     }
 
     /**
@@ -135,7 +131,7 @@ class CourseBlockManager extends Component
      */
     public function saveCourseBlock()
     {
-        // 1. Validation
+        // 1. Validation for standard fields
         $this->validate([
             'academicYearId' => 'required',
             'semester' => 'required',
@@ -146,7 +142,24 @@ class CourseBlockManager extends Component
             'newCourseBlock.schedule_string' => 'required|string|max:150',
         ]);
 
-        // 2. Create the CourseBlock record
+        // --- 2. Conflict Check ---
+        $existingBlock = CourseBlock::where('course_id', $this->newCourseBlock['course_id'])
+                                            ->where('section_id', $this->sectionId)
+                                            ->where('academic_year_id', $this->academicYearId)
+                                            ->where('semester', $this->semester)
+                                            ->first();
+
+        if ($existingBlock) {
+            $courseCode = Course::find($this->newCourseBlock['course_id'])->code;
+
+            // Flash an error message and stop execution
+            session()->flash('error', 
+                "The course **{$courseCode}** is already assigned to this section for the selected academic period. Cannot create a duplicate block."
+            );
+            return; // Stop the method
+        }
+
+        // 3. Create the CourseBlock record (Only runs if no conflict found)
         CourseBlock::create([
             'section_id' => $this->sectionId,
             'course_id' => $this->newCourseBlock['course_id'],
@@ -157,11 +170,77 @@ class CourseBlockManager extends Component
             'schedule_string' => $this->newCourseBlock['schedule_string'],
         ]);
 
-        // 3. Reset form and refresh data
+        // 4. Reset form and refresh data
         $this->reset('newCourseBlock');
-        $this->loadSectionData(); // Refresh list to show new block
+        $this->loadSectionData();
         session()->flash('message', 'Course block added successfully!');
     }
+
+    /**
+     * MASS ENROLLMENT: Enroll all students in the section into all course blocks assigned to that section,
+     * ensuring no duplicates.
+     */
+    public function enrollAllSectionStudents()
+    {
+        // Basic check for context data and students/blocks
+        if (!$this->sectionId || !$this->academicYearId || !$this->semester || $this->students->isEmpty() || $this->courseBlocks->isEmpty()) {
+            session()->flash('error', 'Please select the context and ensure students and course blocks are loaded.');
+            return;
+        }
+
+        $newEnrollments = [];
+        $studentIds = $this->students->pluck('id')->toArray();
+        $now = now();
+
+        // Get all existing enrollments for the current section/AY/semester
+        $existingEnrollments = Enrollment::where('section_id', $this->sectionId)
+            ->where('academic_year_id', $this->academicYearId)
+            ->where('semester', $this->semester)
+            ->get()
+            ->map(function ($item) {
+                return "{$item->student_id}-{$item->course_id}";
+            })
+            ->toArray();
+
+        $enrolledCount = 0;
+
+        // Loop through each course block
+        foreach ($this->courseBlocks as $block) {
+            $courseId = $block->course_id;
+
+            // Loop through each student in the section
+            foreach ($studentIds as $studentId) {
+                $uniqueKey = "{$studentId}-{$courseId}";
+
+                // Check if enrollment already exists (student + course combination)
+                if (!in_array($uniqueKey, $existingEnrollments)) {
+                    $newEnrollments[] = [
+                        'student_id' => $studentId,
+                        'course_id' => $courseId,
+                        'section_id' => $this->sectionId,
+                        'academic_year_id' => $this->academicYearId,
+                        'semester' => $this->semester,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                    // Add to existing list for subsequent course block checks within the same batch
+                    $existingEnrollments[] = $uniqueKey; 
+                    $enrolledCount++;
+                }
+            }
+        }
+
+        if (!empty($newEnrollments)) {
+            // Insert all new enrollment records at once
+            Enrollment::insert($newEnrollments);
+            session()->flash('message', "Mass Enrollment successful! Added **{$enrolledCount}** new enrollments across {$this->courseBlocks->count()} course blocks.");
+        } else {
+            session()->flash('message', 'All students are already enrolled in all assigned course blocks for this section.');
+        }
+
+        $this->loadSectionData();
+    }
+
 
     /**
      * Renders the corresponding Livewire view.
@@ -173,3 +252,4 @@ class CourseBlockManager extends Component
             ->section('content');
     }
 }
+
