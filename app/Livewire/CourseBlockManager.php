@@ -10,7 +10,8 @@ use App\Models\Employee;
 use App\Models\Enrollment; 
 use App\Models\AcademicYear;
 use App\Models\CourseBlock;
-use Illuminate\Support\Facades\DB; // Required for bulk operations
+use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Collection;
 
 class CourseBlockManager extends Component
 {
@@ -21,16 +22,20 @@ class CourseBlockManager extends Component
 
     // --- Data for Dropdowns ---
     public $sections = [];
-    public $academicYears = []; 
+    public $academicYears = [];
     public $semesters = ['1st', '2nd', 'Summer'];
     public $allCourses; 
     public $allFaculty; 
 
-    // --- Data for Lists ---
-    // $students now holds the list of all students in the selected section (for display and mass enrollment)
-    public $students = []; 
-    public $courseBlocks = [];
+    // --- Data for Lists (Collections must be initialized correctly) ---
+    public Collection $students; 
+    public Collection $courseBlocks;
     public $selectedSection;
+
+    // --- Student Enrollment Form Data (REVISED) ---
+    // Holds all students who ARE NOT CURRENTLY in the selected section/context
+    public Collection $availableStudentsForAdd; 
+    public $selectedStudentId = null; // Used by the new dropdown
 
     // --- Form Data for New Block ---
     public $newCourseBlock = [
@@ -49,6 +54,11 @@ class CourseBlockManager extends Component
         $this->sections = Section::all()->map->only(['id', 'name'])->toArray();
         $this->allCourses = Course::all();
         $this->allFaculty = Employee::all();
+        
+        // Initialize Collections
+        $this->students = collect();
+        $this->courseBlocks = collect();
+        $this->availableStudentsForAdd = collect(); // Initialize the new property
     }
 
     // --- Lifecycle Hooks ---
@@ -73,18 +83,16 @@ class CourseBlockManager extends Component
      */
     protected function handleDropdownChange()
     {
-        // Check if ALL three required properties are set.
         if ($this->sectionId && $this->academicYearId && $this->semester) {
             $this->loadSectionData();
         } else {
-            // If any one is missing, clear the data list but keep the current selections.
             $this->clearDynamicData();
-            $this->selectedSection = Section::find($this->sectionId); // Still load the section name if possible
+            $this->selectedSection = Section::find($this->sectionId);
         }
     }
 
     /**
-     * Loads the pool of students and existing course blocks for the selected criteria.
+     * Loads the pool of students currently in the section and students available to be added.
      */
     protected function loadSectionData()
     {
@@ -95,25 +103,33 @@ class CourseBlockManager extends Component
             return; 
         }
         
-        // 1. Load ALL students enrolled in the section (POOL for enrollment)
-        $studentIds = DB::table('enrollments')
+        // 1. Get IDs of students CURRENTLY in the section (Source: Enrollments)
+        $studentIdsInSection = Enrollment::select('student_id')
                         ->where('section_id', $this->sectionId)
                         ->where('academic_year_id', $this->academicYearId)
                         ->where('semester', $this->semester)
-                        // Grouping and selecting distinct student IDs assuming initial enrollment is per section, not course
-                        ->groupBy('student_id') 
+                        ->distinct() 
                         ->pluck('student_id');
 
-        $this->students = Student::whereIn('id', $studentIds)
+        // 2. Load Student objects CURRENTLY in the section (for display)
+        $this->students = Student::whereIn('id', $studentIdsInSection)
             ->orderBy('last_name')
             ->get();
 
-        // 2. Load Course Blocks for the selected context
+        // 3. Load Student objects AVAILABLE to be added (NOT in the section)
+        $this->availableStudentsForAdd = Student::whereNotIn('id', $studentIdsInSection)
+            ->orderBy('last_name')
+            ->get();
+
+        // 4. Load Course Blocks for the selected context
         $this->courseBlocks = CourseBlock::where('section_id', $this->sectionId)
                                         ->where('academic_year_id', $this->academicYearId)
                                         ->where('semester', $this->semester)
                                         ->with(['course', 'faculty'])
                                         ->get();
+        
+        // Reset selection ID
+        $this->selectedStudentId = null;
     }
 
 
@@ -124,7 +140,71 @@ class CourseBlockManager extends Component
     {
         $this->students = collect(); 
         $this->courseBlocks = collect();
+        $this->availableStudentsForAdd = collect(); 
+        
+        $this->reset(['selectedStudentId']); 
     }
+
+    // ------------------------------------------
+    // --- STUDENT MANAGEMENT METHODS (REVISED) ---
+    // ------------------------------------------
+    
+    // The search/select methods are REMOVED as they are replaced by the dropdown
+
+    /**
+     * Adds the selected student to the section by creating an initial Enrollment record.
+     */
+    public function addStudentToSection()
+    {
+        // 1. Validation: Ensure a student is selected and context is set.
+        $this->validate([
+            'selectedStudentId' => 'required|exists:students,id',
+            'sectionId' => 'required',
+            'academicYearId' => 'required',
+            'semester' => 'required',
+        ]);
+        
+        // 2. Find the course ID to use for the initial enrollment
+        $firstCourseBlock = $this->courseBlocks->first();
+
+        if (!$firstCourseBlock) {
+             session()->flash('error', 'Cannot add student: There must be at least one course block assigned to the section to create the initial enrollment record.');
+             return;
+        }
+        
+        // 3. Conflict Check (Ensure student doesn't have an enrollment for ANY course in this context already)
+        // This check is slightly redundant due to `loadSectionData` logic, but good practice.
+        $exists = Enrollment::where('student_id', $this->selectedStudentId)
+                            ->where('section_id', $this->sectionId) 
+                            ->where('academic_year_id', $this->academicYearId)
+                            ->where('semester', $this->semester)
+                            ->exists();
+
+        if ($exists) {
+            session()->flash('error', 'Student is already associated with this section for the selected academic period.');
+            return;
+        }
+
+        // 4. Create the initial Enrollment record
+        Enrollment::create([
+            'student_id' => $this->selectedStudentId,
+            'course_id' => $firstCourseBlock->course_id, 
+            'section_id' => $this->sectionId,
+            'academic_year_id' => $this->academicYearId,
+            'semester' => $this->semester,
+        ]);
+        
+        // 5. Reset form and refresh data
+        $student = Student::find($this->selectedStudentId);
+        $studentName = $student ? ($student->last_name . ', ' . $student->first_name) : 'Student';
+        
+        $this->reset('selectedStudentId');
+        $this->loadSectionData();
+        
+        session()->flash('message', "Student **{$studentName}** successfully added to the section. Remember to run 'Enroll All' to assign them to all other course blocks.");
+    }
+    
+    // --- Existing Methods ---
 
     /**
      * Handles saving the new course block to the database.
@@ -152,14 +232,13 @@ class CourseBlockManager extends Component
         if ($existingBlock) {
             $courseCode = Course::find($this->newCourseBlock['course_id'])->code;
 
-            // Flash an error message and stop execution
             session()->flash('error', 
                 "The course **{$courseCode}** is already assigned to this section for the selected academic period. Cannot create a duplicate block."
             );
-            return; // Stop the method
+            return;
         }
 
-        // 3. Create the CourseBlock record (Only runs if no conflict found)
+        // 3. Create the CourseBlock record 
         CourseBlock::create([
             'section_id' => $this->sectionId,
             'course_id' => $this->newCourseBlock['course_id'],
@@ -182,7 +261,6 @@ class CourseBlockManager extends Component
      */
     public function enrollAllSectionStudents()
     {
-        // Basic check for context data and students/blocks
         if (!$this->sectionId || !$this->academicYearId || !$this->semester || $this->students->isEmpty() || $this->courseBlocks->isEmpty()) {
             session()->flash('error', 'Please select the context and ensure students and course blocks are loaded.');
             return;
@@ -192,7 +270,6 @@ class CourseBlockManager extends Component
         $studentIds = $this->students->pluck('id')->toArray();
         $now = now();
 
-        // Get all existing enrollments for the current section/AY/semester
         $existingEnrollments = Enrollment::where('section_id', $this->sectionId)
             ->where('academic_year_id', $this->academicYearId)
             ->where('semester', $this->semester)
@@ -204,15 +281,12 @@ class CourseBlockManager extends Component
 
         $enrolledCount = 0;
 
-        // Loop through each course block
         foreach ($this->courseBlocks as $block) {
             $courseId = $block->course_id;
 
-            // Loop through each student in the section
             foreach ($studentIds as $studentId) {
                 $uniqueKey = "{$studentId}-{$courseId}";
 
-                // Check if enrollment already exists (student + course combination)
                 if (!in_array($uniqueKey, $existingEnrollments)) {
                     $newEnrollments[] = [
                         'student_id' => $studentId,
@@ -223,7 +297,6 @@ class CourseBlockManager extends Component
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
-                    // Add to existing list for subsequent course block checks within the same batch
                     $existingEnrollments[] = $uniqueKey; 
                     $enrolledCount++;
                 }
@@ -231,7 +304,6 @@ class CourseBlockManager extends Component
         }
 
         if (!empty($newEnrollments)) {
-            // Insert all new enrollment records at once
             Enrollment::insert($newEnrollments);
             session()->flash('message', "Mass Enrollment successful! Added **{$enrolledCount}** new enrollments across {$this->courseBlocks->count()} course blocks.");
         } else {
@@ -252,4 +324,3 @@ class CourseBlockManager extends Component
             ->section('content');
     }
 }
-

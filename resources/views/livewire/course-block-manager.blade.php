@@ -63,34 +63,87 @@
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
             
-            {{-- 1. Student List for Section --}}
-            <div class="lg:col-span-1 bg-white shadow-lg rounded-xl p-6 border-t-4 border-emerald-500 h-fit">
-                <h3 class="text-xl font-semibold mb-4 text-gray-700 flex justify-between items-center">
-                    👥 Students in Section 
-                    @if ($selectedSection)
-                        <span class="text-sm font-medium text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
-                            {{ $selectedSection->name }}
-                        </span>
-                    @endif
-                </h3>
+            {{-- 1. Student List for Section & Add Student Form (UPDATED COLUMN) --}}
+            <div class="lg:col-span-1 h-fit">
+                
+                {{-- Student List Panel (Existing Code) --}}
+                <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-emerald-500 h-fit">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700 flex justify-between items-center">
+                        👥 Students in Section 
+                        @if ($selectedSection)
+                            <span class="text-sm font-medium text-emerald-600 bg-emerald-100 px-3 py-1 rounded-full">
+                                {{ $selectedSection->name }}
+                            </span>
+                        @endif
+                    </h3>
 
-                @if ($students->isNotEmpty())
-                    <p class="text-sm text-gray-500 mb-3">Total Students: **{{ $students->count() }}**</p>
-                    <div class="max-h-96 overflow-y-auto border p-3 rounded-md bg-white">
-                        <ul class="divide-y divide-gray-100">
-                            @foreach ($students as $student)
-                                <li class="py-2 text-sm text-gray-800">
-                                    {{ $student->last_name }}, {{ $student->first_name }} {{ $student->mid_name }}
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @else
-                    <p class="text-sm text-gray-500 italic p-3 border rounded">
-                        No students are currently enrolled in this Section/AY/Semester context.
-                    </p>
-                @endif
-            </div>
+                    @if ($students->isNotEmpty())
+                        <p class="text-sm text-gray-500 mb-3">Total Students: **{{ $students->count() }}**</p>
+                        <div class="max-h-96 overflow-y-auto border p-3 rounded-md bg-white">
+                            <ul class="divide-y divide-gray-100">
+                                @foreach ($students as $student)
+                                    <li class="py-2 text-sm text-gray-800">
+                                        {{ $student->last_name }}, {{ $student->first_name }} {{ $student->mid_name }}
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @else
+                        <p class="text-sm text-gray-500 italic p-3 border rounded">
+                            No students are currently enrolled in this Section/AY/Semester context.
+                        </p>
+                    @endif
+                </div>
+
+                {{-- ADD NEW STUDENT TO SECTION FORM (REVISED FEATURE: Dropdown Select) --}}
+                <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-yellow-500 h-fit">
+                    <h3 class="text-xl font-semibold mb-4 text-gray-700">✍️ Add Student to Section</h3>
+                    
+                    @if ($availableStudentsForAdd->isNotEmpty())
+                        <form wire:submit.prevent="addStudentToSection">
+                            
+                            {{-- 1. Student Dropdown --}}
+                            <div class="mb-4">
+                                <label for="student-select" class="block text-sm font-medium text-gray-700">Select Student to Add</label>
+                            <select 
+                                id="student-select" 
+                                wire:model.live="selectedStudentId" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                            >
+                                    <option value="">-- Select a Student --</option>
+                                    @foreach ($availableStudentsForAdd->sortBy('last_name') as $student)
+                                        <option value="{{ $student->id }}">
+                                            {{ $student->last_name }}, {{ $student->first_name }} (ID: {{ $student->id ?? 'N/A' }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('selectedStudentId') 
+                                    <span class="text-red-500 text-sm block mt-2">
+                                        {{ $message }}
+                                    </span> 
+                                @enderror
+                            </div>
+
+                            {{-- 2. Add Button --}}
+                            <div class="flex justify-end">
+                                <button 
+                                    type="submit" 
+                                    {{-- The controller validation handles the required check, but we can visually disable it too --}}
+                                    @if (!$selectedStudentId) disabled @endif
+                                    class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white transition duration-150 ease-in-out 
+                                        @if ($selectedStudentId) bg-yellow-600 hover:bg-yellow-700 @else bg-gray-400 cursor-not-allowed @endif"
+                                >
+                                    Add Student to Section
+                                </button>
+                            </div>
+                        </form>
+                    @else
+                        <p class="text-sm text-gray-500 italic p-3 border rounded">
+                            All students are currently associated with this section context, or there are no students in the database.
+                        </p>
+                    @endif
+                </div>
+            </div> {{-- End Student List Column --}}
 
             {{-- 2. Course Blocks List & Mass Enrollment Action --}}
             <div class="lg:col-span-2">
@@ -136,7 +189,6 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ $block->schedule_string }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->room_name }}</td>
-                                            {{-- Removed Action column/button: select for enrollment --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -194,12 +246,6 @@
                 </div>
                 
                 <div class="mt-6 text-right flex justify-end items-center space-x-4">
-                    {{-- Success Message for New Block (optional inline display) --}}
-                    @if (session()->has('message') && session('message') === 'Course block added successfully!')
-                        <div class="text-green-600 font-semibold text-sm">
-                            {{ session('message') }}
-                        </div>
-                    @endif
                     
                     <button type="submit" class="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700">
                         Create Course Block
