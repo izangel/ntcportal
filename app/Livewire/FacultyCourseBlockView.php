@@ -6,6 +6,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
+use App\Models\Enrollment; // 🔑 ADDED: Need to use the Enrollment model directly
 use Livewire\Attributes\On; 
 
 class FacultyCourseBlockView extends Component
@@ -17,7 +18,7 @@ class FacultyCourseBlockView extends Component
     // The ID of the block selected from the dropdown
     public $selectedBlockId; 
     
-    // 🔑 NEW FLAG: Controls when the GradeInputForm is displayed/loaded.
+    // 🔑 FLAG: Controls when the GradeInputForm is displayed/loaded.
     public $blockSelectedAndConfirmed = false;
     
     // --- Internal State/Data ---
@@ -32,22 +33,17 @@ class FacultyCourseBlockView extends Component
     public $syncKey = 0;
     
     // ------------------------------------------------------------------
-    //  EVENT LISTENERS
+    //  EVENT LISTENERS (Existing Methods Remain)
     // ------------------------------------------------------------------
 
     protected $listeners = [
         'showEmitedFlashMessage',
-        // Listen for the grade update signal from the child component
         'gradeUpdated' => 'refreshComponent',
     ];
 
-    /**
-     * Receives the event dispatched from child components (GradeInputForm, ResolveIncGrade)
-     * and flashes the appropriate message to the session.
-     */
     public function showEmitedFlashMessage($action, $updatedCount = 0)
     {
-        // Attempt to fetch the selected block's details for use in the message context
+        // ... (Existing implementation for flash messages)
         $block = $this->assignedBlocks->firstWhere('id', $this->selectedBlockId);
         $courseCode = $block->course->code ?? 'Course';
         
@@ -59,13 +55,11 @@ class FacultyCourseBlockView extends Component
             case 'finalize':
                 session()->flash('message', "🎉 Grades for **{$courseCode}** have been **FINALIZED** and locked.");
                 $this->loadAssignedBlocks(); 
-                // Force reload of the child form to show final locked grades/resolution mode
                 $this->blockSelectedAndConfirmed = true; 
                 break;
                 
             case 'inc_resolved':
                 session()->flash('message', "✅ INC grade successfully resolved to a numerical grade for **{$courseCode}**.");
-                // Note: The refreshComponent will handle the actual reloading
                 break;
                 
             case 'error_finalized':
@@ -89,57 +83,99 @@ class FacultyCourseBlockView extends Component
                 break;
         }
 
-        // If an update occurred from a child, force a full refresh.
         if ($action === 'finalize' || $action === 'inc_resolved') {
             $this->refreshComponent();
         }
     }
 
-    /**
-     * Catches the 'gradeUpdated' event and forces a component refresh 
-     * by incrementing the syncKey.
-     */
     public function refreshComponent()
     {
-        // 1. Update the parent's data (if needed for the dropdown status/list)
         $this->loadAssignedBlocks(); 
-        
-        // 2. Increment the key to force the child component to destroy and re-mount.
         $this->syncKey++;
-        
-        // 3. Ensure the child is visible and ready to load the fresh data
         $this->blockSelectedAndConfirmed = true;
     }
 
     // ------------------------------------------------------------------
-    //  NEW ACTION
+    //  ACTION: Load Grades (Existing Method Remains)
     // ------------------------------------------------------------------
 
-    /**
-     * Called when the user clicks the "Load Grades" button.
-     * This confirms the selection and sets the flag to display the child component.
-     */
     public function loadSelectedBlockGrades()
     {
-        // 1. Check if a block is actually selected.
         if (!$this->selectedBlockId) {
             session()->flash('error', '❌ Please select a course block first.');
             $this->blockSelectedAndConfirmed = false;
             return;
         }
         
-        // 2. Set the confirmation flag to TRUE to display the child component.
         $this->blockSelectedAndConfirmed = true;
-        
-        // 3. Reset mode to 'grading' 
         $this->activeMode = 'grading';
-        
-        // 4. Reset syncKey to ensure the child reloads if needed
         $this->syncKey = 0;
     }
     
     // ------------------------------------------------------------------
-    //  MOUNT
+    //  ACTION: Print Finalized Grades (UPDATED LOGIC)
+    // ------------------------------------------------------------------
+
+    /**
+     * Fetches the finalized grades for the selected block using the same 
+     * contextual query logic as the GradeInputForm child component.
+     */
+    public function printFinalizedGrades()
+    {
+        if (!$this->selectedBlockId) {
+            session()->flash('error', '❌ Please select a course block first.');
+            return;
+        }
+
+        // 1. Get the context block (requires course, academic year, and section info)
+        $contextBlock = CourseBlock::where('id', $this->selectedBlockId)
+                                   ->where('faculty_id', $this->facultyId) // Security check
+                                   ->with(['course', 'academicYear'])
+                                   ->first();
+
+        if (!$contextBlock) {
+            session()->flash('error', '❌ Error: Course block not found or you are not authorized.');
+            return;
+        }
+
+        // 2. Ensure the grades are finalized before allowing print
+        if (!$contextBlock->finalized) {
+            session()->flash('error', '⚠️ Cannot print: Grades for this block have not been finalized yet.');
+            return;
+        }
+        
+        // 3. 🔑 CRITICAL: Use the exact query fields from GradeInputForm to fetch enrollments 🔑
+        $enrollments = Enrollment::where('section_id', $contextBlock->section_id)
+                                 ->where('academic_year_id', $contextBlock->academic_year_id)
+                                 ->where('semester', $contextBlock->semester)
+                                 ->where('course_id', $contextBlock->course_id)
+                                 ->with('student') 
+                                 ->get();
+
+
+        // 4. Prepare the data structure for the print view
+        $gradeData = [
+            'courseCode' => $contextBlock->course->code ?? 'N/A',
+            'courseName' => $contextBlock->course->name ?? 'N/A',
+            'blockDetails' => "{$contextBlock->schedule_string} (Room: {$contextBlock->room_name})",
+            'academicPeriod' => "{$contextBlock->academicYear->start_year}-{$contextBlock->academicYear->end_year}", 
+            'semester' => $contextBlock->semester,
+            'teacherName' => Auth::user()->name,
+            'students' => $enrollments->map(function ($enrollment) {
+                return [
+                    'studentId' => $enrollment->student->student_id ?? 'N/A',
+                    'studentName' => $enrollment->student->full_name ?? $enrollment->student->last_name . ', ' . $enrollment->student->first_name, // Use the concatenated name if available
+                    'finalGrade' => $enrollment->grade ?? 'INC', // 🔑 Use 'grade' column 🔑
+                ];
+            })->sortBy('studentName')->values()->all(), 
+        ];
+
+        // 5. Emit a browser event to trigger the print action in the view.
+        $this->dispatch('triggerPrint', $gradeData);
+    }
+    
+    // ------------------------------------------------------------------
+    //  MOUNT & DATA LOADING (Existing Methods Remain)
     // ------------------------------------------------------------------
 
     public function mount()
@@ -158,39 +194,29 @@ class FacultyCourseBlockView extends Component
         $this->loadAssignedBlocks();
     }
     
-    // ------------------------------------------------------------------
-    //  DATA LOADING
-    // ------------------------------------------------------------------
-
     public function loadAssignedBlocks()
     {
-        // Reset blocks and selection if filters are incomplete
         if (!$this->academicYearId || !$this->semester) {
             $this->assignedBlocks = collect();
             $this->selectedBlockId = null;
-            $this->blockSelectedAndConfirmed = false; // Reset confirmation
+            $this->blockSelectedAndConfirmed = false;
             return;
         }
 
-        // Fetch all assigned blocks for the dropdown list based on filters
         $this->assignedBlocks = CourseBlock::where('faculty_id', $this->facultyId)
                                             ->where('academic_year_id', $this->academicYearId)
                                             ->where('semester', $this->semester)
                                             ->with('course')
                                             ->get();
 
-        // Check if the currently selected block still exists in the new list
         if (!$this->assignedBlocks->contains('id', $this->selectedBlockId)) {
              $this->selectedBlockId = null;
-             // If selection is invalid, reset confirmation
              $this->blockSelectedAndConfirmed = false; 
         }
-
-        $this->render();
     }
     
     // ------------------------------------------------------------------
-    //  LIFECYCLE HOOKS
+    //  LIFECYCLE HOOKS (Existing Methods Remain)
     // ------------------------------------------------------------------
 
     public function updatedAcademicYearId() 
@@ -209,12 +235,10 @@ class FacultyCourseBlockView extends Component
 
     public function updatedSelectedBlockId()
     {
-        // When the user changes the dropdown, invalidate the grades view
         $this->blockSelectedAndConfirmed = false;
         $this->activeMode = 'grading';
     }
 
-   
     public function render()
     {
         return view('livewire.faculty-course-block-view')->extends('layouts.admin')
