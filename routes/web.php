@@ -35,6 +35,8 @@ use App\Livewire\AssignCoursesIndividual;
 use App\Livewire\CourseBlockManager;
 
 use App\Livewire\FacultyCourseBlockView;
+
+use App\Livewire\Admin\FacultyCourseListView;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -107,6 +109,9 @@ Route::middleware([
         Route::post('/employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
         ->name('employees.reset-password')
         ->middleware('auth'); // Ensure this is protected by appropriate middleware
+
+        // New Admin Faculty Course View
+        Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
         
     });
 

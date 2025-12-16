@@ -178,6 +178,24 @@
                     </x-nav-link>
                 </div>
             </div>
+
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Reports</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('admin.faculty.courses') }}" :active="request()->routeIs('admin.faculty.courses')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Grade Submission Tracking') }}
+                    </x-nav-link>
+                    
+                </div>
+            </div>
+
+            
+
+
         @endif
 
 
@@ -250,6 +268,7 @@
                     </x-nav-link>
                 </div>
             </div>
+            
         @endif
 
         @if(Auth::user()->hasRole('academic_head')|| Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
