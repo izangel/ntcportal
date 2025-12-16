@@ -33,7 +33,9 @@
                 <select id="section" wire:model.live="sectionId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                     <option value="">Select Section</option>
                     @foreach ($sections as $section)
-                        <option value="{{ $section['id'] }}">{{ $section['name'] }}</option>
+                        <option value="{{ $section['id'] }}">
+                            {{ $section['program_name'] }}-{{ $section['name'] }}
+                        </option>
                     @endforeach
                 </select>
                 @error('sectionId') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -215,7 +217,7 @@
                         <select wire:model.defer="newCourseBlock.course_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             <option value="">Select Course</option>
                             @foreach ($allCourses as $course)
-                                <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
+                                <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }} ({{ $course->description }})</option>
                             @endforeach
                         </select>
                         @error('newCourseBlock.course_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
@@ -226,7 +228,7 @@
                         <select wire:model.defer="newCourseBlock.faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                             <option value="">Select Faculty</option>
                             @foreach ($allFaculty as $faculty)
-                                <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                                <option value="{{ $faculty->id }}">{{ $faculty->last_name }}, {{ $faculty->first_name }} {{ $faculty->mid_name }}</option>
                             @endforeach
                         </select>
                         @error('newCourseBlock.faculty_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror

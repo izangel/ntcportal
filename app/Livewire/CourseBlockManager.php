@@ -51,9 +51,19 @@ class CourseBlockManager extends Component
     public function mount()
     {
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); 
-        $this->sections = Section::all()->map->only(['id', 'name'])->toArray();
-        $this->allCourses = Course::all();
-        $this->allFaculty = Employee::all();
+        $this->sections = Section::with('program')
+            ->get()
+            // Map the collection to an array of just the ID, Name, and Program Name
+            ->map(function ($section) {
+                return [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'program_name' => $section->program ? $section->program->name : 'N/A', // Assuming 'name' is the column for the program name
+                ];
+            })
+            ->toArray();
+        $this->allCourses = Course::orderBy('code')->get();
+        $this->allFaculty = Employee::orderBy('last_name')->get();
         
         // Initialize Collections
         $this->students = collect();

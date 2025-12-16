@@ -22,7 +22,7 @@ class CourseController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:courses,code|max:255',
+            'code' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 
@@ -46,7 +46,7 @@ class CourseController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'code' => 'required|string|unique:courses,code,' . $course->id . '|max:255',
+            'code' => 'required|string|max:255',
             'description' => 'nullable|string',
         ]);
 

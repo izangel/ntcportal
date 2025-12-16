@@ -36,7 +36,13 @@ class Enrollment extends Model
     // Define relationship with Course
     public function section()
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsTo(Section::class, 'section_id', 'id');
+    }
+
+      // Define relationship with Course
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'id');
     }
 
     /**

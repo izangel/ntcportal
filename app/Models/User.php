@@ -71,10 +71,23 @@ class User extends Authenticatable
      * @return bool
      */
     public function hasRole(string $role): bool
-    {
-         // This logic is correct IF employee relation loads successfully
-         return $this->employee && $this->employee->role === $role;
+{
+    // 1. Check for Employee Roles (Staff/Admin)
+    // If the user has an 'employee' record, check the role stored there.
+    if ($this->employee) {
+        return $this->employee->role === $role;
     }
+
+    // 2. Check for Student Role
+    // If the requested role is 'student', check if the user has a linked 'student' record.
+    // Assuming you have a 'student' relationship defined in the User model.
+    if ($role === 'student') {
+        return (bool) $this->student; 
+    }
+
+    // 3. Fallback
+    return false;
+}
 
      /**
      * Get the student record associated with the user.
