@@ -90,6 +90,8 @@ Route::middleware([
          ->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);
          Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
+         Route::post('/leave_applications/{leaveApplication}/cancel', [LeaveApplicationController::class, 'cancel'])
+    ->name('leave_applications.cancel');
        // This route will handle the HR view of pending applications
         Route::get('/hr/pending-applications', [LeaveApplicationController::class, 'pending'])->name('hr.leave_applications.pending');
 
@@ -104,9 +106,9 @@ Route::middleware([
         
     });
 
-
+    
    
-    Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
+    
     
     // Reports Routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

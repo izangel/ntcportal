@@ -43,7 +43,7 @@
                         @endforeach
                     @else
                         {{-- Display the message directly if it's not a non-empty array --}}
-                        <p>No remaining leave credits to display. {{ $remainingCredits }}</p>
+                        <p>No remaining leave credits to display.</p>
                     @endif
 
                 </div>

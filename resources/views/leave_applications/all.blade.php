@@ -1,10 +1,10 @@
-{{-- resources/views/leave_applications/index.blade.php --}}
+{{-- resources/views/leave_applications/all.blade.php --}}
 
-@extends('layouts.admin') {{-- Or your main layout file --}}
+@extends('layouts.admin')
 
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        {{ __('Leave Applications') }}
+        {{ __('All Leave Applications') }}
     </h2>
 @endsection
 
@@ -30,7 +30,7 @@
                     </div>
                 @endif
 
-                {{-- Basic Filter Form (optional) --}}
+                {{-- Filter Form --}}
                 <form action="{{ route('hr.leave_applications.all') }}" method="GET" class="mb-4 bg-gray-50 p-4 rounded-md shadow-sm">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
@@ -49,7 +49,7 @@
                             <select id="type_filter" name="leave_type_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">All Types</option>
                                 @foreach($leaveTypes as $type)
-                                    <option value="{{ $type->id }}" {{ $type->id == $leaveTypeId ? 'selected' : '' }}>
+                                    <option value="{{ $type->id }}" {{ request('leave_type_id') == $type->id ? 'selected' : '' }}>
                                         {{ $type->name }}
                                     </option>
                                 @endforeach
@@ -60,11 +60,7 @@
                             <select id="status_filter" name="status" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">All Statuses</option>
                                 @foreach ($approvalStatuses as $statusOption)
-                                    <option 
-                                        value="{{ $statusOption }}" 
-                                        {{ $statusOption == $status ? 'selected' : '' }}>
-                                        
-                                        {{-- Display a user-friendly version --}}
+                                    <option value="{{ $statusOption }}" {{ request('status') == $statusOption ? 'selected' : '' }}>
                                         {{ ucwords(str_replace('_', ' ', $statusOption)) }}
                                     </option>
                                 @endforeach
@@ -75,7 +71,7 @@
                         <x-button type="submit" class="bg-gray-800 hover:bg-gray-700 text-white">
                             {{ __('Apply Filters') }}
                         </x-button>
-                        <a href="{{ route('leave_applications.index') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 ml-2">
+                        <a href="{{ route('hr.leave_applications.all') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150 ml-2">
                             {{ __('Clear Filters') }}
                         </a>
                     </div>
@@ -86,8 +82,8 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
-                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
-                                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Middle Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">First Name</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Middle Name</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
@@ -112,13 +108,29 @@
                                             @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
                                             @elseif ($application->approval_status === 'approved_with_pay' || $application->approval_status === 'approved_without_pay') bg-green-100 text-green-800
                                             @elseif ($application->approval_status === 'rejected') bg-red-100 text-red-800
+                                            @elseif ($application->approval_status === 'cancelled') bg-gray-100 text-gray-800
                                             @else bg-gray-100 text-gray-800 @endif">
                                             {{ ucwords(str_replace('_', ' ', $application->approval_status)) }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->date_filed->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        {{-- View Button --}}
                                         <a href="{{ route('leave_applications.show', $application) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+
+                                        {{-- CANCEL BUTTON --}}
+                                        {{-- Condition: Visible ONLY for 'approved_with_pay' or 'approved_without_pay' or 'cancelled' --}}
+                                        @if ($application->approval_status === 'approved_with_pay' || $application->approval_status === 'approved_without_pay' || $application->approval_status === 'cancelled')
+                                            <form action="{{ route('leave_applications.cancel', $application) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to cancel this approved leave? Credits will be refunded.');">
+                                                @csrf
+                                                <button type="submit" class="text-orange-600 hover:text-orange-900 font-bold mr-3">
+                                                    Cancel
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        {{-- EDIT & DELETE BUTTONS --}}
+                                        {{-- Condition: Visible ONLY for 'pending' --}}
                                         @if ($application->approval_status === 'pending')
                                             <a href="{{ route('leave_applications.edit', $application) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
                                             <form action="{{ route('leave_applications.destroy', $application) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this leave application? This action cannot be undone.');">
@@ -131,7 +143,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
+                                    <td colspan="10" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
                                 </tr>
                             @endforelse
                         </tbody>
