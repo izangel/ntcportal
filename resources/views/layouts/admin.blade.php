@@ -222,6 +222,10 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Faculty Course Blocks') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('course-blocks.bulk-uploader') }}" :active="request()->routeIs('course-blocks.bulk-uploader')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Course Blocks Bulk Uploader') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('coursetosections.index') }}" :active="request()->routeIs('coursetosections.*')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Course To Sections') }}
@@ -310,6 +314,10 @@
                     <x-nav-link href="{{ route('faculty-loadings.index') }}" :active="request()->routeIs('faculty-loadings.*')">
                         <i class="fas fa-chalkboard-teacher mr-3 text-lg"></i>
                         {{ __('Faculty Loading') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('admin.leave.summary') }}" :active="request()->routeIs('admin.leave.summary')">
+                        <i class="fas fa-calendar-check mr-3 text-lg"></i>
+                        {{ __('Leave Summary') }}
                     </x-nav-link>
                 </div>
             </div>

@@ -37,6 +37,8 @@ use App\Livewire\CourseBlockManager;
 use App\Livewire\FacultyCourseBlockView;
 
 use App\Livewire\Admin\FacultyCourseListView;
+
+use App\Livewire\CourseBlockBulkUploader;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -112,6 +114,12 @@ Route::middleware([
 
         // New Admin Faculty Course View
         Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
+        Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)
+     ->name('course-blocks.bulk-uploader');
+
+     // The new Leave Summary/Calendar route
+    Route::get('/admin/leave-summary', [LeaveApplicationController::class, 'leaveSummary'])
+        ->name('admin.leave.summary');
         
     });
 

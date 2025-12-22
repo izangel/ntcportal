@@ -239,6 +239,39 @@ class LeaveApplicationController extends Controller
         return redirect()->route('leave_applications.index')->with('success', 'Leave application submitted successfully. Substitute teachers received in-app assignments.');
     }
 
+    public function leaveSummary(Request $request)
+{
+    $selectedMonth = $request->input('month', date('Y-m'));
+    $date = Carbon::parse($selectedMonth);
+    
+    $startOfMonth = $date->copy()->startOfMonth();
+    $endOfMonth = $date->copy()->endOfMonth();
+    
+    // Fetch applications where approval_status is 'approved' (adjust based on your enum)
+    $applications = LeaveApplication::where('approval_status', 'approved_with_pay')
+        ->where(function ($query) use ($startOfMonth, $endOfMonth) {
+            $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                  ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth]);
+        })
+        ->with('employee') 
+        ->get();
+
+    $calendar = [];
+    for ($d = 1; $d <= $startOfMonth->daysInMonth; $d++) {
+        $currentDate = $startOfMonth->copy()->day($d)->toDateString();
+        $calendar[$currentDate] = $applications->filter(function ($app) use ($currentDate) {
+            return $currentDate >= $app->start_date->toDateString() && 
+                   $currentDate <= $app->end_date->toDateString();
+        });
+    }
+
+    return view('admin.leave-summary', [
+        'calendar' => $calendar,
+        'monthName' => $date->format('F Y'),
+        'currentMonth' => $selectedMonth,
+        'startOfWeek' => $startOfMonth->dayOfWeek, // 0 (Sun) to 6 (Sat)
+    ]);
+}
    
 
     public function edit(LeaveApplication $leaveApplication)
