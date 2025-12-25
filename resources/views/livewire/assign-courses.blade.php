@@ -1,5 +1,8 @@
 <div class="p-6 bg-white shadow-xl rounded-lg">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">📚 Assign Students to Courses</h2>
+    <div class="mb-6 border-b pb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Assign Students to Course</h2>
+        <p class="text-sm text-gray-500">for Regular Students</p>
+    </div>
 
     @if (session()->has('success'))
         <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4" role="alert">
@@ -30,6 +33,7 @@
                 <option value="">Select Semester</option>
                 <option value="1st">1st Semester</option>
                 <option value="2nd">2nd Semester</option>
+                <option value="Sum">Summer</option>
             </select>
             @error('selectedSemester') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
@@ -39,7 +43,7 @@
             <select wire:model.live="selectedSectionId" id="section" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md @if(empty($sections)) bg-gray-100 cursor-not-allowed @endif" {{ empty($sections) ? 'disabled' : '' }}>
                 <option value="">Select Section</option>
                 @foreach($sections as $section)
-                    <option value="{{ $section->id }}">{{ $section->program->name }}-{{ $section->name }}</option>
+                    <option value="{{ $section->id }}">{{ $section->program->name ?? '' }} - {{ $section->name }}</option>
                 @endforeach
             </select>
             @error('selectedSectionId') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
@@ -77,7 +81,6 @@
                     <tr>
                         <th scope="col" class="px-6 py-3">Course Code</th>
                         <th scope="col" class="px-6 py-3">Course Name</th>
-                        <th scope="col" class="px-6 py-3">Units</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -85,7 +88,6 @@
                         <tr class="bg-white border-b hover:bg-gray-50">
                             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ $course->code }}</td>
                             <td class="px-6 py-4">{{ $course->name }}</td>
-                            <td class="px-6 py-4">{{ $course->units }}</td>
                         </tr>
                     @endforeach
                 </tbody>

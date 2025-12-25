@@ -42,6 +42,10 @@
                                 <i class="fas fa-user-graduate mr-3 text-lg"></i>
                                 {{ __('Course To Sections') }}
                             </x-nav-link>
+                            <x-nav-link href="{{ route('assigned_courses.index') }}" :active="request()->routeIs('assigned_courses.index')">
+                                <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                                {{ __('Assigned Courses') }}
+                            </x-nav-link>
                             <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
                                 <i class="fas fa-user-graduate mr-3 text-lg"></i>
                                 {{ __('Manage Students') }}

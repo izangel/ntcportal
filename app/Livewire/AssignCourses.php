@@ -48,9 +48,11 @@ class AssignCourses extends Component
     public function loadSections()
     {
         // Filter sections based on year/semester
-        // NOTE: Ensure your Section model has 'academic_year_id' and 'semester' columns, 
-        // or adjust the WHERE clause to match your actual database schema.
-        $this->sections = Section::where('academic_year_id', $this->selectedAcademicYearId)
+        // We include sections with matching academic_year_id OR null (legacy/global sections)
+        $this->sections = Section::where(function($query) {
+                                    $query->where('academic_year_id', $this->selectedAcademicYearId)
+                                          ->orWhereNull('academic_year_id');
+                                 })
                                  ->get();
         $this->courses = [];
     }
@@ -130,6 +132,8 @@ class AssignCourses extends Component
             
             session()->flash('success', 
                 "Successfully assigned $assignedCount records. Students in the section are now enrolled in the selected courses.");
+
+            return redirect()->route('assigned_courses.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
