@@ -198,21 +198,24 @@ class FacultyCourseBlockView extends Component
     {
         if (!$this->academicYearId || !$this->semester) {
             $this->assignedBlocks = collect();
-            $this->selectedBlockId = null;
-            $this->blockSelectedAndConfirmed = false;
             return;
         }
 
-        $this->assignedBlocks = CourseBlock::where('faculty_id', $this->facultyId)
-                                            ->where('academic_year_id', $this->academicYearId)
-                                            ->where('semester', $this->semester)
-                                            ->with('course')
-                                            ->get();
+        $blocks = CourseBlock::where('faculty_id', $this->facultyId)
+                            ->where('academic_year_id', $this->academicYearId)
+                            ->where('semester', $this->semester)
+                            ->with(['course', 'section'])
+                            ->get();
 
-        if (!$this->assignedBlocks->contains('id', $this->selectedBlockId)) {
-             $this->selectedBlockId = null;
-             $this->blockSelectedAndConfirmed = false; 
-        }
+        // 🔑 Group by Schedule and Course so Merged Sections appear as one "Class"
+        $this->assignedBlocks = $blocks->groupBy(function($item) {
+            return $item->course_id . $item->schedule_string . $item->room_name;
+        })->map(function($group) {
+            $first = $group->first();
+            // Combine section names for the label: "BSIS1, DIT1"
+            $first->combined_sections = $group->pluck('section.name')->implode(', ');
+            return $first;
+        });
     }
     
     // ------------------------------------------------------------------

@@ -41,11 +41,11 @@
             
             @if ($assignedBlocks->isNotEmpty())
                 <div class="flex items-center space-x-4">
-                    <select id="block" wire:model.live="selectedBlockId" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500">
-                        <option value="">-- Select a Block --</option>
-                        @foreach ($assignedBlocks as $block)
+                    <select wire:model.live="selectedBlockId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        <option value="">Select a Class</option>
+                        @foreach($assignedBlocks as $block)
                             <option value="{{ $block->id }}">
-                                {{ $block->course->code }} - {{ $block->course->name }} ({{ $block->schedule_string }}) (Room: {{ $block->room_name }})
+                                {{ $block->course->code }} - {{ $block->combined_sections }} ({{ $block->schedule_string }})
                             </option>
                         @endforeach
                     </select>

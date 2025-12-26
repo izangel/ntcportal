@@ -13,18 +13,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('course_to_sections', function (Blueprint $table) {
-            $table->id();
+            // $table->id();
             
-            // References to other tables (Foreign Keys)
-            $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
-            $table->string('semester');
-            $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
-            $table->foreignId('section_id')->constrained('sections')->onDelete('cascade'); 
+            // // References to other tables (Foreign Keys)
+            // $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
+            // $table->string('semester');
+            // $table->foreignId('course_id')->constrained('courses')->onDelete('cascade');
+            // $table->foreignId('section_id')->constrained('sections')->onDelete('cascade'); 
             
             
            
             
-            $table->timestamps();
+            // $table->timestamps();
         });
     }
     /**

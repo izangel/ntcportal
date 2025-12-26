@@ -93,6 +93,7 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student Name</th>
+                                
                                 <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Final Grade</th>
                             </tr>
                         </thead>
@@ -100,6 +101,7 @@
                             @foreach ($enrolledStudents as $student)
                             <tr wire:key="modal-review-{{ $student['student_id'] }}">
                                 <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ $student['student_name'] }}</td>
+                                
                                 <td class="px-3 py-2 whitespace-nowrap text-right text-sm font-bold text-gray-700">
                                     {{ $grades[$student['student_id']] ?? 'N/A' }} 
                                 </td>

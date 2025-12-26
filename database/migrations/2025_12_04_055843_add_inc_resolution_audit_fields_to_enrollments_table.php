@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            // Stores the grade *before* it was resolved (should be 'INC')
-            $table->string('original_grade', 5)->nullable()->after('grade'); 
+            // // Stores the grade *before* it was resolved (should be 'INC')
+            // $table->string('original_grade', 5)->nullable()->after('grade'); 
             
-            // Timestamp of when the resolution occurred
-            $table->timestamp('resolution_date')->nullable()->after('original_grade'); 
+            // // Timestamp of when the resolution occurred
+            // $table->timestamp('resolution_date')->nullable()->after('original_grade'); 
             
-            // ID of the user (teacher/admin) who performed the resolution
-            $table->foreignId('resolved_by_user_id')->nullable()->constrained('users')->after('resolution_date'); 
+            // // ID of the user (teacher/admin) who performed the resolution
+            // $table->foreignId('resolved_by_user_id')->nullable()->constrained('users')->after('resolution_date'); 
         });
     }
 

@@ -14,31 +14,31 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            // ... Drop semester_id column logic ...
+            // // ... Drop semester_id column logic ...
             
-            // 1. Add as nullable (required to pass the constraint check)
-            $table->foreignId('academic_year_id')
-                  ->nullable() // MUST BE NULLABLE
-                  ->constrained('academic_years')
-                  ->after('section_id'); 
+            // // 1. Add as nullable (required to pass the constraint check)
+            // $table->foreignId('academic_year_id')
+            //       ->nullable() // MUST BE NULLABLE
+            //       ->constrained('academic_years')
+            //       ->after('section_id'); 
 
-            $table->string('semester', 50)->nullable()->after('academic_year_id');
+            // $table->string('semester', 50)->nullable()->after('academic_year_id');
         });
         
         // --- DATA POPULATION STEP ---
         
         // Find a default Academic Year ID (e.g., the oldest or the current one)
         // You'll need to know a valid ID to use as a fallback. Let's assume AY ID is 1.
-        $defaultAcademicYearId = 3; 
-        $defaultSemester = '1st'; 
+        // $defaultAcademicYearId = 3; 
+        // $defaultSemester = '1st'; 
         
-        // 2. Set the default values for existing rows
-        DB::statement("
-            UPDATE enrollments 
-            SET academic_year_id = ?, 
-                semester = ? 
-            WHERE academic_year_id IS NULL
-        ", [$defaultAcademicYearId, $defaultSemester]);
+        // // 2. Set the default values for existing rows
+        // DB::statement("
+        //     UPDATE enrollments 
+        //     SET academic_year_id = ?, 
+        //         semester = ? 
+        //     WHERE academic_year_id IS NULL
+        // ", [$defaultAcademicYearId, $defaultSemester]);
     }
 
     /**

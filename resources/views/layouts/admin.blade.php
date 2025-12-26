@@ -172,7 +172,7 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Teacher Evaluation') }}
                     </x-nav-link>
-                    <x-nav-link href="#">
+                   <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Grade Submission') }}
                     </x-nav-link>
@@ -199,7 +199,7 @@
         @endif
 
 
-        @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar'))
+        @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
             {{-- NEW: ROLE SEPARATOR FOR ACADEMIC/REGISTRAR --}}
             <div class="mt-6 pt-3 border-t border-gray-700">
                 <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">

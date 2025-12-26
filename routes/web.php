@@ -72,7 +72,7 @@ Route::middleware([
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
     // Admin and Teacher specific routes (apply roles middleware)
-    Route::middleware(['role:academic_head|registrar'])->group(function () {
+    Route::middleware(['role:academic_head|registrar|hr|admin'])->group(function () {
         
         Route::resource('courses', CourseController::class);
         Route::resource('enrollments', EnrollmentController::class);

@@ -39,4 +39,26 @@ class CourseBlock extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
+
+    protected static function booted()
+    {
+        static::created(function ($courseBlock) {
+            // 1. Find all students already registered in this section
+            $registrations = \App\Models\SectionStudent::where('section_id', $courseBlock->section_id)
+                ->where('academic_year_id', $courseBlock->academic_year_id)
+                ->where('semester', $courseBlock->semester)
+                ->get();
+
+            // 2. Enroll them in this specific newly created course block
+            foreach ($registrations as $reg) {
+                \App\Models\Enrollment::firstOrCreate([
+                    'student_id'       => $reg->student_id,
+                    'course_id'        => $courseBlock->course_id,
+                    'section_id'       => $courseBlock->section_id,
+                    'academic_year_id' => $courseBlock->academic_year_id,
+                    'semester'         => $courseBlock->semester,
+                ]);
+            }
+        });
+    }
 }

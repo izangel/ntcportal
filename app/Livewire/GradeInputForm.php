@@ -76,49 +76,44 @@ class GradeInputForm extends Component
         $this->loadGrades();
     }
     
-    // ------------------------------------------------------------------
-    //  DATA LOADING
-    // ------------------------------------------------------------------
+    public function loadGrades()
+{
+    $this->selectedBlock = CourseBlock::find($this->blockId);
+    if (!$this->selectedBlock) return;
 
-    // 🔑 CRITICAL FIX: Changed visibility to public/protected to resolve the BadMethodCallException 🔑
-    // The component listens for the global event dispatched from ResolveIncGrade component.
-   
-    public function loadGrades() // Changed to public/protected to ensure accessibility
-    {
-        $this->enrolledStudents = [];
-        $this->grades = []; 
-        $this->confirmationChecked = false;
-        $this->statusMessage = '';
-        
-        $this->selectedBlock = CourseBlock::find($this->blockId);
-        
-        if (!$this->selectedBlock) {
-             return;
-        }
+    $this->gradesFinalized = $this->selectedBlock->finalized;
 
-        $this->selectedBlock->load('course');
-        $this->gradesFinalized = $this->selectedBlock->finalized; 
+    // 🔑 STEP 1: Find all sections that share this EXACT schedule/teacher/course
+    // This handles the "Merge" (BSIS1 and DIT1) automatically.
+    $relatedSectionIds = CourseBlock::where('faculty_id', $this->selectedBlock->faculty_id)
+        ->where('course_id', $this->selectedBlock->course_id)
+        ->where('academic_year_id', $this->selectedBlock->academic_year_id)
+        ->where('semester', $this->selectedBlock->semester)
+        ->where('schedule_string', $this->selectedBlock->schedule_string) // Match by time
+        ->where('room_name', $this->selectedBlock->room_name)           // Match by room
+        ->pluck('section_id');
 
-        $enrollments = Enrollment::where('section_id', $this->selectedBlock->section_id)
-                                 ->where('academic_year_id', $this->selectedBlock->academic_year_id)
-                                 ->where('semester', $this->selectedBlock->semester)
-                                 ->where('course_id', $this->selectedBlock->course_id)
-                                 ->with('student') 
-                                 ->get();
+    // 🔑 STEP 2: Fetch students from ALL those sections for this specific course
+    $enrollments = Enrollment::whereIn('section_id', $relatedSectionIds)
+                             ->where('academic_year_id', $this->selectedBlock->academic_year_id)
+                             ->where('semester', $this->selectedBlock->semester)
+                             ->where('course_id', $this->selectedBlock->course_id)
+                             ->with(['student', 'section']) 
+                             ->get();
                                  
-        $this->enrolledStudents = $enrollments->map(function ($enrollment) {
-            $studentId = $enrollment->student_id;
-            // The grades array is populated with the FRESH data from the database
-            $this->grades[$studentId] = $enrollment->grade;
-            
-            return [
-                'enrollment_id' => $enrollment->id,
-                'student_id' => $studentId,
-                'student_name' => $enrollment->student->last_name.', '. $enrollment->student->first_name, 
-                'grade' => $enrollment->grade,
-            ];
-        })->toArray();
-    }
+    $this->enrolledStudents = $enrollments->map(function ($enrollment) {
+        $studentId = $enrollment->student_id;
+        $this->grades[$studentId] = $enrollment->grade;
+        
+        return [
+            'enrollment_id' => $enrollment->id,
+            'student_id' => $studentId,
+            'student_name' => $enrollment->student->last_name.', '. $enrollment->student->first_name, 
+            'section_name' => $enrollment->section->name ?? 'N/A', // 👈 Display BSIS1 or DIT1
+            'grade' => $enrollment->grade,
+        ];
+    })->sortBy(['section_name', 'student_name'])->toArray();
+}
 
     // ------------------------------------------------------------------
     //  ACTIONS

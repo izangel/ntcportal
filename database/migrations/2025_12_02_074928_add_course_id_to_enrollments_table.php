@@ -11,24 +11,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            // Check if the column exists before attempting to add it
-            if (!Schema::hasColumn('enrollments', 'course_id')) {
-                $table->foreignId('course_id')
-                      ->nullable() 
-                      ->constrained('courses')
-                      ->after('section_id'); 
-            } else {
-                // The column exists, but the constraint might be missing/duplicated.
-                // We'll try to add the constraint directly, guarding against the duplicate key error.
-                try {
-                    $table->foreign('course_id')
-                          ->references('id')
-                          ->on('courses')
-                          ->name('enrollments_course_id_foreign'); // Use the default name
-                } catch (\Exception $e) {
-                    // Ignore the duplicate key name error (1061) if it occurs.
-                }
-            }
+            // // Check if the column exists before attempting to add it
+            // if (!Schema::hasColumn('enrollments', 'course_id')) {
+            //     $table->foreignId('course_id')
+            //           ->nullable() 
+            //           ->constrained('courses')
+            //           ->after('section_id'); 
+            // } else {
+            //     // The column exists, but the constraint might be missing/duplicated.
+            //     // We'll try to add the constraint directly, guarding against the duplicate key error.
+            //     try {
+            //         $table->foreign('course_id')
+            //               ->references('id')
+            //               ->on('courses')
+            //               ->name('enrollments_course_id_foreign'); // Use the default name
+            //     } catch (\Exception $e) {
+            //         // Ignore the duplicate key name error (1061) if it occurs.
+            //     }
+            // }
         });
     }
 
