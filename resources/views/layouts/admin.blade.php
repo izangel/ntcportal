@@ -31,7 +31,7 @@
             <i class="fas fa-home mr-3 text-lg"></i>
             {{ __('Dashboard') }}
         </x-nav-link>
-        <x-nav-link href="#">
+        <x-nav-link href="{{ route('announcements.index') }}" :active="request()->routeIs('announcements.index')">
             <i class="fas fa-user-graduate mr-3 text-lg"></i>
             {{ __('School Announcements') }}
         </x-nav-link>

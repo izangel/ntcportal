@@ -39,6 +39,9 @@ use App\Livewire\FacultyCourseBlockView;
 use App\Livewire\Admin\FacultyCourseListView;
 
 use App\Livewire\CourseBlockBulkUploader;
+
+
+use App\Http\Controllers\AnnouncementController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -70,6 +73,25 @@ Route::middleware([
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
+
+    //--Announcements--
+
+    // Everyone can view
+    Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+
+    // 2. Only Admin and Teachers can Manage (Create, Edit, Delete)
+    Route::middleware(['can:post-announcements'])->group(function () {
+        Route::get('/announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
+        Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+        
+        // ADD THESE THREE LINES:
+        Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
+        Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
+    });
+
+
 
     // Admin and Teacher specific routes (apply roles middleware)
     Route::middleware(['role:academic_head|registrar|hr|admin'])->group(function () {

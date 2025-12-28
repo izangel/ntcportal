@@ -105,4 +105,9 @@ class User extends Authenticatable
         // This assumes 'user_id' is the foreign key on the 'employees' table
         return $this->hasOne(Employee::class); // <-- CORRECTED THIS LINE
     }
+
+    public function announcements()
+    {
+        return $this->hasMany(Announcement::class);
+    }
 }
