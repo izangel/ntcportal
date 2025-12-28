@@ -9,10 +9,11 @@ use App\Models\Program;
 use App\Models\Section;
 use App\Models\User;
 use App\Models\LeaveApplication;
+use App\Models\ImportantDate; // Added ImportantDate Model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
-use Carbon\Carbon; // Import Carbon for date handling
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -24,11 +25,31 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $todayStr = now()->toDateString(); // Helper for SQL query
 
         // ------------------------------------------
-        // 1. DATA COMMON TO ALL USERS (Notifications)
+        // 1. DATA COMMON TO ALL USERS
         // ------------------------------------------
         $notifications = $user->unreadNotifications;
+
+        // Fetch Top 5 Important Dates (Ongoing first, then Upcoming)
+        $recentDates = ImportantDate::with('categories')
+            ->where(function($query) use ($todayStr) {
+                // Keep events that haven't ended yet
+                $query->where('end_date', '>=', $todayStr)
+                      ->orWhere(function($q) use ($todayStr) {
+                          $q->whereNull('end_date')->where('start_date', '>=', $todayStr);
+                      });
+            })
+            ->orderByRaw("
+                CASE 
+                    WHEN '$todayStr' BETWEEN start_date AND COALESCE(end_date, start_date) THEN 1
+                    ELSE 2
+                END ASC
+            ")
+            ->orderBy('start_date', 'asc')
+            ->take(5)
+            ->get();
 
         if ($user && $user->employee) {
             $user->load([
@@ -43,18 +64,13 @@ class DashboardController extends Controller
         $pendingApplications = collect(); 
 
         // ------------------------------------------
-        // 2. STUDENT SPECIFIC DATA (Revised Eager Loading for Schedule)
+        // 2. STUDENT SPECIFIC DATA
         // ------------------------------------------
         if ($user->hasRole('student') && $user->student) {
             
-            // NOTE: Eager load course for credits/name and section.
-            // We now load section.courseBlocks to get scheduling data from the 'course_blocks' table.
             $student = $user->student->load([
                 'enrollments.course',
-                // Assuming 'section' relation is defined in Enrollment model,
-                // and 'courseBlocks' relation is defined in the Section model.
                 'enrollments.section.courseBlocks', 
-                // 'attendances',
             ]);
 
             $studentData = [
@@ -67,19 +83,15 @@ class DashboardController extends Controller
                                     ->sortByDesc('updated_at')
                                     ->take(5),
                                     
-                // **UPDATED:** Use the new function to fetch the schedule
                 'upcomingSchedule' => $this->getUpcomingSchedule($student->enrollments),
-                // 'attendanceSummary' => $this->getAttendanceSummary($student->attendances),
             ];
             
         } 
         
         // ------------------------------------------
-        // 3. STAFF/ADMIN DATA (Fetched ONLY if not a student)
+        // 3. STAFF/ADMIN DATA
         // ------------------------------------------
         else { 
-            
-            // ... (Staff Data Fetching Logic remains unchanged) ...
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
             $staffData['totalEnrollments'] = Enrollment::count();
@@ -108,10 +120,10 @@ class DashboardController extends Controller
         }
 
         // ------------------------------------------
-        // 4. RETURN VIEW
+        // 4. RETURN VIEW (Added recentDates to compact)
         // ------------------------------------------
         $viewData = array_merge(
-            compact('user', 'notifications'),
+            compact('user', 'notifications', 'recentDates'),
             $staffData,
             $studentData
         );
@@ -121,16 +133,9 @@ class DashboardController extends Controller
 
 
     // ------------------------------------------
-    // 5. HELPER METHODS (STUDENT-SPECIFIC LOGIC)
+    // 5. HELPER METHODS
     // ------------------------------------------
 
-    /**
-     * Calculates GPA using the 'grade' column on the Enrollment model.
-     * (Logic remains the same as it correctly uses $enrollment->grade and $enrollment->course->credits)
-     *
-     * @param \Illuminate\Database\Eloquent\Collection $enrollments
-     * @return float
-     */
     protected function calculateGPA(Collection $enrollments): float
     {
         $totalPoints = 0;
@@ -147,12 +152,6 @@ class DashboardController extends Controller
         return $totalCredits > 0 ? $totalPoints / $totalCredits : 0.0;
     }
 
-    /**
-     * Converts a score or letter grade to a GPA point.
-     *
-     * @param string|int $grade
-     * @return float
-     */
     protected function convertToGradePoint($grade): float
     {
         $score = (int) $grade;
@@ -168,59 +167,26 @@ class DashboardController extends Controller
         return 0.0;
     }
 
-    /**
-     * Fetches the next 5 upcoming schedule blocks based on the user's enrollments.
-     * Uses the course_blocks table structure: section_id, schedule_string, room_name.
-     *
-     * @param \Illuminate\Database\Eloquent\Collection $enrollments
-     * @return \Illuminate\Support\Collection
-     */
     protected function getUpcomingSchedule(Collection $enrollments): Collection
     {
         $schedule = collect();
-        $now = Carbon::now();
         $limit = 5;
 
         foreach ($enrollments as $enrollment) {
-            // Check if section and courseBlocks exist due to eager loading
             if ($enrollment->section && $enrollment->section->courseBlocks) {
-                
                 foreach ($enrollment->section->courseBlocks as $block) {
-                    // NOTE: The logic here assumes the 'schedule_string' can be parsed 
-                    // to determine the exact next class time.
-                    
-                    // --- Placeholder Logic (You MUST replace this with real schedule parsing) ---
-                    // Since 'schedule_string' is a VARCHAR, we can only provide mock data 
-                    // or simplified logic until the format is known (e.g., 'MWF 9:00-10:00').
-                    $mockTime = rand(1, 4); // Simple random ordering for mock data
+                    $mockTime = rand(1, 4); 
 
                     $schedule->push((object)[
                         'title' => $enrollment->course->name ?? 'N/A',
                         'course_name' => $enrollment->course->code ?? 'N/A',
                         'time_display' => $block->schedule_string . ' in ' . $block->room_name,
-                        'sort_order' => $mockTime, // Use a real time for sorting in production
+                        'sort_order' => $mockTime, 
                     ]);
-                    // --- END Placeholder Logic ---
                 }
             }
         }
 
-        // Return the first 5 sorted items based on simulated "next up" time
         return $schedule->unique('time_display')->sortBy('sort_order')->take($limit);
     }
-
-    /**
-     * Placeholder for summarizing recent attendance data.
-     *
-     * @param \Illuminate\Database\Eloquent\Collection $attendances
-     * @return array
-     */
-    // protected function getAttendanceSummary(Collection $attendances): array
-    // {
-    //     // Placeholder Data Structure
-    //     return [
-    //         'total_absences' => 5,
-    //         'attendance_rate' => '92%',
-    //     ];
-    // }
 }

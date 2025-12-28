@@ -35,7 +35,7 @@
             <i class="fas fa-user-graduate mr-3 text-lg"></i>
             {{ __('School Announcements') }}
         </x-nav-link>
-        <x-nav-link href="#" :active="request()->routeIs('faculty.course-blocks')">
+        <x-nav-link href="{{ route('important_dates.index') }}" :active="request()->routeIs('important_dates.index')">
             <i class="fas fa-user-graduate mr-3 text-lg"></i>
             {{ __('Important Dates') }}
         </x-nav-link>

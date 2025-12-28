@@ -42,6 +42,8 @@ use App\Livewire\CourseBlockBulkUploader;
 
 
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\ImportantDateController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -91,7 +93,19 @@ Route::middleware([
         Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
     });
 
+    //-----------------
+    //IMPORTANT DATES
+    //-----------------
 
+    Route::resource('important_dates', ImportantDateController::class)->names([
+        'index'   => 'important_dates.index',
+        'create'  => 'important_dates.create',
+        'store'   => 'important_dates.store',
+        'show'    => 'important_dates.show',
+        'edit'    => 'important_dates.edit',
+        'update'  => 'important_dates.update',
+        'destroy' => 'important_dates.destroy',
+    ]);
 
     // Admin and Teacher specific routes (apply roles middleware)
     Route::middleware(['role:academic_head|registrar|hr|admin'])->group(function () {

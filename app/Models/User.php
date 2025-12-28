@@ -110,4 +110,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Announcement::class);
     }
+
+    public function postedDates()
+    {
+        return $this->hasMany(ImportantDate::class);
+    }
 }

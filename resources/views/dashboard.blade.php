@@ -1,308 +1,221 @@
 @extends('layouts.admin')
 
 @section('header')
-    <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-        {{ __('Dashboard') }}
-        
-        {{-- Displaying role in header based on custom hasRole method --}}
-        @if(Auth::user()->hasRole('student'))
-            <span class="text-sm text-blue-500"> (Student)</span>
-        @elseif(Auth::user()->hasRole('academic_head'))
-            <span class="text-sm text-gray-500"> (Academic Head)</span>
-        @elseif(Auth::user()->hasRole('hr'))
-            <span class="text-sm text-gray-500"> (HR Manager)</span>
-        @elseif(Auth::user()->hasRole('admin'))
-            <span class="text-sm text-red-500"> (Administrator)</span>
-        @endif
-    </h2>
+    <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Dashboard') }}
+            @php
+                $roleColors = [
+                    'student' => 'text-blue-500',
+                    'academic_head' => 'text-gray-500',
+                    'hr' => 'text-gray-500',
+                    'admin' => 'text-red-500'
+                ];
+                $roleNames = [
+                    'student' => 'Student',
+                    'academic_head' => 'Academic Head',
+                    'hr' => 'HR Manager',
+                    'admin' => 'Administrator'
+                ];
+            @endphp
+            @foreach($roleNames as $role => $name)
+                @if(Auth::user()->hasRole($role))
+                    <span class="text-sm {{ $roleColors[$role] }}"> ({{ $name }})</span>
+                @endif
+            @endforeach
+        </h2>
+        <span class="text-sm text-gray-500 font-medium">{{ now()->format('l, F j, Y') }}</span>
+    </div>
 @endsection
 
-@php use Illuminate\Support\Facades\URL; @endphp
-
-
 @section('content')
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <h3 class="text-2xl font-semibold text-gray-900 mb-6">Welcome, {{ Auth::user()->name }}!</h3>
-
-                {{-- --- NOTIFICATIONS SECTION (Visible to ALL roles) --- --}}
-                @if(Auth::check() && Auth::user()->unreadNotifications->isNotEmpty())
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                        <div class="p-6 border-b border-gray-200">
-                            <h3 class="font-semibold text-xl text-gray-800">🔔 {{ __('New Notifications') }}</h3>
-                        </div>
-                        <div class="p-6">
-                            <ul class="space-y-4">
-                                @foreach(Auth::user()->unreadNotifications as $notification)
-                                    @php
-                                        $data = $notification->data;
-                                        $notificationId = $notification->id;
-                                    @endphp
-                                    <li class="relative p-4 rounded-lg shadow-sm
-                                        @if(($data['type'] ?? '') === 'substitute_assignment') bg-blue-50 border border-blue-200
-                                        @elseif(in_array(($data['type'] ?? ''), ['ah_leave_review', 'hr_leave_review', 'admin_leave_review'])) bg-yellow-50 border border-yellow-200
-                                        @elseif(($data['type'] ?? '') === 'leave_decision' && ($data['decision'] ?? '') === 'approved') bg-green-50 border border-green-200
-                                        @elseif(($data['type'] ?? '') === 'leave_decision' && ($data['decision'] ?? '') === 'rejected') bg-red-50 border border-red-200
-                                        @elseif(($data['type'] ?? '') === 'grade_posted') bg-purple-50 border border-purple-200
-                                        @else bg-gray-50 border border-gray-200 @endif
-                                        ">
-
-                                        <form method="POST" action="{{ route('notifications.markAsRead', $notificationId) }}" class="absolute top-2 right-2 z-20">
-                                            @csrf
-                                            <button type="submit" class="text-gray-400 hover:text-gray-600 transition duration-150 ease-in-out p-1 rounded-full hover:bg-gray-200">
-                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </form>
-
-                                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pr-10">
-                                            <div class="flex-1 min-w-0 mb-2 sm:mb-0">
-                                                <p class="font-medium text-lg text-gray-800 break-words">
-                                                    {{ $data['title'] ?? 'General Notification' }}
-                                                </p>
-                                                <p class="text-sm text-gray-700 mt-1 break-words">{{ $data['message'] ?? '' }}</p>
-                                            </div>
-
-                                            <div class="flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                                                {{-- Staff-specific links --}}
-                                                @if(in_array(($data['type'] ?? ''), ['substitute_assignment', 'ah_leave_review', 'hr_leave_review', 'admin_leave_review']))
-                                                    @if(($data['type'] ?? '') === 'substitute_assignment')
-                                                        <a href="{{ $data['acknowledgement_url'] ?? '#' }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-500 w-full justify-center">
-                                                            {{ __('Review & Acknowledge') }}
-                                                        </a>
-                                                    @else
-                                                        @php
-                                                            $rolePrefix = Str::before($data['type'], '_leave_review');
-                                                            $route = $rolePrefix . '.leave_applications.review';
-                                                            $buttonText = 'Review Leave App (' . strtoupper($rolePrefix) . ')';
-                                                        @endphp
-                                                        <a href="{{ URL::signedRoute($route, ['leaveApplication' => $data['leave_application_id']]) }}" class="inline-flex items-center px-4 py-2 bg-yellow-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-yellow-500 w-full justify-center">
-                                                            {{ __($buttonText) }}
-                                                        </a>
-                                                    @endif
-                                                {{-- Links for both (Leave decision for staff, Grade posted for student) --}}
-                                                @elseif(($data['type'] ?? '') === 'leave_decision' || ($data['type'] ?? '') === 'grade_posted')
-                                                    @if(isset($data['view_application_url']) || isset($data['view_grade_url']))
-                                                        <a href="{{ $data['view_application_url'] ?? $data['view_grade_url'] ?? '#' }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 w-full justify-center">
-                                                            {{ __('View Details') }}
-                                                        </a>
-                                                    @endif
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </li>
-                                @endforeach
-                            </ul>
-                            <form method="POST" action="{{ route('notifications.markAllAsRead') }}" class="mt-4 text-center">
-                                @csrf
-                                <button type="submit" class="text-sm text-indigo-600 hover:text-indigo-900 font-semibold">Mark all as read</button>
-                            </form>
-                        </div>
-                    </div>
-                @else
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                        <div class="p-6 border-t border-gray-200 text-center text-gray-600">
-                            {{ __('You have no new notifications at this time.') }}
-                        </div>
-                    </div>
-                @endif
-                {{-- --- END NOTIFICATIONS SECTION --- --}}
-
-                
-                {{-- ****************************************************** --}}
-                {{-- ** START OF ROLE-SPECIFIC CONTENT (STUDENT VS STAFF) ** --}}
-                {{-- ****************************************************** --}}
-
-                @if(Auth::user()->hasRole('student'))
+<div class="py-12">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
+        
+        {{-- 1. Welcome & Notifications Section --}}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
+                    <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
+                    <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
                     
-                    {{-- Student Dashboard Content --}}
-                    
-                    <h4 class="text-xl font-bold text-blue-600 mb-4">📚 My Academic Overview</h4>
-                    <hr class="mb-6">
+                    @if(!Auth::user()->hasRole('student'))
+                        <div class="mt-6 flex gap-4">
+                            @php
+                                $route = Auth::user()->hasRole('admin') ? 'admin.leave_applications.index' : 
+                                        (Auth::user()->hasRole('hr') ? 'hr.leave_applications.index' : 'ah.leave_applications.all');
+                            @endphp
+                            <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
+                                Review Pending Leaves
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
 
-                    {{-- 1. Student Statistics Cards --}}
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div class="bg-blue-100 border-l-4 border-blue-500 rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold text-blue-700">Current GPA</div>
-                            <div class="text-3xl font-bold text-blue-900">{{ number_format($currentGPA ?? 0, 2) }}</div>
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full">
+                    <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                        <h4 class="font-bold text-gray-800 text-sm uppercase tracking-wider">🔔 Notifications</h4>
+                        <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                            {{ Auth::user()->unreadNotifications->count() }} New
+                        </span>
+                    </div>
+                    <div class="p-4 max-h-48 overflow-y-auto">
+                        @forelse(Auth::user()->unreadNotifications->take(3) as $notification)
+                            <div class="mb-3 last:mb-0 p-3 rounded-lg bg-gray-50 border border-gray-100 relative group">
+                                <p class="text-xs font-bold text-gray-900 truncate pr-4">{{ $notification->data['title'] ?? 'Update' }}</p>
+                                <p class="text-[11px] text-gray-500 truncate">{{ $notification->data['message'] ?? '' }}</p>
+                                <form method="POST" action="{{ route('notifications.markAsRead', $notification->id) }}">
+                                    @csrf
+                                    <button type="submit" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600 transition">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        @empty
+                            <p class="text-xs text-gray-400 text-center py-4 italic">All caught up!</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- 2. Important Dates Widget (The Calendar Strip) --}}
+        
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                    <span class="p-2 bg-indigo-100 rounded-lg mr-3">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </span>
+                    School Calendar & Events
+                </h4>
+                <a href="{{ route('important_dates.index') }}" class="text-xs font-bold text-indigo-600 hover:underline uppercase">View Full Schedule</a>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                @forelse($recentDates as $date)
+                    @php
+                        $today = now()->startOfDay();
+                        $isOngoing = $today->between($date->start_date->startOfDay(), ($date->end_date ?? $date->start_date)->endOfDay());
+                    @endphp
+                    <div class="relative p-4 rounded-xl border {{ $isOngoing ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-white border-gray-100' }} transition-all duration-300 hover:shadow-md">
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="text-center">
+                                <p class="text-[10px] font-bold uppercase {{ $isOngoing ? 'text-indigo-600' : 'text-gray-400' }}">{{ $date->start_date->format('M') }}</p>
+                                <p class="text-xl font-black {{ $isOngoing ? 'text-indigo-700' : 'text-gray-800' }}">{{ $date->start_date->format('d') }}</p>
+                            </div>
+                            @if($isOngoing)
+                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full animate-pulse">ONGOING</span>
+                            @endif
                         </div>
-                        <div class="bg-green-100 border-l-4 border-green-500 rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold text-green-700">Enrolled Courses</div>
-                            <div class="text-3xl font-bold text-green-900">{{ $enrolledCourses->count() ?? 0 }}</div>
-                        </div>
-                        <div class="bg-purple-100 border-l-4 border-purple-500 rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold text-purple-700">Total Credits</div>
-                            <div class="text-3xl font-bold text-purple-900">{{ $totalCredits ?? 0 }}</div>
+                        <h5 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 mb-2">{{ $date->title }}</h5>
+                        <div class="flex flex-wrap gap-1">
+                            @foreach($date->categories->take(2) as $cat)
+                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 font-medium">{{ $cat->name }}</span>
+                            @endforeach
                         </div>
                     </div>
+                @empty
+                    <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 italic">No scheduled events found.</div>
+                @endforelse
+            </div>
+        </div>
 
-                    {{-- 2. Upcoming Schedule / Quick Links --}}
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <h4 class="text-xl font-semibold text-gray-900 mb-4">🗓️ Upcoming Classes / Activities</h4>
-                            <div class="bg-gray-50 rounded-lg shadow-lg p-4 h-64 overflow-y-auto border border-gray-200">
-                                @forelse ($upcomingSchedule ?? [] as $item)
-                                    <div class="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-100 hover:bg-gray-100 rounded px-2 transition">
-                                        <div class="flex flex-col">
-                                            <span class="font-medium text-gray-800">{{ $item->title }}</span>
-                                            <span class="text-xs text-gray-500">{{ $item->course_name }}</span>
-                                        </div>
-                                        <span class="text-sm text-blue-600 font-semibold">{{ $item->time_display }}</span>
+        {{-- 3. Role-Specific Main Content --}}
+        @if(Auth::user()->hasRole('student'))
+            {{-- STUDENT VIEW --}}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4">🗓️ Academic Schedule</h4>
+                        <div class="divide-y divide-gray-100">
+                            @forelse($upcomingSchedule ?? [] as $item)
+                                <div class="py-4 flex justify-between items-center hover:bg-gray-50 transition px-2 rounded-lg">
+                                    <div>
+                                        <p class="font-bold text-gray-900">{{ $item->title }}</p>
+                                        <p class="text-xs text-gray-500">{{ $item->course_name }}</p>
                                     </div>
-                                @empty
-                                    <p class="text-gray-600 p-4 text-center">No upcoming schedule items. Check your full calendar.</p>
-                                @endforelse
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 class="text-xl font-semibold text-gray-900 mb-4">🔗 Quick Actions & Links</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <a href="#" class="block p-4 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 text-center font-medium transition duration-150">
-                                    My Courses
-                                </a>
-                                <a href="#" class="block p-4 bg-orange-600 text-white rounded-lg shadow hover:bg-orange-700 text-center font-medium transition duration-150">
-                                    View Grades
-                                </a>
-                                <a href="#" class="block p-4 bg-teal-600 text-white rounded-lg shadow hover:bg-teal-700 text-center font-medium transition duration-150">
-                                    Attendance Record
-                                </a>
-                                <a href="#" class="block p-4 bg-gray-600 text-white rounded-lg shadow hover:bg-gray-700 text-center font-medium transition duration-150">
-                                    Update Profile
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    {{-- 3. Recent Grades --}}
-                    <div>
-                        <h4 class="text-xl font-semibold text-gray-900 mb-4">💯 Latest Grade Submissions</h4>
-                        <div class="bg-gray-50 rounded-lg shadow-md p-4 mb-8 border border-gray-200">
-                            @forelse ($recentGrades ?? [] as $grade)
-                                <div class="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-                                    <span class="font-medium">{{ $grade->assessment_name ?? 'Assessment' }} in **{{ $grade->enrollment->course->name ?? 'N/A' }}**</span>
-                                    <span class="text-lg font-bold 
-                                        @if(($grade->score ?? 0) >= 90) text-green-600
-                                        @elseif(($grade->score ?? 0) >= 70) text-yellow-600
-                                        @else text-red-600
-                                        @endif
-                                    ">
-                                        {{ $grade->score ?? 'N/A' }} / {{ $grade->max_score ?? 'N/A' }}
-                                    </span>
+                                    <span class="text-sm font-bold text-indigo-600">{{ $item->time_display }}</span>
                                 </div>
                             @empty
-                                <p class="text-gray-600">No grades submitted recently.</p>
+                                <p class="text-center text-gray-400 py-6 italic text-sm">No classes today. Enjoy your break!</p>
                             @endforelse
                         </div>
                     </div>
-
-                @else
+                </div>
                 
-                {{-- Staff/Employee/Admin Dashboard Content (Hidden from Students) --}}
-
-                    {{-- 1. Role-Specific Action Links (AH, HR, Admin) --}}
-                    @if(Auth::user()->hasRole('academic_head')) 
-                        <div class="mb-6">
-                            <a href="{{ route('ah.leave_applications.all') }}" class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                {{ __('View All Pending Leave Applications (AH)') }}
-                            </a>
-                        </div>
-                    @elseif(Auth::user()->hasRole('hr')) 
-                        <div class="mb-6">
-                            <a href="{{ route('hr.leave_applications.index') }}" class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                {{ __('View All Pending Leave Applications (HR)') }}
-                            </a>
-                        </div>
-                    @elseif(Auth::user()->hasRole('admin'))
-                        <div class="mb-6">
-                            <a href="{{ route('admin.leave_applications.index') }}" class="inline-flex items-center px-6 py-3 bg-indigo-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
-                                {{ __('View All Pending Leave Applications (Admin)') }}
-                            </a>
-                        </div>
-                    @endif 
-
-                    {{-- 2. Your Leave Applications Status (for the applicant - visible to all employees) --}}
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                        <div class="p-6 border-b border-gray-200">
-                            <h3 class="font-semibold text-xl text-gray-800">{{ __('Your Leave Applications') }}</h3>
-                             <a href="{{ route('leaveapplicationstatus') }}" class="block mt-4 p-4 bg-blue-100 rounded-lg shadow hover:bg-blue-200 text-blue-800 text-center font-medium transition">
-                                        View/Apply for Leave
-                            </a>
+                <div class="space-y-6">
+                    <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-white">
+                        <p class="text-sm font-medium opacity-80 uppercase tracking-widest">Current GPA</p>
+                        <h2 class="text-5xl font-black mt-1">{{ number_format($currentGPA ?? 0, 2) }}</h2>
+                        <div class="mt-4 pt-4 border-t border-blue-400 flex justify-between text-xs">
+                            <span>Enrolled: <strong>{{ $enrolledCourses->count() ?? 0 }} Courses</strong></span>
+                            <span>Credits: <strong>{{ $totalCredits ?? 0 }}</strong></span>
                         </div>
                     </div>
-
-                    {{-- 3. Overview Statistics Cards (Visible to staff roles) --}}
-                    <h4 class="text-xl font-bold text-indigo-600 mb-4">📊 System Statistics (Staff View)</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-blue-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Students</div>
-                            <div class="text-3xl font-bold">{{ $totalStudents }}</div>
-                        </div>
-                        <div class="bg-green-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Courses</div>
-                            <div class="text-3xl font-bold">{{ $totalCourses }}</div>
-                        </div>
-                        <div class="bg-purple-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Enrollments</div>
-                            <div class="text-3xl font-bold">{{ $totalEnrollments }}</div>
-                        </div>
-                        <div class="bg-yellow-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Teachers</div>
-                            <div class="text-3xl font-bold">{{ $totalTeachers }}</div>
-                        </div>
-                        <div class="bg-indigo-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Programs</div>
-                            <div class="text-3xl font-bold">{{ $totalPrograms }}</div>
-                        </div>
-                        <div class="bg-pink-500 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Sections</div>
-                            <div class="text-3xl font-bold">{{ $totalSections }}</div>
-                        </div>
-                        <div class="bg-gray-700 text-white rounded-lg shadow-md p-5">
-                            <div class="text-sm uppercase font-bold">Total Users</div>
-                            <div class="text-3xl font-bold">{{ $totalUsers }}</div>
+                    
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h4 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-widest">Quick Actions</h4>
+                        <div class="grid grid-cols-1 gap-3">
+                            <a href="#" class="p-3 rounded-lg bg-gray-50 hover:bg-indigo-50 border border-gray-100 text-sm font-bold text-gray-700 hover:text-indigo-600 transition text-center">My Grades</a>
+                            <a href="#" class="p-3 rounded-lg bg-gray-50 hover:bg-indigo-50 border border-gray-100 text-sm font-bold text-gray-700 hover:text-indigo-600 transition text-center">Enrollment Info</a>
                         </div>
                     </div>
-
-                    {{-- 4. Recent Activity Section (Staff View) --}}
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div>
-                            <h4 class="text-xl font-semibold text-gray-900 mb-4">Recently Added Students</h4>
-                            <div class="bg-gray-50 rounded-lg shadow-md p-4">
-                                @forelse ($recentStudents as $student)
-                                    <div class="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-                                        <span>{{ $student->name }} ({{ $student->email }})</span>
-                                        <span class="text-sm text-gray-500">{{ $student->created_at->diffForHumans() }}</span>
-                                    </div>
-                                @empty
-                                    <p class="text-gray-600">No recent students.</p>
-                                @endforelse
-                            </div>
-                        </div>
-
-                        <div>
-                            <h4 class="text-xl font-semibold text-gray-900 mb-4">Recently Added Courses</h4>
-                            <div class="bg-gray-50 rounded-lg shadow-md p-4">
-                                @forelse ($recentCourses as $course)
-                                    <div class="flex justify-between items-center py-2 border-b last:border-b-0 border-gray-200">
-                                        <span>{{ $course->name }} ({{ $course->code }})</span>
-                                        <span class="text-sm text-gray-500">{{ $course->created_at->diffForHumans() }}</span>
-                                    </div>
-                                @empty
-                                    <p class="text-gray-600">No recent courses.</p>
-                                @endforelse
-                            </div>
-                        </div>
-                    </div>
-
-                @endif
-                {{-- ****************************************************** --}}
-                {{-- ** END OF ROLE-SPECIFIC CONTENT ** --}}
-                {{-- ****************************************************** --}}
-                
+                </div>
             </div>
-        </div>
+
+        @else
+            {{-- STAFF / ADMIN VIEW --}}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                @php
+                    $stats = [
+                        ['label' => 'Students', 'val' => $totalStudents, 'color' => 'bg-blue-500'],
+                        ['label' => 'Teachers', 'val' => $totalTeachers, 'color' => 'bg-green-500'],
+                        ['label' => 'Courses', 'val' => $totalCourses, 'color' => 'bg-purple-500'],
+                        ['label' => 'Programs', 'val' => $totalPrograms, 'color' => 'bg-yellow-500'],
+                        ['label' => 'Enrollments', 'val' => $totalEnrollments, 'color' => 'bg-indigo-500'],
+                        ['label' => 'Users', 'val' => $totalUsers, 'color' => 'bg-gray-800'],
+                    ];
+                @endphp
+                @foreach($stats as $stat)
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $stat['label'] }}</p>
+                        <p class="text-2xl font-black text-gray-900 mt-1">{{ $stat['val'] }}</p>
+                        <div class="h-1 w-8 {{ $stat['color'] }} mx-auto mt-2 rounded-full"></div>
+                    </div>
+                @endforeach
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Recently Enrolled Students</h4>
+                    <div class="space-y-3">
+                        @foreach($recentStudents as $student)
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center">
+                                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs mr-3">
+                                        {{ substr($student->name, 0, 1) }}
+                                    </div>
+                                    <span class="text-sm font-bold text-gray-700">{{ $student->name }}</span>
+                                </div>
+                                <span class="text-[10px] text-gray-400">{{ $student->created_at->diffForHumans() }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center flex flex-col justify-center">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">Leave Management</h4>
+                    <p class="text-sm text-gray-500 mb-6">Manage staff leave requests and view balances.</p>
+                    <a href="{{ route('leaveapplicationstatus') }}" class="w-full py-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-bold hover:bg-indigo-100 transition">
+                        Open Leave Portal
+                    </a>
+                </div>
+            </div>
+        @endif
+
     </div>
+</div>
 @endsection
