@@ -113,7 +113,7 @@ Route::middleware([
         ->middleware('auth'); // Ensure this is protected by appropriate middleware
 
         // New Admin Faculty Course View
-        Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
+       
         Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)
      ->name('course-blocks.bulk-uploader');
 
@@ -144,6 +144,8 @@ Route::middleware([
         }
         return response()->json([]);
     })->name('api.semestersByAcademicYear');
+
+     Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
 
 
     // Substitute Teacher routes

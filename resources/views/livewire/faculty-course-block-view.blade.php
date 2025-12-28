@@ -6,10 +6,9 @@
     <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-indigo-500">
         <h3 class="text-lg font-semibold text-gray-700 mb-4">Select Academic Period</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
             <div>
                 <label for="ay" class="block text-sm font-medium text-gray-700">Academic Year</label>
-                <select id="ay" wire:model.live="academicYearId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select id="ay" wire:model.live="academicYearId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500">
                     <option value="">Select AY</option>
                     @foreach ($academicYears as $ay)
                         <option value="{{ $ay->id }}">{{ $ay->start_year }} - {{ $ay->end_year }}</option> 
@@ -19,7 +18,7 @@
             
             <div>
                 <label for="sem" class="block text-sm font-medium text-gray-700">Semester</label>
-                <select id="sem" wire:model.live="semester" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                <select id="sem" wire:model.live="semester" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500">
                     <option value="">Select Semester</option>
                     @foreach ($semesters as $sem)
                         <option value="{{ $sem }}">{{ $sem }} Semester</option>
@@ -28,292 +27,251 @@
             </div>
             
             <div class="p-3 bg-indigo-50 rounded-lg text-sm text-indigo-700 flex items-center">
-                <p class="font-semibold">Select your filters to view assigned blocks.</p>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p>Filter by period to see your unique teaching schedule.</p>
             </div>
         </div>
     </div>
     
     <div class="bg-white shadow-lg rounded-xl p-6 mb-8 border-t-4 border-purple-500">
         @if ($academicYearId && $semester)
-            <label for="block" class="block text-sm font-medium text-gray-700 mb-2">
-                Select Course Block to Grade ({{ $assignedBlocks->count() }} found):
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Select Class / Schedule ({{ count($assignedBlocks) }} unique slots found):
             </label>
             
-            @if ($assignedBlocks->isNotEmpty())
-                <div class="flex items-center space-x-4">
-                    <select wire:model.live="selectedBlockId" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">Select a Class</option>
-                        @foreach($assignedBlocks as $block)
-                            <option value="{{ $block->id }}">
-                                {{ $block->course->code }} - {{ $block->combined_sections }} ({{ $block->schedule_string }})
-                            </option>
-                        @endforeach
-                    </select>
+            @if (!empty($assignedBlocks))
+                <div class="flex flex-col md:flex-row items-end space-y-4 md:space-y-0 md:space-x-4">
+                    <div class="flex-grow">
+                        <select wire:model.live="selectedBlockId" id="courseBlock" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-purple-500 text-sm">
+                            <option value="">-- Select a Class --</option>
+                            @foreach($assignedBlocks as $block)
+                                <option value="{{ $block['id'] }}">
+                                    {{ $block['course_code'] }}: {{ $block['course_name'] }} | {{ $block['schedule_string'] }} | ({{ $block['sections'] }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
 
                     @if ($selectedBlockId && !$blockSelectedAndConfirmed)
                         <button wire:click="loadSelectedBlockGrades" 
                                 wire:loading.attr="disabled"
-                                class="px-6 py-2 whitespace-nowrap bg-purple-600 text-white font-semibold rounded-md shadow hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition duration-150">
-                            <span wire:loading.remove wire:target="loadSelectedBlockGrades">Load Grades</span>
-                            <span wire:loading wire:target="loadSelectedBlockGrades">Loading...</span>
+                                class="w-full md:w-auto px-8 py-2 bg-purple-600 text-white font-bold rounded-md shadow hover:bg-purple-700 transition">
+                            <span wire:loading.remove wire:target="loadSelectedBlockGrades">Open Grading Sheet</span>
+                            <span wire:loading wire:target="loadSelectedBlockGrades">Fetching Students...</span>
                         </button>
-                    @elseif ($selectedBlockId && $blockSelectedAndConfirmed)
-                        <span class="px-6 py-2 text-sm text-green-600 border border-green-300 rounded-md bg-green-50 whitespace-nowrap">Grades Loaded</span>
                     @endif
                 </div>
             @else
-                <p class="text-gray-500 italic">No blocks assigned to you for the selected Academic Period.</p>
+                <p class="text-gray-500 italic">No classes assigned for this period.</p>
             @endif
         @else
-            <p class="text-gray-500 italic">Please select both Academic Year and Semester to view your assigned blocks.</p>
+            <p class="text-gray-500 italic">Please select Academic Year and Semester first.</p>
         @endif
     </div>
 
-    {{-- 🔑 Only render the child components IF blockSelectedAndConfirmed is TRUE 🔑 --}}
     @if ($blockSelectedAndConfirmed && $selectedBlockId)
         @php
-            // Find the selected block object and determine status
-            $selectedBlock = $assignedBlocks->firstWhere('id', $selectedBlockId);
-            $isFinalized = $selectedBlock ? $selectedBlock->finalized : false;
+            $selectedBlock = collect($assignedBlocks)->firstWhere('id', $selectedBlockId);
+            // Accessing 'finalized' from the array passed from controller
+            $isFinalized = $selectedBlock ? ($selectedBlock['finalized'] ?? false) : false;
         @endphp
 
-        {{-- NEW: Print Button Area (Visible only when finalized) --}}
-        @if ($isFinalized)
-        <div class="flex justify-end mb-4">
-            <button wire:click="printFinalizedGrades" 
-                    wire:loading.attr="disabled"
-                    class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-150 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M5 4v3h.5a.5.5 0 01.5.5V11a.5.5 0 01-.5.5H5v3h10v-3h-.5a.5.5 0 01-.5-.5V7.5a.5.5 0 01.5-.5H15V4h1a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h1zM8 9a1 1 0 100-2 1 1 0 000 2zM9 9a1 1 0 100-2 1 1 0 000 2zM10 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />
-                </svg>
-                <span wire:loading.remove wire:target="printFinalizedGrades">Print Final Grades</span>
-                <span wire:loading wire:target="printFinalizedGrades">Preparing Report...</span>
-            </button>
-        </div>
-        @endif
-        {{-- END NEW: Print Button Area --}}
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 p-4 bg-white border-l-4 border-indigo-500 rounded-r-lg shadow-sm">
+            <div>
+                <h4 class="text-xl font-bold text-gray-800">{{ $selectedBlock['course_code'] }} - {{ $selectedBlock['course_name'] }}</h4>
+                <p class="text-sm text-gray-600">
+                    <span class="font-semibold text-indigo-600">Sections:</span> {{ $selectedBlock['sections'] }}
+                    | <span class="font-semibold text-indigo-600">Schedule:</span> {{ $selectedBlock['schedule_string'] }}
+                </p>
+            </div>
 
-        {{-- 🔑 Use $syncKey to force reload after INC resolution 🔑 --}}
+            @if ($isFinalized)
+            <div class="mt-4 md:mt-0">
+                <button wire:click="printFinalizedGrades" 
+                        wire:loading.attr="disabled"
+                        class="px-5 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 flex items-center shadow transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Report of Rating
+                </button>
+            </div>
+            @endif
+        </div>
+
         @livewire('grade-input-form', 
             ['blockId' => $selectedBlockId], 
             key('grade-input-' . $selectedBlockId . '-' . $syncKey)
         )
 
-       
         @if (session()->has('message'))
-            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded" role="alert">
-                <p>{!! session('message') !!}</p>
+            <div class="mt-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-sm">
+                {!! session('message') !!}
             </div>
         @endif
-        @if (session()->has('error'))
-            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded" role="alert">
-                <p>{!! session('error') !!}</p>
-            </div>
-        @endif
-        
 
         @if ($isFinalized)
-            <h3 class="text-2xl font-bold text-red-700 mb-4 mt-8">Finalized Course Block: INC Resolution Interface</h3>
-            @livewire('resolve-inc-grade', 
-                ['blockId' => $selectedBlockId], 
-                key('resolve-inc-' . $selectedBlockId)
-            )
+            <div class="mt-12 bg-white rounded-xl shadow-lg border-t-4 border-red-600 overflow-hidden">
+                <div class="p-6">
+                    <h3 class="text-2xl font-bold text-red-700 mb-2">INC Resolution Panel</h3>
+                    <p class="text-sm text-gray-500 mb-6">Grades for this merged block are locked. Use this panel to update INC records only.</p>
+                    @livewire('resolve-inc-grade', 
+                        ['blockId' => $selectedBlockId], 
+                        key('resolve-inc-' . $selectedBlockId)
+                    )
+                </div>
+            </div>
         @endif
     @else
-        <p class="text-center text-gray-500 mt-10 p-6 bg-white shadow-lg rounded-xl">
-            @if ($selectedBlockId)
-                Click the **"Load Grades"** button to view the enrollment data and begin grading for the selected block.
-            @else
-                Select a Course Block above to begin grading.
-            @endif
-        </p>
+        <div class="text-center text-gray-400 mt-10 p-12 bg-white shadow rounded-xl border-2 border-dashed">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            <p>Select a course block and click "Open Grading Sheet" to view students.</p>
+        </div>
     @endif
-    
-</div> 
-
+</div>
 
 <script>
     document.addEventListener('livewire:initialized', () => {
         Livewire.on('triggerPrint', (event) => {
             const data = event[0];
-            
-            const teacherName = data.teacherName || '_________________________';
+            const logoUrl = window.location.origin + '/images/ntc-logo.jpeg';
+
+            // Helper function to determine Remarks based on Rating
+            const getRemarks = (grade) => {
+                if (!grade) return '';
+                const g = grade.toString().toUpperCase();
+                if (g === 'INC') return 'INCOMPLETE';
+                if (g === 'DRP') return 'DROPPED';
+                if (g === '5.0') return 'FAILED';
+                
+                const numGrade = parseFloat(g);
+                if (!isNaN(numGrade) && numGrade <= 3.0) return 'PASSED';
+                if (!isNaN(numGrade) && numGrade > 3.0) return 'FAILED';
+                return '';
+            };
 
             let printContent = `
                 <style>
-                    /* Print-specific CSS */
-                    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+                    @page { size: portrait; margin: 0.4in; }
+                    body { font-family: "Times New Roman", Times, serif; padding: 0; color: #000; line-height: 1.1; font-size: 10.5px; }
                     
-                    /* --- Header/Report Styles --- */
-                    .report-container { width: 100%; margin: 0 auto; }
-                    .letterhead { 
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        padding-bottom: 10px;
-                        border-bottom: 3px double #000;
-                        margin-bottom: 15px;
-                    }
-                    .letterhead img {
-                        height: 75px;
-                        width: auto;
-                        margin-right: 20px;
-                    }
-                    .header-text {
-                        text-align: left;
-                        line-height: 1.2;
-                    }
-                    .header-text h1 { 
-                        font-size: 20px; 
-                        margin: 0; 
-                        color: #000;
-                    }
-                    .header-text p { 
-                        font-size: 12px; 
-                        margin: 0; 
-                        color: #555;
-                    }
-                    .report-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 15px; }
-                    .report-details table { width: 100%; font-size: 12px; }
-                    .report-details table td { padding: 3px 0; }
-                    .grade-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-                    .grade-table th, .grade-table td { border: 1px solid #000; padding: 8px; text-align: left; font-size: 14px; }
-                    .grade-table th { background-color: #f0f0f0; }
+                    .letterhead { display: flex; align-items: center; justify-content: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 12px; }
+                    .letterhead img { height: 55px; margin-right: 15px; }
+                    .header-text h1 { font-size: 15px; margin: 0; font-weight: bold; text-transform: uppercase; }
+                    .header-text p { font-size: 9px; margin: 0; }
                     
-                    /* --- Signature Styles (UPDATED) --- */
-                    .signatures { 
-                        margin-top: 40px; 
-                        display: flex; 
-                        justify-content: space-between; 
-                        font-size: 12px;
+                    .report-title { font-size: 14px; font-weight: bold; text-align: center; margin: 10px 0; text-transform: uppercase; }
+                    
+                    .meta-table { width: 100%; margin-bottom: 10px; font-size: 10.5px; border-collapse: collapse; }
+                    .meta-table td { padding: 1px 0; vertical-align: top; }
+                    
+                    .grade-table { width: 100%; border-collapse: collapse; margin-top: 5px; table-layout: fixed; }
+                    .grade-table th, .grade-table td { 
+                        border: 1px solid #000; 
+                        padding: 2px 4px; 
+                        text-align: left; 
+                        font-size: 9.5px; 
+                        word-wrap: break-word;
                     }
-                    .received-by-section {
-                        justify-content: center;
-                        margin-top: 20px;
-                    }
-                    .signature-column { 
-                        width: 45%;
-                        text-align: center; 
-                    }
-                    .received-by-section .signature-column {
-                        width: 35%;
-                    }
-                    .role-title {
-                        font-size: 14px;
-                        margin-bottom: 5px;
-                        text-align: center;
-                    }
-                    .signature-line { 
-                        border-bottom: 1px solid #000; 
-                        height: 18px; 
-                        margin-bottom: 5px;
-                        font-weight: bold;
-                        text-transform: uppercase;
-                        padding-top: 5px;
-                    }
-                    .role-label {
-                        text-align: center;
-                        margin-top: 0;
-                        font-size: 14px;
-                    }
-
-                    .finalized-status { 
-                        text-align: center; 
-                        margin-top: 30px; 
-                        font-weight: bold; 
-                        color: green; 
-                        border-top: 1px solid #ccc; 
-                        padding-top: 10px; 
-                    }
+                    .grade-table th { background: #f2f2f2; text-transform: uppercase; font-weight: bold; font-size: 9px; text-align: center; }
+                    .text-center { text-align: center; }
+                    .font-bold { font-weight: bold; }
+                    
+                    .sig-container { margin-top: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+                    .sig-box { width: 45%; margin-bottom: 15px; }
+                    .sig-label-bold { font-size: 10.5px; font-weight: bold; margin-bottom: 18px; }
+                    .sig-name-line { border-bottom: 1px solid #000; font-weight: bold; text-transform: uppercase; font-size: 11px; padding-bottom: 1px; text-align: center; }
+                    .sig-sub-label { font-size: 9px; margin-top: 1px; text-align: center; }
+                    
+                    .registrar-container { width: 100%; display: flex; justify-content: center; margin-top: 5px; }
                 </style>
-                <div class="report-container">
-                    <div class="letterhead">
-                        <img src="/images/ntc-logo.jpeg" alt="NTC Letterhead Logo">
-                        <div class="header-text">
-                            <h1>NORTHLINK TECHNOLOGICAL COLLEGE</h1>
-                            <p>Official Academic Records and Grading System</p>
-                            <p>Contact No: 0939 384 2969 | Email: ntcregistrar@northlink.edu.ph</p>
-                        </div>
+
+                <div class="letterhead">
+                    <img src="${logoUrl}" onerror="this.src='https://via.placeholder.com/55?text=LOGO'">
+                    <div class="header-text">
+                        <h1>NORTHLINK TECHNOLOGICAL COLLEGE</h1>
+                        <p>Panabo City, Davao del Norte</p>
+                        <p>Official Academic Records and Grading System</p>
+                    </div>
+                </div>
+
+                <div class="report-title">Report of Rating</div>
+
+                <table class="meta-table">
+                    <tr>
+                        <td width="12%"><strong>COURSE:</strong></td>
+                        <td width="48%">${data.courseCode} - ${data.courseName}</td>
+                        <td width="15%"><strong>SCHEDULE:</strong></td>
+                        <td width="25%" align="right">${data.scheduleString}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PERIOD:</strong></td>
+                        <td>${data.academicPeriod}</td>
+                        <td><strong>SECTIONS:</strong></td>
+                        <td align="right">${data.blockDetails}</td>
+                    </tr>
+                </table>
+
+                <table class="grade-table">
+                    <thead>
+                        <tr>
+                            <th width="5%">No.</th>
+                            <th width="42%" style="text-align: left;">Student Name</th>
+                            <th width="25%" style="text-align: left;">Program & Section</th>
+                            <th width="12%">Rating</th>
+                            <th width="16%">Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.students.map((s, index) => {
+                            const remark = getRemarks(s.finalGrade);
+                            return `
+                            <tr>
+                                <td class="text-center">${index + 1}</td>
+                                <td style="text-transform: uppercase; white-space: nowrap; overflow: hidden;">${s.studentName}</td>
+                                <td style="font-size: 8.5px;">${s.section}</td>
+                                <td class="text-center font-bold">${s.finalGrade || '-'}</td>
+                                <td class="text-center" style="font-size: 8px;">${remark}</td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+
+                <div class="sig-container">
+                    <div class="sig-box">
+                        <div class="sig-label-bold">Prepared by:</div>
+                        <div class="sig-name-line">${data.teacherName}</div>
+                        <div class="sig-sub-label">Instructor/Professor</div>
                     </div>
                     
-                    <div class="report-title">FINALIZED GRADE REPORT</div>
-
-                    <div class="report-details">
-                        <table>
-                            <tr>
-                                <td><strong>Course:</strong> ${data.courseCode}-${data.courseName}</td>
-                                <td style="text-align: right;"><strong>Teacher:</strong> ${data.teacherName}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Academic Period:</strong> ${data.academicPeriod} (${data.semester} Semester)</td>
-                                <td style="text-align: right;"><strong>Block:</strong> ${data.blockDetails}</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <table class="grade-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 15%;">Student ID</th>
-                                <th style="width: 65%;">Student Name</th>
-                                <th style="width: 20%; text-align: center;">Final Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${data.students.map(student => `
-                                <tr>
-                                    <td>${student.studentId}</td>
-                                    <td>${student.studentName}</td>
-                                    <td style="text-align: center;"><strong>${student.finalGrade}</strong></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-
-                    <div class="signatures">
-                        <div class="signature-column">
-                            <p class="role-title">Prepared by:</p>
-                            <div class="signature-line">${teacherName.toUpperCase()}</div>
-                            <p class="role-label">Instructor/Prof</p>
-                        </div>
-                        
-                        <div class="signature-column">
-                            <p class="role-title">Checked and Approved by:</p>
-                            <div class="signature-line">&nbsp;</div>
-                            <p class="role-label">Program Head</p>
-                        </div>
+                    <div class="sig-box">
+                        <div class="sig-label-bold">Checked & Approved by:</div>
+                        <div class="sig-name-line">&nbsp;</div>
+                        <div class="sig-sub-label">Program Head</div>
                     </div>
 
-                    <div class="signatures received-by-section">
-                        <div class="signature-column">
-                            <p class="role-title">Received by:</p>
-                            <div class="signature-line">GENEROSE A. SABUDIN</div>
-                            <p class="role-label">College Registrar</p>
+                    <div class="registrar-container">
+                        <div class="sig-box" style="width: 35%; margin-bottom: 0;">
+                            <div class="sig-label-bold" style="text-align: center; margin-bottom: 18px;">Received by:</div>
+                            <div class="sig-name-line">GENEROSE A. SABUDIN</div>
+                            <div class="sig-sub-label">College Registrar</div>
                         </div>
-                    </div>
-                    
-                    <div class="finalized-status">
-                        CONFIRMED AND FINALIZED GRADES
                     </div>
                 </div>
             `;
 
-            // Open a new window using about:blank and features to minimize UI
-            const printWindow = window.open('about:blank', 'GradePrintWindow', 'height=600,width=800,status=no,location=no,toolbar=no');
-            
-            if (!printWindow) {
-                alert("The print window could not be opened. Please check your browser's pop-up blocker settings.");
-                return;
-            }
-            
-            printWindow.document.write('<html><head><title>Report of Rating</title></head><body>');
-            printWindow.document.write(printContent);
-            printWindow.document.write('</body></html>');
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write('<html><head><title>Report of Rating</title></head><body>' + printContent + '</body></html>');
             printWindow.document.close();
             
-            printWindow.onload = function() {
+            setTimeout(() => {
                 printWindow.print();
-            };
+                printWindow.close();
+            }, 800);
         });
     });
 </script>

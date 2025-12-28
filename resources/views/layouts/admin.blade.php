@@ -31,7 +31,7 @@
             <i class="fas fa-home mr-3 text-lg"></i>
             {{ __('Dashboard') }}
         </x-nav-link>
-        <x-nav-link href="#" :active="request()->routeIs('faculty.course-blocks')">
+        <x-nav-link href="#">
             <i class="fas fa-user-graduate mr-3 text-lg"></i>
             {{ __('School Announcements') }}
         </x-nav-link>
@@ -156,10 +156,14 @@
             {{-- Evaluation and Grading (COLLAPSIBLE) --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
-                    <h3 class="text-left">Evaluation and Grading</h3>
+                    <h3 class="text-left">Grading and Evaluation</h3>
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Grade Submission') }}
+                    </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Course Evaluation') }}
@@ -172,10 +176,7 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Teacher Evaluation') }}
                     </x-nav-link>
-                   <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Grade Submission') }}
-                    </x-nav-link>
+                   
                 </div>
             </div>
 

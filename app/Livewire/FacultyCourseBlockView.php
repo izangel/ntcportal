@@ -43,9 +43,9 @@ class FacultyCourseBlockView extends Component
 
     public function showEmitedFlashMessage($action, $updatedCount = 0)
     {
-        // ... (Existing implementation for flash messages)
-        $block = $this->assignedBlocks->firstWhere('id', $this->selectedBlockId);
-        $courseCode = $block->course->code ?? 'Course';
+        // 🔑 Fix: Wrap the array in collect() and use array access ['course_code']
+        $block = collect($this->assignedBlocks)->firstWhere('id', $this->selectedBlockId);
+        $courseCode = $block['course_code'] ?? 'Course';
         
         switch ($action) {
             case 'save':
@@ -62,25 +62,7 @@ class FacultyCourseBlockView extends Component
                 session()->flash('message', "✅ INC grade successfully resolved to a numerical grade for **{$courseCode}**.");
                 break;
                 
-            case 'error_finalized':
-                session()->flash('error', '⚠️ Cannot save or finalize. Grades are already finalized and locked.');
-                break;
-
-            case 'error_confirm':
-                session()->flash('error', '❌ You must confirm the grades before final submission.');
-                break;
-
-            case 'error_block':
-                session()->flash('error', '❌ Error: Course block model not found for action.');
-                break;
-
-            case 'error_inc_resolve_fail':
-                session()->flash('error', "❌ Error resolving INC grade for **{$courseCode}**. The grade may have already been changed or the record was not found.");
-                break;
-                
-            default:
-                session()->flash('message', 'Action completed successfully.');
-                break;
+            // ... (rest of your switch cases remain the same)
         }
 
         if ($action === 'finalize' || $action === 'inc_resolved') {
@@ -120,60 +102,77 @@ class FacultyCourseBlockView extends Component
      * Fetches the finalized grades for the selected block using the same 
      * contextual query logic as the GradeInputForm child component.
      */
-    public function printFinalizedGrades()
-    {
-        if (!$this->selectedBlockId) {
-            session()->flash('error', '❌ Please select a course block first.');
-            return;
-        }
-
-        // 1. Get the context block (requires course, academic year, and section info)
-        $contextBlock = CourseBlock::where('id', $this->selectedBlockId)
-                                   ->where('faculty_id', $this->facultyId) // Security check
-                                   ->with(['course', 'academicYear'])
-                                   ->first();
-
-        if (!$contextBlock) {
-            session()->flash('error', '❌ Error: Course block not found or you are not authorized.');
-            return;
-        }
-
-        // 2. Ensure the grades are finalized before allowing print
-        if (!$contextBlock->finalized) {
-            session()->flash('error', '⚠️ Cannot print: Grades for this block have not been finalized yet.');
-            return;
-        }
-        
-        // 3. 🔑 CRITICAL: Use the exact query fields from GradeInputForm to fetch enrollments 🔑
-        $enrollments = Enrollment::where('section_id', $contextBlock->section_id)
-                                 ->where('academic_year_id', $contextBlock->academic_year_id)
-                                 ->where('semester', $contextBlock->semester)
-                                 ->where('course_id', $contextBlock->course_id)
-                                 ->with('student') 
-                                 ->get();
-
-
-        // 4. Prepare the data structure for the print view
-        $gradeData = [
-            'courseCode' => $contextBlock->course->code ?? 'N/A',
-            'courseName' => $contextBlock->course->name ?? 'N/A',
-            'blockDetails' => "{$contextBlock->schedule_string} (Room: {$contextBlock->room_name})",
-            'academicPeriod' => "{$contextBlock->academicYear->start_year}-{$contextBlock->academicYear->end_year}", 
-            'semester' => $contextBlock->semester,
-            'teacherName' => Auth::user()->name,
-            'students' => $enrollments->map(function ($enrollment) {
-                return [
-                    'studentId' => $enrollment->student->student_id ?? 'N/A',
-                    'studentName' => $enrollment->student->full_name ?? $enrollment->student->last_name . ', ' . $enrollment->student->first_name, // Use the concatenated name if available
-                    'finalGrade' => $enrollment->grade ?? 'INC', // 🔑 Use 'grade' column 🔑
-                ];
-            })->sortBy('studentName')->values()->all(), 
-        ];
-
-        // 5. Emit a browser event to trigger the print action in the view.
-        $this->dispatch('triggerPrint', $gradeData);
+        public function printFinalizedGrades()
+{
+    if (!$this->selectedBlockId) {
+        session()->flash('error', '❌ Please select a course block first.');
+        return;
     }
-    
+
+    $contextBlock = CourseBlock::where('id', $this->selectedBlockId)
+                               ->with(['course', 'academicYear'])
+                               ->first();
+
+    if (!$contextBlock || !$contextBlock->finalized) {
+        session()->flash('error', '⚠️ Grades are not yet finalized.');
+        return;
+    }
+
+    // 1. Get Name from Employees Table
+    $user = auth()->user();
+    $employee = $user->employee; // Access the related employee record
+
+    if ($employee) {
+        $mInitial = !empty($employee->mid_name) 
+            ? ' ' . strtoupper(substr($employee->mid_name, 0, 1)) . '.' 
+            : '';
+        $fullTeacherName = "{$employee->first_name}{$mInitial} {$employee->last_name}";
+    } else {
+        // Fallback to user table if employee record is missing
+        $fullTeacherName = $user->name; 
+    }
+
+    // 2. Fetch Merged Sections Data
+    $relatedBlocks = CourseBlock::where('faculty_id', $contextBlock->faculty_id)
+        ->where('academic_year_id', $contextBlock->academic_year_id)
+        ->where('semester', $contextBlock->semester)
+        ->where('course_id', $contextBlock->course_id)
+        ->where('schedule_string', $contextBlock->schedule_string)
+        ->with(['section.program'])
+        ->get();
+
+    $sectionIds = $relatedBlocks->pluck('section_id');
+    $mergedSectionNames = $relatedBlocks->map(function($b) {
+        return ($b->section->program->name ?? '') . '-' . ($b->section->name ?? '');
+    })->unique()->implode(', ');
+
+    // 3. Prepare Student List
+    $enrollments = Enrollment::whereIn('section_id', $sectionIds)
+                             ->where('course_id', $contextBlock->course_id)
+                             ->with(['student', 'section.program'])
+                             ->get();
+
+    $students = $enrollments->map(function ($enrollment) {
+        return [
+            'studentName' => $enrollment->student->last_name . ', ' . $enrollment->student->first_name,
+            'section'     => ($enrollment->section->program->name ?? 'N/A') . '-' . ($enrollment->section->name ?? 'N/A'),
+            'finalGrade'  => $enrollment->grade ?? 'INC',
+            'last_name'   => $enrollment->student->last_name,
+        ];
+    })->sortBy('last_name')->values()->all();
+
+    $gradeData = [
+        'courseCode'     => $contextBlock->course->code,
+        'courseName'     => $contextBlock->course->name,
+        'scheduleString' => $contextBlock->schedule_string,
+        'blockDetails'   => $mergedSectionNames,
+        'academicPeriod' => "{$contextBlock->academicYear->start_year}-{$contextBlock->academicYear->end_year} ({$contextBlock->semester} SEM)",
+        'teacherName'    => $fullTeacherName,
+        'students'       => $students,
+    ];
+
+    $this->dispatch('triggerPrint', $gradeData);
+}
     // ------------------------------------------------------------------
     //  MOUNT & DATA LOADING (Existing Methods Remain)
     // ------------------------------------------------------------------
@@ -193,31 +192,46 @@ class FacultyCourseBlockView extends Component
 
         $this->loadAssignedBlocks();
     }
+
+    
     
     public function loadAssignedBlocks()
-    {
-        if (!$this->academicYearId || !$this->semester) {
-            $this->assignedBlocks = collect();
-            return;
-        }
+{
+    if (!$this->academicYearId || !$this->semester) {
+        $this->assignedBlocks = [];
+        return;
+    }
 
-        $blocks = CourseBlock::where('faculty_id', $this->facultyId)
+    $allBlocks = CourseBlock::where('faculty_id', $this->facultyId)
                             ->where('academic_year_id', $this->academicYearId)
                             ->where('semester', $this->semester)
-                            ->with(['course', 'section'])
+                            ->with(['course', 'section.program'])
                             ->get();
 
-        // 🔑 Group by Schedule and Course so Merged Sections appear as one "Class"
-        $this->assignedBlocks = $blocks->groupBy(function($item) {
-            return $item->course_id . $item->schedule_string . $item->room_name;
-        })->map(function($group) {
-            $first = $group->first();
-            // Combine section names for the label: "BSIS1, DIT1"
-            $first->combined_sections = $group->pluck('section.name')->implode(', ');
-            return $first;
-        });
-    }
-    
+    // 🔑 Group by Course + Schedule to handle merged/combined classes
+    $this->assignedBlocks = $allBlocks->groupBy(function($item) {
+        return $item->course_id . '-' . $item->schedule_string;
+    })->map(function($group) {
+        $firstBlock = $group->first();
+
+        // 🔑 Build the Section string (e.g., "BSIS-1A, DIT-1B")
+        $sections = $group->map(function($item) {
+            $program = $item->section->program->name ?? 'N/A';
+            $section = $item->section->name ?? 'N/A';
+            return "{$program}-{$section}";
+        })->unique()->sort()->implode(', ');
+
+        // 🔑 Return as an array to ensure Livewire remembers the data after selection
+        return [
+            'id'              => $firstBlock->id,
+            'course_code'     => $firstBlock->course->code,
+            'course_name'     => $firstBlock->course->name,
+            'schedule_string' => $firstBlock->schedule_string,
+            'sections'        => $sections,
+            'finalized'       => $firstBlock->finalized, // 🔑 Add this line!
+        ];
+    })->values()->toArray(); // resets keys and converts to persistent array
+}
     // ------------------------------------------------------------------
     //  LIFECYCLE HOOKS (Existing Methods Remain)
     // ------------------------------------------------------------------

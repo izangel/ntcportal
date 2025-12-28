@@ -75,30 +75,44 @@ class GradeInputForm extends Component
         // The mount method calls loadGrades() once during initialization
         $this->loadGrades();
     }
+
     
-    public function loadGrades()
+    // Add these public properties to your class
+public $academicPeriod = '';
+public $combinedSectionsLabel = '';
+
+public function loadGrades()
 {
-    $this->selectedBlock = CourseBlock::find($this->blockId);
+    $this->selectedBlock = CourseBlock::with(['course', 'academicYear', 'section.program'])->find($this->blockId);
     if (!$this->selectedBlock) return;
 
     $this->gradesFinalized = $this->selectedBlock->finalized;
 
-    // 🔑 STEP 1: Find all sections that share this EXACT schedule/teacher/course
-    // This handles the "Merge" (BSIS1 and DIT1) automatically.
-    $relatedSectionIds = CourseBlock::where('faculty_id', $this->selectedBlock->faculty_id)
+    // 1. Format Academic Period
+    $this->academicPeriod = "{$this->selectedBlock->academicYear->start_year}-{$this->selectedBlock->academicYear->end_year} ({$this->selectedBlock->semester} SEM)";
+
+    // 2. Identify all sections in this block (Merged or Single)
+    $relatedBlocks = CourseBlock::where('faculty_id', $this->selectedBlock->faculty_id)
         ->where('course_id', $this->selectedBlock->course_id)
         ->where('academic_year_id', $this->selectedBlock->academic_year_id)
         ->where('semester', $this->selectedBlock->semester)
-        ->where('schedule_string', $this->selectedBlock->schedule_string) // Match by time
-        ->where('room_name', $this->selectedBlock->room_name)           // Match by room
-        ->pluck('section_id');
+        ->where('schedule_string', $this->selectedBlock->schedule_string)
+        ->with(['section.program'])
+        ->get();
 
-    // 🔑 STEP 2: Fetch students from ALL those sections for this specific course
+    $relatedSectionIds = $relatedBlocks->pluck('section_id');
+
+    // 3. Create the Sections Label (e.g., "BSIS-1A" or "BSIS-1A, BSED-2B")
+    $this->combinedSectionsLabel = $relatedBlocks->map(function($b) {
+        return ($b->section->program->name ?? '') . '-' . ($b->section->name ?? '');
+    })->unique()->sort()->implode(', ');
+
+    // 4. Pull all enrollments (Existing logic)
     $enrollments = Enrollment::whereIn('section_id', $relatedSectionIds)
                              ->where('academic_year_id', $this->selectedBlock->academic_year_id)
                              ->where('semester', $this->selectedBlock->semester)
                              ->where('course_id', $this->selectedBlock->course_id)
-                             ->with(['student', 'section']) 
+                             ->with(['student', 'section.program']) 
                              ->get();
                                  
     $this->enrolledStudents = $enrollments->map(function ($enrollment) {
@@ -107,12 +121,12 @@ class GradeInputForm extends Component
         
         return [
             'enrollment_id' => $enrollment->id,
-            'student_id' => $studentId,
-            'student_name' => $enrollment->student->last_name.', '. $enrollment->student->first_name, 
-            'section_name' => $enrollment->section->name ?? 'N/A', // 👈 Display BSIS1 or DIT1
-            'grade' => $enrollment->grade,
+            'student_id'    => $studentId,
+            'student_name'  => $enrollment->student->last_name.', '. $enrollment->student->first_name, 
+            'section_name'  => ($enrollment->section->program->name ?? '').'-'.($enrollment->section->name ?? ''), 
+            'grade'         => $enrollment->grade,
         ];
-    })->sortBy(['section_name', 'student_name'])->toArray();
+    })->sortBy(['student_name'])->toArray();
 }
 
     // ------------------------------------------------------------------

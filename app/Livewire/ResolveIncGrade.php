@@ -78,52 +78,57 @@ class ResolveIncGrade extends Component
         $this->loadIncStudents();
     }
 
-    // --- Data Loading ---
+protected function loadIncStudents()
+{
+    $block = CourseBlock::find($this->blockId);
     
-    protected function loadIncStudents()
-    {
-        $block = CourseBlock::find($this->blockId);
-
-        if (!$block || !$block->finalized) {
-            $this->incStudents = [];
-            $this->studentList = [];
-            $this->selectedStudentId = null;
-            return;
-        }
-
-        $enrollments = Enrollment::where('section_id', $block->section_id)
-                                 ->where('academic_year_id', $block->academic_year_id)
-                                 ->where('semester', $block->semester)
-                                 ->where('course_id', $block->course_id)
-                                 ->where('grade', 'INC')
-                                 ->with('student')
-                                 ->get();
-
+    // Safety check: only load if finalized
+    if (!$block || !$block->finalized) {
         $this->incStudents = [];
-        $this->studentList = []; 
-        
-        foreach ($enrollments as $enrollment) {
-            $studentId = $enrollment->student_id;
-            $studentName = $enrollment->student->last_name.', '. $enrollment->student->first_name;
-            
-            $this->incStudents[$studentId] = [
-                'enrollment_id' => $enrollment->id,
-                'student_id' => $studentId,
-                'student_name' => $studentName,
-                'current_grade' => $enrollment->grade,
-            ];
-            
-            $this->studentList[$studentId] = $studentName;
-            $this->resolvedGrades[$studentId] = ''; 
-        }
-
-        // If the current student is no longer in the list, select the next available, or null
-        if (!isset($this->incStudents[$this->selectedStudentId]) && !empty($this->studentList)) {
-            $this->selectedStudentId = array_key_first($this->studentList);
-        } elseif (empty($this->studentList)) {
-            $this->selectedStudentId = null;
-        }
+        $this->studentList = [];
+        return;
     }
+
+    // 1. Get all section IDs sharing this specific merged schedule
+    $sharedSectionIds = CourseBlock::where('faculty_id', $block->faculty_id)
+        ->where('academic_year_id', $block->academic_year_id)
+        ->where('semester', $block->semester)
+        ->where('course_id', $block->course_id)
+        ->where('schedule_string', $block->schedule_string)
+        // Note: room_name removed for better matching across merged blocks
+        ->pluck('section_id');
+
+    // 2. Fetch enrollments that have 'INC'
+    $enrollments = Enrollment::whereIn('section_id', $sharedSectionIds)
+        ->where('course_id', $block->course_id)
+        ->where(function($query) {
+            $query->where('grade', 'INC')
+                  ->orWhere('grade', 'inc'); // Case sensitivity safety
+        })
+        ->with(['student', 'section.program'])
+        ->get();
+
+    // 3. Reset and Populate both arrays
+    $this->incStudents = [];
+    $this->studentList = [];
+
+    foreach ($enrollments as $enrollment) {
+        $sName = $enrollment->student->last_name . ', ' . $enrollment->student->first_name;
+        $secName = ($enrollment->section->program->name ?? '') . '-' . ($enrollment->section->name ?? '');
+        
+        // Full data for the resolution panel
+        $this->incStudents[$enrollment->student_id] = [
+            'enrollment_id' => $enrollment->id,
+            'student_id'    => $enrollment->student_id,
+            'student_name'  => $sName,
+            'section_name'  => $secName,
+            'current_grade' => $enrollment->grade,
+        ];
+
+        // Label for the dropdown (including section for clarity)
+        $this->studentList[$enrollment->student_id] = "{$sName} ({$secName})";
+    }
+}
     
     // --- INC Resolution Action ---
 
