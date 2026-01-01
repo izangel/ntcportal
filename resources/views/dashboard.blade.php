@@ -9,18 +9,20 @@
                     'student' => 'text-blue-500',
                     'academic_head' => 'text-gray-500',
                     'hr' => 'text-gray-500',
-                    'admin' => 'text-red-500'
+                    'admin' => 'text-red-500',
+                    'teacher' => 'text-indigo-500'
                 ];
                 $roleNames = [
                     'student' => 'Student',
                     'academic_head' => 'Academic Head',
                     'hr' => 'HR Manager',
-                    'admin' => 'Administrator'
+                    'admin' => 'Administrator',
+                    'teacher' => 'Teacher'
                 ];
             @endphp
             @foreach($roleNames as $role => $name)
-                @if(Auth::user()->hasRole($role))
-                    <span class="text-sm {{ $roleColors[$role] }}"> ({{ $name }})</span>
+                @if(Auth::user()->hasRole($role) || (Auth::user()->employee && Auth::user()->employee->role === $role))
+                    <span class="text-sm {{ $roleColors[$role] ?? 'text-gray-500' }}"> ({{ $name }})</span>
                 @endif
             @endforeach
         </h2>
@@ -42,12 +44,23 @@
                     @if(!Auth::user()->hasRole('student'))
                         <div class="mt-6 flex gap-4">
                             @php
-                                $route = Auth::user()->hasRole('admin') ? 'admin.leave_applications.index' : 
-                                        (Auth::user()->hasRole('hr') ? 'hr.leave_applications.index' : 'ah.leave_applications.all');
+                                if(Auth::user()->hasRole('admin')) $route = 'admin.leave_applications.index';
+                                elseif(Auth::user()->hasRole('hr')) $route = 'hr.leave_applications.index';
+                                elseif(Auth::user()->hasRole('academic_head')) $route = 'ah.leave_applications.all';
+                                else $route = null;
                             @endphp
-                            <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
-                                Review Pending Leaves
-                            </a>
+                            
+                            @if($route)
+                                <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
+                                    Review Pending Leaves
+                                </a>
+                            @endif
+
+                            @if(Auth::user()->employee && Auth::user()->employee->role === 'teacher')
+                                <a href="{{ route('faculty.course-load') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
+                                    View Detailed Load
+                                </a>
+                            @endif
                         </div>
                     @endif
                 </div>
@@ -66,12 +79,6 @@
                             <div class="mb-3 last:mb-0 p-3 rounded-lg bg-gray-50 border border-gray-100 relative group">
                                 <p class="text-xs font-bold text-gray-900 truncate pr-4">{{ $notification->data['title'] ?? 'Update' }}</p>
                                 <p class="text-[11px] text-gray-500 truncate">{{ $notification->data['message'] ?? '' }}</p>
-                                <form method="POST" action="{{ route('notifications.markAsRead', $notification->id) }}">
-                                    @csrf
-                                    <button type="submit" class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-600 transition">
-                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                </form>
                             </div>
                         @empty
                             <p class="text-xs text-gray-400 text-center py-4 italic">All caught up!</p>
@@ -81,8 +88,7 @@
             </div>
         </div>
 
-        {{-- 2. Important Dates Widget (The Calendar Strip) --}}
-        
+        {{-- 2. Important Dates Widget --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div class="flex items-center justify-between mb-6">
                 <h4 class="text-lg font-bold text-gray-800 flex items-center">
@@ -111,11 +117,6 @@
                             @endif
                         </div>
                         <h5 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 mb-2">{{ $date->title }}</h5>
-                        <div class="flex flex-wrap gap-1">
-                            @foreach($date->categories->take(2) as $cat)
-                                <span class="text-[9px] px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500 font-medium">{{ $cat->name }}</span>
-                            @endforeach
-                        </div>
                     </div>
                 @empty
                     <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 italic">No scheduled events found.</div>
@@ -125,7 +126,6 @@
 
         {{-- 3. Role-Specific Main Content --}}
         @if(Auth::user()->hasRole('student'))
-            {{-- STUDENT VIEW --}}
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 space-y-8">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -140,7 +140,7 @@
                                     <span class="text-sm font-bold text-indigo-600">{{ $item->time_display }}</span>
                                 </div>
                             @empty
-                                <p class="text-center text-gray-400 py-6 italic text-sm">No classes today. Enjoy your break!</p>
+                                <p class="text-center text-gray-400 py-6 italic text-sm">No classes today.</p>
                             @endforelse
                         </div>
                     </div>
@@ -155,19 +155,131 @@
                             <span>Credits: <strong>{{ $totalCredits ?? 0 }}</strong></span>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h4 class="text-sm font-bold text-gray-800 mb-4 uppercase tracking-widest">Quick Actions</h4>
-                        <div class="grid grid-cols-1 gap-3">
-                            <a href="#" class="p-3 rounded-lg bg-gray-50 hover:bg-indigo-50 border border-gray-100 text-sm font-bold text-gray-700 hover:text-indigo-600 transition text-center">My Grades</a>
-                            <a href="#" class="p-3 rounded-lg bg-gray-50 hover:bg-indigo-50 border border-gray-100 text-sm font-bold text-gray-700 hover:text-indigo-600 transition text-center">Enrollment Info</a>
-                        </div>
-                    </div>
                 </div>
             </div>
 
         @else
-            {{-- STAFF / ADMIN VIEW --}}
+            {{-- STAFF / ADMIN / TEACHER VIEW --}}
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {{-- 🔑 My Course Load Table (Half Width) --}}
+                @if(isset($myCourses) && count($myCourses) > 0)
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
+                            <h4 class="text-sm font-black text-gray-700 uppercase tracking-widest flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                My Course Load
+                            </h4>
+                            
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-100">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Course</th>
+                                        <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Schedule</th>
+                                        <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Grade Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-50">
+                                    @foreach($myCourses as $course)
+                                        <tr class="hover:bg-gray-50 transition">
+                                            <td class="px-4 py-3">
+                                                <div class="text-xs font-bold text-gray-900">{{ $course['code'] }}</div>
+                                                <div class="text-[10px] text-gray-500 truncate w-32">{{ $course['name'] }}</div>
+                                            </td>
+                                            <td class="px-4 py-3 text-[10px] text-gray-600 italic">
+                                                {{ $course['schedule'] }}
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                @if($course['finalized'])
+                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-100 text-green-700">Submitted</span>
+                                                @else
+                                                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">In Progress</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Leave Management / Quick Actions (The other Half) --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center text-center">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">Leave Management</h4>
+                    <p class="text-sm text-gray-500 mb-6">Review balances and submit applications.</p>
+                    <a href="{{ route('leaveapplicationstatus') }}" class="w-full py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm font-bold hover:bg-indigo-100 transition">
+                        Open Leave Portal
+                    </a>
+                </div>
+
+                
+            </div>
+
+            {{-- Full-Width Work Week Leave Summary (Mon-Fri) --}}
+            @if(!Auth::user()->hasRole('student'))
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                        <span class="p-2 bg-indigo-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </span>
+                        Leave Summary This Week
+                    </h4>
+                    <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100">
+                        {{ now()->startOfWeek()->format('M d') }} — {{ now()->startOfWeek()->addDays(4)->format('M d') }}
+                    </span>
+                </div>
+
+                {{-- 5-Column Grid --}}
+                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    @foreach($daysOfWeek as $day)
+                        @php 
+                            $dateStr = $day->toDateString();
+                            $isToday = $day->isToday();
+                            $dailyLeaves = $leavesByDay[$dateStr];
+                        @endphp
+                        <div class="flex flex-col min-h-[180px] rounded-xl border {{ $isToday ? 'bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50' : 'bg-gray-50/30 border-gray-100' }}">
+                            
+                            <div class="p-3 text-center border-b {{ $isToday ? 'border-indigo-100 bg-indigo-100/30' : 'border-gray-100 bg-gray-50/50' }} rounded-t-xl">
+                                <p class="text-[10px] font-black uppercase tracking-tighter {{ $isToday ? 'text-indigo-600' : 'text-gray-400' }}">
+                                    {{ $day->format('l') }}
+                                </p>
+                                <p class="text-xl font-black {{ $isToday ? 'text-indigo-700' : 'text-gray-800' }}">
+                                    {{ $day->format('d') }}
+                                </p>
+                            </div>
+
+                            <div class="p-3 space-y-2 flex-grow">
+                                @forelse($dailyLeaves as $leave)
+                                    <div class="bg-white p-2 rounded-lg border {{ $leave->approval_status === 'pending' ? 'border-amber-200' : 'border-gray-100' }} shadow-sm">
+                                        <p class="text-[11px] font-bold text-gray-900 leading-tight">
+                                            {{ $leave->employee->last_name }},  {{ $leave->employee->first_name }}
+                                        </p>
+                                        <div class="flex items-center mt-1">
+                                            <span class="w-1.5 h-1.5 rounded-full {{ $leave->approval_status === 'pending' ? 'bg-amber-400' : 'bg-green-500' }} mr-1.5"></span>
+                                            <span class="text-[8px] font-black uppercase {{ $leave->approval_status === 'pending' ? 'text-amber-600' : 'text-green-600' }}">
+                                                {{ $leave->approval_status === 'pending' ? 'Pending' : 'Approved' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <div class="h-full flex items-center justify-center py-8 opacity-20">
+                                        <p class="text-[10px] italic text-gray-400 font-bold uppercase tracking-widest">No Leave</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- General Statistics --}}
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 @php
                     $stats = [
@@ -206,12 +318,16 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center flex flex-col justify-center">
-                    <h4 class="text-lg font-bold text-gray-800 mb-2">Leave Management</h4>
-                    <p class="text-sm text-gray-500 mb-6">Manage staff leave requests and view balances.</p>
-                    <a href="{{ route('leaveapplicationstatus') }}" class="w-full py-4 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 font-bold hover:bg-indigo-100 transition">
-                        Open Leave Portal
-                    </a>
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <h4 class="text-lg font-bold text-gray-800 mb-4">Latest Courses</h4>
+                    <div class="space-y-3">
+                        @foreach($recentCourses as $course)
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <span class="text-sm font-bold text-gray-700">{{ $course->code }}</span>
+                                <span class="text-[10px] text-gray-400">{{ $course->credits }} Credits</span>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
         @endif

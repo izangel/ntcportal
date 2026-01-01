@@ -44,6 +44,8 @@ use App\Livewire\CourseBlockBulkUploader;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ImportantDateController;
 
+use App\Livewire\FacultyCourseLoad;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -251,6 +253,9 @@ Route::middleware('auth')->group(function () {
         ->name('faculty.course_load.show');
 
       Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
+
+      // NEW My Course Load Page
+Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
   
 });
 

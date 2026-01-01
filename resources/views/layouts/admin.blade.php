@@ -130,7 +130,7 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('faculty.course_load') }}" :active="request()->routeIs('faculty.*')">
+                    <x-nav-link href="{{ route('faculty.course-load') }}" :active="request()->routeIs('faculty.course-load')">
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('My Course Load') }}
                     </x-nav-link>

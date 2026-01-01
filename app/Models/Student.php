@@ -44,7 +44,8 @@ class Student extends Model
      */
     public function section()
     {
-        return $this->belongsTo(Section::class);
+        // Gets the student's current section assignment
+        return $this->hasOne(SectionStudent::class, 'student_id');
     }
 
     /**
