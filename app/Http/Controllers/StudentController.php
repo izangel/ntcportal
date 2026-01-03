@@ -23,7 +23,9 @@ class StudentController extends Controller
         // For simplicity, we'll get all sections. For dynamic dropdowns, you'd fetch sections based on selected program.
         $sections = Section::with('program')->orderBy('name')->get();
 
-        $studentsQuery = Student::with(['user', 'section.program']);
+       $studentsQuery = Student::with(['user']);
+
+        //$studentsQuery = Student::all();
 
         // Apply filters
         if ($request->filled('program_id')) {

@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('course_surveys', function (Blueprint $table) {
+        Schema::create('course_evaluations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained();
             $table->foreignId('course_id')->constrained();
             $table->foreignId('academic_year_id')->constrained();
-            $table->string('semester');
-            $table->integer('rating'); // 1 to 5 scale
-            $table->text('feedback')->nullable();
+            $table->string('semester'); // '1st', '2nd', etc.
+            $table->integer('rating'); // 1 to 5
+            $table->text('comments')->nullable();
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('course_surveys');
+        Schema::dropIfExists('course_evaluations');
     }
 };

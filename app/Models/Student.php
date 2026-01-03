@@ -73,4 +73,9 @@ class Student extends Model
 
         return $previousEnrollments === 0; // If count is 0, they are new.
     }
+
+    public function evaluations()
+    {
+        return $this->hasMany(CourseEvaluation::class, 'student_id');
+    }
 }

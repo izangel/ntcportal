@@ -191,6 +191,14 @@
                         {{ __('Grade Submission Tracking') }}
                     </x-nav-link>
                     
+                    <x-nav-link href="{{ route('faculty.evaluations.index') }}" :active="request()->routeIs('faculty.evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Course Evaluation') }}
+                    </x-nav-link>
+                    
+                    
+
+                    
                 </div>
             </div>
 
@@ -270,6 +278,10 @@
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                         <i class="fas fa-chart-line mr-3 text-lg"></i>
                         {{ __('Reports') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('admin.evaluations') }}" :active="request()->routeIs('admin.evaluations')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Course Satisfaction Summary') }}
                     </x-nav-link>
                 </div>
             </div>

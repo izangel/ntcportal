@@ -45,7 +45,8 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ImportantDateController;
 
 use App\Livewire\FacultyCourseLoad;
-
+use App\Http\Controllers\StudentCourseController;
+use App\Http\Controllers\EvaluationReportController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -133,6 +134,7 @@ Route::middleware([
 
     // HR specific routes (apply roles middleware)
     Route::middleware(['role:hr|admin|academic_head'])->group(function () {
+
         
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])
          ->name('hr.leave_credits.all');
@@ -158,7 +160,22 @@ Route::middleware([
      // The new Leave Summary/Calendar route
     Route::get('/admin/leave-summary', [LeaveApplicationController::class, 'leaveSummary'])
         ->name('admin.leave.summary');
-        
+
+        //course satisfaction rating
+        // For the teacher to see their own results
+    // Route::get('/faculty/my-evaluations', [EvaluationReportController::class, 'facultyView'])
+    //     ->name('faculty.evaluations');
+    // The GET route displays the category breakdown and qualitative feedback
+    // Selection page
+    Route::get('/faculty/evaluations', [EvaluationReportController::class, 'index'])
+        ->name('faculty.evaluations.index');
+
+    // Results page
+    Route::get('/faculty/evaluations/report', [EvaluationReportController::class, 'facultyCourseReport'])
+        ->name('faculty.evaluations.report');
+    // For the admin to see everything (protected by admin middleware if you have one)
+    Route::get('/admin/overall-reports', [EvaluationReportController::class, 'adminView'])
+        ->name('admin.evaluations');
     });
 
 
@@ -256,6 +273,13 @@ Route::middleware('auth')->group(function () {
 
       // NEW My Course Load Page
 Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
+
+// Student Dashboard/Courses Route
+    Route::get('/my-courses', [StudentCourseController::class, 'index'])
+        ->name('student.courses');
+    
+    Route::post('/my-courses/evaluate', [StudentCourseController::class, 'storeEvaluation'])
+    ->name('student.courses.evaluate');
   
 });
 
