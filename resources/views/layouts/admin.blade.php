@@ -40,6 +40,25 @@
             {{ __('Important Dates') }}
         </x-nav-link>
 
+        {{-- My Profile (COLLAPSIBLE) --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">My Profile</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="#">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Personal Information') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('password.edit') }}" :active="request()->routeIs('password.*')">
+                        <i class="fas fa-key mr-3 text-lg"></i>
+                        {{ __('Change Password') }}
+                    </x-nav-link>
+                    
+                </div>
+            </div>
+
         {{-- Library Resources (COLLAPSIBLE) --}}
         <div class="mt-4 space-y-1" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -58,6 +77,25 @@
                 </x-nav-link>
             </div>
         </div>
+
+        @if(Auth::user()->student)
+             <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">COURSE EVALUATION</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.evaluations.index') }}" :active="request()->routeIs('student.evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Course Evaluation') }}
+                    </x-nav-link>
+
+                   
+                </div>
+            </div>
+
+        @endif
             
         @if(Auth::user()->hasRole('teacher') || Auth::user()->hasRole('staff') || Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
             
@@ -86,24 +124,7 @@
                 </div>
             </div>
 
-            {{-- My Profile (COLLAPSIBLE) --}}
-            <div class="mt-4 space-y-1" x-data="{ open: false }">
-                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
-                    <h3 class="text-left">My Profile</h3>
-                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
-                </button>
-                <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="#">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Personal Information') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('password.edit') }}" :active="request()->routeIs('password.*')">
-                        <i class="fas fa-key mr-3 text-lg"></i>
-                        {{ __('Change Password') }}
-                    </x-nav-link>
-                    
-                </div>
-            </div>
+            
 
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -156,7 +177,7 @@
             {{-- Evaluation and Grading (COLLAPSIBLE) --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
-                    <h3 class="text-left">Grading and Evaluation</h3>
+                    <h3 class="text-left">Grading</h3>
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
@@ -172,11 +193,34 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Student Self-assessment') }}
                     </x-nav-link>
-                    <x-nav-link href="#">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Teacher Evaluation') }}
-                    </x-nav-link>
+                    
                    
+                </div>
+            </div>
+
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Performance Evaluation</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('faculty.peer-evaluations.index') }}" :active="request()->routeIs('faculty.peer-evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Peer Evaluation') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.self-evaluations.index') }}" :active="request()->routeIs('faculty.self-evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Self Evaluation') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('supervisor.evaluations.index') }}" :active="request()->routeIs('supervisor.evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Department Head Evaluation') }}
+                    </x-nav-link>
+                     <x-nav-link href="{{ route('teacher.evaluations.index') }}" :active="request()->routeIs('teacher.evaluations.index')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('PES Result') }}
+                    </x-nav-link>
+                                    
                 </div>
             </div>
 
@@ -191,10 +235,7 @@
                         {{ __('Grade Submission Tracking') }}
                     </x-nav-link>
                     
-                    <x-nav-link href="{{ route('faculty.evaluations.index') }}" :active="request()->routeIs('faculty.evaluations.index')">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Course Evaluation') }}
-                    </x-nav-link>
+                    
                     
                     
 
@@ -279,10 +320,7 @@
                         <i class="fas fa-chart-line mr-3 text-lg"></i>
                         {{ __('Reports') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('admin.evaluations') }}" :active="request()->routeIs('admin.evaluations')">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Course Satisfaction Summary') }}
-                    </x-nav-link>
+                    
                 </div>
             </div>
             
@@ -332,6 +370,23 @@
                         <i class="fas fa-calendar-check mr-3 text-lg"></i>
                         {{ __('Leave Summary') }}
                     </x-nav-link>
+                </div>
+            </div>
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Performance Evaluation Settings</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('hr.peer-assignments.index') }}" :active="request()->routeIs('hr.peer-assignments.index')">
+                        <i class="fas fa-user-tie mr-3 text-lg"></i>
+                        {{ __('Peer Assignment') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('hr.supervisor-assignments.index') }}" :active="request()->routeIs('hr.supervisor-assignments.index')">
+                        <i class="fas fa-calendar-minus mr-3 text-lg"></i>
+                        {{ __('Department Head Assignment') }}
+                    </x-nav-link>
+                   
                 </div>
             </div>
         @endif

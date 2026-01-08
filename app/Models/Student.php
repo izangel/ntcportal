@@ -42,10 +42,12 @@ class Student extends Model
     /**
      * Get the section that the student belongs to.
      */
-    public function section()
+    // App\Models\Student.php
+    public function sections()
     {
-        // Gets the student's current section assignment
-        return $this->hasOne(SectionStudent::class, 'student_id');
+        return $this->belongsToMany(Section::class, 'section_student')
+                    ->withPivot('academic_year_id', 'semester')
+                    ->withTimestamps();
     }
 
     /**

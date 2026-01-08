@@ -13,6 +13,10 @@ use App\Models\ImportantDate;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
 
+use App\Models\Semester;
+
+use App\Models\SectionStudent;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Collection;
@@ -75,15 +79,48 @@ class DashboardController extends Controller
         $pendingApplications = collect(); 
 
         if ($user->hasRole('student') && $user->student) {
-            $student = $user->student->load(['enrollments.course', 'enrollments.section.courseBlocks']);
+            $student = $user->student;
+            
+            // 1. GET ACTIVE SEMESTER LOGIC (From Monitoring Controller)
+            $activeSemester = Semester::where('is_active', 1)->first();
+            $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
+            
+            $enrolledCourses = collect([]);
+            $upcomingSchedule = collect([]);
+
+            if ($activeSemester) {
+                // 2. FIND STUDENT'S SECTION FOR THE ACTIVE SEMESTER
+                $studentSection = SectionStudent::where('student_id', $student->id)
+                    ->where('academic_year_id', $activeSemester->academic_year_id)
+                    ->where('semester', $semesterName)
+                    ->first();
+
+                if ($studentSection) {
+                    // 3. GET SPECIFIC ENROLLMENTS FOR THIS SEMESTER
+                    $enrolledCourseIds = Enrollment::where('student_id', $student->id)
+                        ->where('academic_year_id', $activeSemester->academic_year_id)
+                        ->where('semester', $semesterName)
+                        ->pluck('course_id');
+
+                    // 4. GET COURSE BLOCKS (SCHEDULE)
+                    $upcomingSchedule = CourseBlock::with(['course', 'faculty'])
+                        ->where('section_id', $studentSection->section_id)
+                        ->where('academic_year_id', $activeSemester->academic_year_id)
+                        ->where('semester', $semesterName)
+                        ->whereIn('course_id', $enrolledCourseIds)
+                        ->get();
+                }
+            }
+
             $studentData = [
-                'enrolledCourses' => $student->enrollments,
+                'enrolledCourses' => $student->enrollments, // Keep all for GPA
                 'currentGPA' => $this->calculateGPA($student->enrollments), 
                 'totalCredits' => $student->enrollments->sum('course.credits'),
-                'recentGrades' => $student->enrollments->filter(fn ($e) => !empty($e->grade))->sortByDesc('updated_at')->take(5),
-                'upcomingSchedule' => $this->getUpcomingSchedule($student->enrollments),
+                'upcomingSchedule' => $upcomingSchedule,
+                'activeSemester' => $activeSemester,
+                'semesterName' => $semesterName,
             ];
-        } 
+        }
         else { 
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
@@ -137,6 +174,15 @@ class DashboardController extends Controller
         );
 
         return view('dashboard', $viewData);
+    }
+
+    // Helper to map semester names
+    private function getSemesterName($name) {
+        return match (true) {
+            str_contains($name, 'First')  => '1st',
+            str_contains($name, 'Second') => '2nd',
+            default                       => 'Summer',
+        };
     }
 
     protected function calculateGPA(Collection $enrollments): float {

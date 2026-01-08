@@ -5,142 +5,63 @@ namespace App\Http\Controllers;
 use App\Models\Enrollment;
 use App\Models\Student;
 use App\Models\Section;
-use App\Models\Semester; // <-- ADD THIS LINE
-use App\Models\AcademicYear; // <-- ADD THIS LINE for filtering
+use App\Models\Course;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; 
 
 class EnrollmentController extends Controller
 {
-    /**
-     * Display a listing of the enrollments.
-     */
     public function index(Request $request)
     {
-        // Get all academic years and semesters for filter dropdowns
-        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
-        $semestersList = Semester::orderBy('name')->get(); // Use a different name to avoid conflict with `semesters` variable below
+        $selectedStudent = $request->query('student_id');
 
-        $enrollmentsQuery = Enrollment::with(['student', 'section', 'semester.academicYear']);
+        $assignments = Enrollment::with(['student', 'course', 'section.program', 'academicYear'])
+            ->when($selectedStudent, function ($query, $selectedStudent) {
+                $query->where('student_id', $selectedStudent);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
 
-        // Apply filters
-        if ($request->filled('academic_year_id')) {
-            $academicYearId = $request->input('academic_year_id');
-            $enrollmentsQuery->whereHas('semester.academicYear', function ($query) use ($academicYearId) {
-                $query->where('id', $academicYearId);
-            });
-        }
-
-        if ($request->filled('semester_id')) {
-            $semesterId = $request->input('semester_id');
-            $enrollmentsQuery->where('semester_id', $semesterId);
-        }
-
-        $enrollments = $enrollmentsQuery->paginate(10);
-        $enrollments->appends($request->only(['academic_year_id', 'semester_id'])); // Append filters to pagination links
-
-        return view('enrollments.index', compact('enrollments', 'academicYears', 'semestersList'));
+        return view('enrollments.index', [
+            'assignments'   => $assignments,
+            'students'      => Student::orderBy('last_name')->get(),
+            'courses'       => Course::orderBy('name')->get(),
+            'sections'      => Section::with('program')->get(),
+            'academicYears' => AcademicYear::orderBy('start_year', 'desc')->get(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new enrollment.
-     */
-    public function create()
-    {
-        $students = Student::orderBy('last_name')->get();
-        $sections = Section::with('program')->orderBy('name')->get();
-        $activeAY = AcademicYear::getActiveAcademicYear(); // Get the currently active AY
-
-        // If no active semester, prevent enrollment creation and inform the user
-        if (!$activeAY) {
-            return redirect()->route('enrollments.index')->with('error', 'No active academic AY found. Please set one as active before enrolling students.');
-        }
-
-        return view('enrollments.create', compact('students', 'sections', 'activeAY'));
-    }
-
-    /**
-     * Store a newly created enrollment in storage.
-     */
     public function store(Request $request)
     {
-        $activeAY = AcademicYear::getActiveAcademicYear();
+        $validated = $request->validate([
+            'student_id'        => 'required|exists:students,id',
+            'course_id'         => 'required|exists:courses,id',
+            'section_id'        => 'required|exists:sections,id',
+            'academic_year_id'  => 'required|exists:academic_years,id',
+            'semester'          => 'required|string',
+        ]);
 
-        if (!$activeAY) {
-            return redirect()->route('enrollments.index')->with('error', 'No active academic year found. Enrollment failed.');
+        // Prevent duplicate enrollment for the same course/year/semester
+        $exists = Enrollment::where([
+            ['student_id', $request->student_id],
+            ['course_id', $request->course_id],
+            ['academic_year_id', $request->academic_year_id],
+            ['semester', $request->semester],
+        ])->exists();
+
+        if ($exists) {
+            return back()->withErrors(['student_id' => 'Student is already enrolled in this course for the selected term.'])->withInput();
         }
 
-        $validatedData = $request->validate([
-            'student_id' => [
-                'required',
-                'exists:students,id',
-                // This unique rule ensures a student is only enrolled in a section once per semester
-                Rule::unique('enrollments')->where(function ($query) use ($request, $activeAY) {
-                    return $query->where('student_id', $request->student_id)
-                                 ->where('section_id', $request->section_id)
-                                 ->where('academic_year_id', $activeAY->id);
-                })
-            ],
-            'section_id' => 'required|exists:sections,id',
-             'semester' => 'required|string|max:50',
-        ]);
+        Enrollment::create($validated);
 
-        // Assign the active semester ID to the validated data
-        $validatedData['academic_year_id'] = $activeAY->id;
-
-        // Determine if the student is new for this semester
-      //  $student = Student::find($validatedData['student_id']);
-      //  $validatedData['is_new_student'] = $student->isNewStudentForSemester($activeSemester); // <-- ADD THIS LINE
-
-        Enrollment::create($validatedData);
-
-        return redirect()->route('enrollments.index')->with('success', 'Enrollment created successfully.');
-    }
-    /**
-     * Show the form for editing the specified enrollment.
-     */
-    public function edit(Enrollment $enrollment)
-    {
-        $students = Student::orderBy('last_name')->get();
-        $sections = Section::with('program')->orderBy('name')->get();
-        // For editing, allow selecting any semester, not just active ones
-        $semesters = Semester::with('academicYear')->orderBy('academic_year_id', 'desc')->orderBy('name')->get();
-
-        return view('enrollments.edit', compact('enrollment', 'students', 'sections', 'semesters'));
+        return back()->with('success', 'Student enrolled successfully!');
     }
 
-    /**
-     * Update the specified enrollment in storage.
-     */
-    public function update(Request $request, Enrollment $enrollment)
-    {
-        $validatedData = $request->validate([
-            'student_id' => [
-                'required',
-                'exists:students,id',
-                // Ensure unique combination of student, section, semester, excluding current enrollment
-                Rule::unique('enrollments')->where(function ($query) use ($request) {
-                    return $query->where('student_id', $request->student_id)
-                                 ->where('section_id', $request->section_id)
-                                 ->where('semester_id', $request->semester_id); // Use selected semester ID
-                })->ignore($enrollment->id)
-            ],
-            'section_id' => 'required|exists:sections,id',
-            'semester_id' => 'required|exists:semesters,id', // Now required as it's manually selected for edit
-        ]);
-
-        $enrollment->update($validatedData);
-
-        return redirect()->route('enrollments.index')->with('success', 'Enrollment updated successfully.');
-    }
-
-    /**
-     * Remove the specified enrollment from storage.
-     */
     public function destroy(Enrollment $enrollment)
     {
         $enrollment->delete();
-
-        return redirect()->route('enrollments.index')->with('success', 'Enrollment deleted successfully.');
+        return back()->with('success', 'Enrollment record has been removed.');
     }
 }

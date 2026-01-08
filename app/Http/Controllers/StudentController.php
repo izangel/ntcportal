@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use League\Csv\Reader; 
 use Illuminate\Support\Facades\DB;
+use League\Csv\Writer;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StudentController extends Controller
 {
@@ -18,46 +20,91 @@ class StudentController extends Controller
      */
     public function index(Request $request)
     {
-        // Get all programs and sections for filter dropdowns
         $programs = Program::orderBy('name')->get();
-        // For simplicity, we'll get all sections. For dynamic dropdowns, you'd fetch sections based on selected program.
         $sections = Section::with('program')->orderBy('name')->get();
 
-       $studentsQuery = Student::with(['user']);
+        // Eager load sections and their programs through the pivot
+        $studentsQuery = Student::with(['user', 'sections.program']);
 
-        //$studentsQuery = Student::all();
-
-        // Apply filters
+        // Filter by Program (through sections pivot)
         if ($request->filled('program_id')) {
-            $programId = $request->input('program_id');
-            $studentsQuery->whereHas('section.program', function ($query) use ($programId) {
-                $query->where('id', $programId);
+            $studentsQuery->whereHas('sections.program', function ($query) use ($request) {
+                $query->where('programs.id', $request->program_id);
             });
         }
 
+        // Filter by Section (through pivot)
         if ($request->filled('section_id')) {
-            $sectionId = $request->input('section_id');
-            $studentsQuery->whereHas('section', function ($query) use ($sectionId) {
-                $query->where('id', $sectionId);
+            $studentsQuery->whereHas('sections', function ($query) use ($request) {
+                $query->where('sections.id', $request->section_id);
             });
         }
 
-        // Apply search if implemented
         if ($request->filled('search')) {
             $search = $request->input('search');
             $studentsQuery->where(function ($query) use ($search) {
-                $query->where('first_name', 'like', '%' . $search . '%')
-                      ->orWhere('email', 'like', '%' . $search . '%')
-                      ->orWhere('last_name', 'like', '%' . $search . '%');
+                $query->where('first_name', 'like', "%$search%")
+                      ->orWhere('last_name', 'like', "%$search%")
+                      ->orWhere('email', 'like', "%$search%");
             });
         }
 
-
         $students = $studentsQuery->paginate(10);
-        // Append filter parameters to pagination links
         $students->appends($request->only(['program_id', 'section_id', 'search']));
 
         return view('students.index', compact('students', 'programs', 'sections'));
+    }
+
+    public function export(Request $request)
+    {
+        $studentsQuery = Student::with(['user', 'sections.program']);
+
+        // Apply same filters as index
+        if ($request->filled('program_id')) {
+            $studentsQuery->whereHas('sections.program', function ($q) use ($request) {
+                $q->where('programs.id', $request->program_id);
+            });
+        }
+        if ($request->filled('section_id')) {
+            $studentsQuery->whereHas('sections', function ($q) use ($request) {
+                $q->where('sections.id', $request->section_id);
+            });
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $studentsQuery->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%$search%")
+                  ->orWhere('last_name', 'like', "%$search%")
+                  ->orWhere('email', 'like', "%$search%");
+            });
+        }
+
+        $students = $studentsQuery->get();
+
+        $response = new StreamedResponse(function () use ($students) {
+            $csv = Writer::createFromPath('php://output', 'w+');
+            $csv->insertOne(['ID', 'Last Name', 'First Name', 'Email', 'Program', 'Section', 'Semester']);
+
+            foreach ($students as $student) {
+                // Get the first/current section for the CSV row
+                $currentSection = $student->sections->first();
+                
+                $csv->insertOne([
+                    $student->id,
+                    $student->last_name,
+                    $student->first_name,
+                    $student->email,
+                    $currentSection->program->name ?? 'N/A',
+                    $currentSection->name ?? 'N/A',
+                    $currentSection->pivot->semester ?? 'N/A',
+                ]);
+            }
+        });
+
+        $response->headers->set('Content-Type', 'text/csv');
+        $response->headers->set('Content-Disposition', 'attachment; filename="students_list.csv"');
+
+        return $response;
     }
 
     /**
@@ -65,7 +112,7 @@ class StudentController extends Controller
      */
     public function create()
     {
-        $users = User::orderBy('name')->where('role','student')->get();
+        $users = User::orderBy('email')->where('role','student')->get();
         // Fetch sections and eager load their programs
         $sections = Section::with('program')->orderBy('name')->get(); // <-- ADD THIS LINE
         return view('students.create', compact('users', 'sections')); // <-- Pass sections
@@ -115,7 +162,7 @@ class StudentController extends Controller
      */
     public function edit(Student $student)
     {
-        $users = User::orderBy('name')->where('role','student')->get();
+        $users = User::orderBy('email')->where('role','student')->get();
         // Fetch sections and eager load their programs
         $sections = Section::with('program')->orderBy('name')->get(); // <-- ADD THIS LINE
         return view('students.edit', compact('student', 'users', 'sections')); // <-- Pass sections
@@ -151,6 +198,8 @@ class StudentController extends Controller
 
         return redirect()->route('students.index')->with('success', 'Student updated successfully.');
     }
+
+    
 
     /**
      * Remove the specified student from storage.

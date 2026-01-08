@@ -112,4 +112,17 @@ class Employee extends Model
         return $this->hasMany(CourseBlock::class, 'faculty_id');
     }
 
+    public function receivedEvaluations()
+{
+    return $this->hasMany(Evaluation::class, 'teacher_id');
+}
+
+/**
+ * Evaluations this user has performed on others (as a Peer or Supervisor)
+ */
+public function performedEvaluations()
+{
+    return $this->hasMany(Evaluation::class, 'evaluator_id');
+}
+
 }

@@ -23,6 +23,11 @@
                         Upload CSV File Students
                     </a>
 
+                    {{-- Add this button next to your "Upload CSV File" link --}}
+                    <a href="{{ route('students.export', request()->all()) }}" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-900 focus:outline-none focus:border-green-900 focus:ring ring-green-300 disabled:opacity-25 transition ease-in-out duration-150">
+                        Download CSV
+                    </a>
+
                     {{-- Filter Form --}}
                     <form method="GET" action="{{ route('students.index') }}" class="flex items-center space-x-2">
                         <x-input id="search" class="block w-full" type="text" name="search" placeholder="Search by name or email" :value="request('search')" />
@@ -81,11 +86,22 @@
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $student->last_name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $student->first_name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">{{ $student->email }}</td>
+                                    {{-- Replace the Program and Section TD tags in your table with this: --}}
+
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $student->section->program->name ?? 'N/A' }}
+                                        {{-- Display the program of the first section found --}}
+                                        {{ $student->sections->first()->program->name ?? 'N/A' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{ $student->section->name ?? 'N/A' }}
+                                        @if($student->sections->isNotEmpty())
+                                            @foreach($student->sections as $section)
+                                                <span class="block text-xs text-gray-600">
+                                                    {{ $section->name }} ({{ $section->pivot->semester }})
+                                                </span>
+                                            @endforeach
+                                        @else
+                                            N/A
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         {{ $student->user->email ?? 'Not Linked' }}

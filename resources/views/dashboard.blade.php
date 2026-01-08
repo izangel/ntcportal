@@ -129,34 +129,49 @@
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 space-y-8">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <h4 class="text-lg font-bold text-gray-800 mb-4">🗓️ Academic Schedule</h4>
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-bold text-gray-800">🗓️ Academic Schedule</h4>
+                            <span class="text-[10px] font-black px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full uppercase tracking-widest">
+                                {{ $semesterName }} Semester
+                            </span>
+                        </div>
+                        
                         <div class="divide-y divide-gray-100">
-                            @forelse($upcomingSchedule ?? [] as $item)
+                            @forelse($upcomingSchedule as $block)
                                 <div class="py-4 flex justify-between items-center hover:bg-gray-50 transition px-2 rounded-lg">
                                     <div>
-                                        <p class="font-bold text-gray-900">{{ $item->title }}</p>
-                                        <p class="text-xs text-gray-500">{{ $item->course_name }}</p>
+                                        <p class="font-bold text-gray-900">{{ $block->course->name }}</p>
+                                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                            {{ $block->course->code }} • {{ $block->faculty->first_name }} {{ $block->faculty->last_name }}
+                                        </p>
                                     </div>
-                                    <span class="text-sm font-bold text-indigo-600">{{ $item->time_display }}</span>
+                                    <div class="text-right">
+                                        <span class="text-sm font-bold text-indigo-600 block">{{ $block->schedule_string }}</span>
+                                        <span class="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{{ $block->room_name }}</span>
+                                    </div>
                                 </div>
                             @empty
-                                <p class="text-center text-gray-400 py-6 italic text-sm">No classes today.</p>
+                                <div class="text-center py-10">
+                                    <p class="text-gray-400 italic text-sm">No courses found for the current semester.</p>
+                                </div>
                             @endforelse
                         </div>
                     </div>
                 </div>
                 
+                {{-- GPA Sidebar --}}
                 <div class="space-y-6">
                     <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-white">
-                        <p class="text-sm font-medium opacity-80 uppercase tracking-widest">Current GPA</p>
+                        <p class="text-sm font-medium opacity-80 uppercase tracking-widest">Cumulative GPA</p>
                         <h2 class="text-5xl font-black mt-1">{{ number_format($currentGPA ?? 0, 2) }}</h2>
                         <div class="mt-4 pt-4 border-t border-blue-400 flex justify-between text-xs">
-                            <span>Enrolled: <strong>{{ $enrolledCourses->count() ?? 0 }} Courses</strong></span>
-                            <span>Credits: <strong>{{ $totalCredits ?? 0 }}</strong></span>
+                            <span>Active: <strong>{{ $upcomingSchedule->count() }} Classes</strong></span>
+                            <span>Total Credits: <strong>{{ $totalCredits ?? 0 }}</strong></span>
                         </div>
                     </div>
                 </div>
             </div>
+
 
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}

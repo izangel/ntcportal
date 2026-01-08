@@ -188,7 +188,7 @@
                                                 <p class="text-sm font-medium text-gray-900">{{ $block->course->code }}</p>
                                                 <p class="text-xs text-gray-500">{{ $block->course->name }}</p>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->last_name }}, {{ $block->faculty->first_name }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ $block->schedule_string }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->room_name }}</td>
                                         </tr>

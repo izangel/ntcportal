@@ -34,15 +34,7 @@
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Subject / Course</label>
-                    <select name="course_id" required class="w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500">
-                        <option value="">Select Course</option>
-                        @foreach($courses as $course)
-                            <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
+        
 
                 <button type="submit" class="w-full py-4 bg-indigo-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-lg hover:bg-indigo-700 transition-all pt-5">
                     Generate Report
