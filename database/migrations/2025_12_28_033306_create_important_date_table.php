@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Schema::create('important_dates', function (Blueprint $table) {
-        //     // $table->id();
-        //     // $table->string('title');
-        //     // $table->text('description')->nullable();
-        //     // $table->date('start_date');
-        //     // $table->date('end_date')->nullable();
-        //     // $table->foreignId('user_id')->constrained(); // Who posted it
-        //     // $table->timestamps();
-        // });
+        Schema::create('important_dates', function (Blueprint $table) {
+            $table->id();
+            $table->string('title');
+            $table->text('description')->nullable();
+            $table->date('start_date');
+            $table->date('end_date')->nullable();
+            $table->foreignId('user_id')->constrained(); // Who posted it
+            $table->timestamps();
+        });
     }
 
     /**

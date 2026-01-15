@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::table('enrollments', function (Blueprint $table) {
             // // Use change() to modify the existing column.
             // // This drops the nullable constraint.
-            // $table->foreignId('academic_year_id')->nullable(false)->change();
-            // $table->string('semester', 50)->nullable(false)->change();
+            $table->foreignId('academic_year_id')->nullable(false)->change();
+            $table->string('semester', 50)->nullable(false)->change();
         });
     }
 

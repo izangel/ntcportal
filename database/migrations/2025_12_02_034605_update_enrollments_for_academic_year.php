@@ -17,12 +17,12 @@ return new class extends Migration
             // // ... Drop semester_id column logic ...
             
             // // 1. Add as nullable (required to pass the constraint check)
-            // $table->foreignId('academic_year_id')
-            //       ->nullable() // MUST BE NULLABLE
-            //       ->constrained('academic_years')
-            //       ->after('section_id'); 
+            $table->foreignId('academic_year_id')
+                  ->nullable() // MUST BE NULLABLE
+                  ->constrained('academic_years')
+                  ->after('section_id'); 
 
-            // $table->string('semester', 50)->nullable()->after('academic_year_id');
+            $table->string('semester', 50)->nullable()->after('academic_year_id');
         });
         
         // --- DATA POPULATION STEP ---

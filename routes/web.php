@@ -213,6 +213,8 @@ Route::middleware([
         Route::get('/admin/student-accounts', [StudentAccountController::class, 'index'])->name('admin.student-accounts.index');
         // Action: Reset Password
         Route::patch('/admin/student-accounts/{user}/reset', [StudentAccountController::class, 'resetPassword'])->name('admin.student-accounts.reset');
+        Route::get('/admin/student-accounts/{user}/edit', [StudentAccountController::class, 'edit'])->name('admin.student-accounts.edit');
+        Route::put('/admin/student-accounts/{user}', [StudentAccountController::class, 'update'])->name('admin.student-accounts.update');
 
         //view student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');

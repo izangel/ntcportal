@@ -36,18 +36,7 @@
                         <x-input-error for="email" class="mt-2" />
                     </div>
 
-                    <div class="mt-4">
-                        <x-label for="section_id" value="{{ __('Program and Section') }}" />
-                        <select id="section_id" name="section_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                            <option value="">-- Select Program and Section --</option>
-                            @foreach ($sections as $section)
-                                <option value="{{ $section->id }}" {{ old('section_id', $student->section_id) == $section->id ? 'selected' : '' }}>
-                                    {{ $section->program->name ?? 'N/A Program' }} - {{ $section->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <x-input-error for="section_id" class="mt-2" />
-                    </div>
+                    {{-- REMOVED: Program and Section Dropdown --}}
 
                     <div class="mt-4">
                         <x-label for="user_id" value="{{ __('Link to User Account (Optional)') }}" />
@@ -72,4 +61,4 @@
             </div>
         </div>
     </div>
-@endsection
+@endsection 

@@ -41,11 +41,25 @@
                     <td class="px-6 py-4 text-sm font-medium text-gray-700">#{{ $student->id }}</td>
                     <td class="px-6 py-4 text-sm text-gray-600">{{ $student->email }}</td>
                     <td class="px-6 py-4">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                            Student Account
+                        @php
+                            $colors = [
+                                'admin' => 'bg-purple-50 text-purple-700 border-purple-100',
+                                'teacher' => 'bg-green-50 text-green-700 border-green-100',
+                                'hr' => 'bg-orange-50 text-orange-700 border-orange-100',
+                                'academic_head' => 'bg-teal-50 text-teal-700 border-teal-100',
+                                'student' => 'bg-blue-50 text-blue-700 border-blue-100',
+                            ];
+                            $colorClass = $colors[$student->role] ?? 'bg-gray-50 text-gray-700 border-gray-100';
+                        @endphp
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $colorClass }} border">
+                            {{ ucwords(str_replace('_', ' ', $student->role)) }}
                         </span>
                     </td>
-                    <td class="px-6 py-4 text-right">
+                    <td class="px-6 py-4 text-right flex justify-end gap-2">
+                        <a href="{{ route('admin.student-accounts.edit', $student->id) }}" 
+                           class="text-xs font-bold text-gray-600 hover:text-gray-800 uppercase tracking-wider bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition">
+                            Edit
+                        </a>
                         <form action="{{ route('admin.student-accounts.reset', $student->id) }}" method="POST" 
                               onsubmit="return confirm('Are you sure you want to reset this password to: northlink?');">
                             @csrf

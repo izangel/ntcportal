@@ -329,7 +329,6 @@
         @if(Auth::user()->hasRole('academic_head')|| Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
             {{-- NEW: ROLE SEPARATOR FOR HR/ADMIN --}}
             <div class="mt-6 pt-3 border-t border-gray-700">
-               
                 <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
                     HR & Administration
                 </h3>
@@ -342,10 +341,16 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('admin.student-accounts.index') }}" :active="request()->routeIs('admin.student-accounts.*')">
+                        <i class="fas fa-user-tie mr-3 text-lg"></i>
+                        {{ __('Manage Users') }}
+                    </x-nav-link>
+
                     <x-nav-link href="{{ route('employees.index') }}" :active="request()->routeIs('employees.*')">
                         <i class="fas fa-user-tie mr-3 text-lg"></i>
                         {{ __('Manage Employees') }}
                     </x-nav-link>
+
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}

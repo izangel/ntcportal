@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::table('sections', function (Blueprint $table) {
             // // Add the column as an unsigned big integer
-            // $table->foreignId('academic_year_id')
-            //       ->nullable() // Decide if this column can be null
-            //       ->constrained('academic_years') // Assumes your academic years table is named 'academic_years'
-            //       ->onDelete('cascade') // Optional: Define what happens on delete
-            //       ->after('id'); // Optional: Specify the column order
+            $table->foreignId('academic_year_id')
+                   ->nullable() // Decide if this column can be null
+                   ->constrained('academic_years') // Assumes your academic years table is named 'academic_years'
+                   ->onDelete('cascade') // Optional: Define what happens on delete
+                   ->after('id'); // Optional: Specify the column order
         });
     }
 
