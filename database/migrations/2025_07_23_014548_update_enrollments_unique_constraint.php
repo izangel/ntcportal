@@ -60,13 +60,13 @@ return new class extends Migration
             $table->foreign('course_id')->references('id')->on('courses')->onDelete('cascade');
             
             // Give section_id its own unique constraint name
-            $table->foreign('section_id', 'enrollments_section_id_fk')
+            /*$table->foreign('section_id', 'enrollments_section_id_fk')
                 ->references('id')
                 ->on('sections')
-                ->onDelete('cascade');
+                ->onDelete('cascade');*/
 
             // New unique index
-            $table->unique(['student_id', 'course_id', 'section_id', 'semester_id'], 'enrollments_pivot_unique');
+            $table->unique(['student_id', 'course_id', 'semester_id'], 'enrollments_pivot_unique');
         });
     }
 
