@@ -97,7 +97,7 @@
                                 @foreach($assignments as $assign)
                                 <tr class="hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div class="font-bold text-gray-900">{{ $assign->teacher->name }}</div>
+                                        <div class="font-bold text-gray-900">{{ $assign->teacher->last_name }}, {{ $assign->teacher->first_name }}</div>
                                         <div class="text-xs text-gray-500">{{ $assign->semester }} | {{ $assign->academicYear->start_year }}-{{ $assign->academicYear->end_year }}</div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

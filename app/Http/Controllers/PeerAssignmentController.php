@@ -13,6 +13,7 @@ class PeerAssignmentController extends Controller
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
     
    $assignments = PeerAssignment::query()
+    ->peer()
     ->with(['teacher', 'peer', 'academicYear'])
     ->join('employees', 'peer_assignments.teacher_id', '=', 'employees.id')
     ->orderBy('employees.last_name', 'asc')

@@ -2,7 +2,7 @@
 
 @section('header')
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Edit Employee: ') . $employee->last_name.' '.$employee->first_name.' '.$employee->mid_name }}
+            {{ __('Edit Employee: ') . $employee->last_name.' '.$employee->first_name.' '.$employee->middle_name }}
         </h2>
 @endsection
 

@@ -17,6 +17,7 @@ class PeerEvaluationController extends Controller
         
         // Fetch assignments where current user is the "Evaluator"
         $tasks = PeerAssignment::with(['teacher', 'academicYear'])
+            ->peer() // Use scopePeer
             ->where('peer_id', $employeeId)
             ->get();
 

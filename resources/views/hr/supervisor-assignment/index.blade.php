@@ -69,6 +69,7 @@
                                 <th class="px-6 py-4">Subordinate</th>
                                 <th class="px-6 py-4">Supervisor</th>
                                 <th class="px-6 py-4">Period</th>
+                                <th class="px-6 py-4">Status</th>
                                 <th class="px-6 py-4 text-right">Action</th>
                             </tr>
                         </thead>
@@ -76,13 +77,18 @@
                             @foreach($assignments as $assign)
                             <tr class="hover:bg-gray-50/50 transition-colors">
                                 <td class="px-6 py-4">
-                                    <p class="text-sm font-bold text-gray-900">{{ $assign->teacher->last_name }}, {{ $assign->teacher->first_name }}</p>
+                                    <h3 class="text-base font-semibold text-gray-900">{{ $assign->teacher->last_name }}, {{ $assign->teacher->first_name }}</h3>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <p class="text-sm font-semibold text-indigo-600">{{ $assign->peer->last_name }}, {{ $assign->peer->first_name }}</p>
+                                    <p class="whitespace-nowrap text-sm text-gray-600">{{ $assign->peer->last_name }}, {{ $assign->peer->first_name }}</p>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <p class="text-[10px] font-bold text-gray-400 uppercase">{{ $assign->semester }} | {{ $assign->academicYear->start_year }}-{{ $assign->academicYear->end_year }}</p>
+                                    <p class="whitespace-nowrap text-sm text-gray-600">{{ $assign->semester }} | {{ $assign->academicYear->start_year }}-{{ $assign->academicYear->end_year }}</p>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="{{ $assign->is_completed ? 'text-green-600 bg-green-100 text-[10px] font-black uppercase border border-green-100' : 'bg-gray-200 text-gray-700 text-[10px] font-black uppercase border gray-yellow-100' }} px-2 py-1 rounded">
+                                        {{ $assign->is_completed ? 'Completed' : 'Pending' }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <form action="{{ route('hr.supervisor-assignments.destroy', $assign) }}" method="POST">

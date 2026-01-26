@@ -45,7 +45,7 @@ class EmployeeController extends Controller
         $validatedData = $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
-            'mid_name' => 'required|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|unique:employees,email|max:255',
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
@@ -123,7 +123,7 @@ class EmployeeController extends Controller
         $validatedData = $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
-            'mid_name' => 'nullable|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
             'email' => [
                 'nullable',
                 'email',
