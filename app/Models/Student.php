@@ -42,9 +42,12 @@ class Student extends Model
     /**
      * Get the section that the student belongs to.
      */
-    public function section()
+    // App\Models\Student.php
+    public function sections()
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsToMany(Section::class, 'section_student')
+                    ->withPivot('academic_year_id', 'semester')
+                    ->withTimestamps();
     }
 
     /**
@@ -71,5 +74,10 @@ class Student extends Model
                                     ->count();
 
         return $previousEnrollments === 0; // If count is 0, they are new.
+    }
+
+    public function evaluations()
+    {
+        return $this->hasMany(CourseEvaluation::class, 'student_id');
     }
 }

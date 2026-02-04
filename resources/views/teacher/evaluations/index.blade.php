@@ -1,0 +1,77 @@
+@extends('layouts.admin') {{-- Use your teacher or admin layout --}}
+
+@section('content')
+<div class="bg-gray-50 min-h-screen py-10 antialiased">
+    <div class="max-w-5xl mx-auto px-4">
+
+        @if (session('success'))
+                <div class="mb-4 font-medium text-sm text-green-600 bg-green-100 p-3 rounded-md">
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="mb-4 font-medium text-sm text-red-600 bg-red-100 p-3 rounded-md">
+                    {{ session('error') }}
+                </div>
+            @endif
+        
+        <div class="mb-10">
+            <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2">Faculty Portal</p>
+            <h1 class="text-3xl font-black text-gray-900 tracking-tight">Performance History</h1>
+            <p class="text-sm text-gray-500 font-medium mt-1">Select a semester to view your aggregated 360-degree feedback reports.</p>
+        </div>
+
+        @if($availableReports->isEmpty())
+            <div class="bg-white rounded-3xl border border-gray-200 p-16 text-center shadow-sm">
+                <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-900 mb-1">No Reports Available</h3>
+                <p class="text-gray-500 text-sm max-w-xs mx-auto">Once evaluations are submitted by students, peers, or supervisors, your reports will appear here.</p>
+            </div>
+        @else
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                @foreach($availableReports as $report)
+                    <div class="group bg-white rounded-2xl border border-gray-200 p-6 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                            <span class="bg-gray-50 text-gray-400 text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-gray-100">
+                                AY {{ $report->academicYear->start_year }}-{{ $report->academicYear->end_year }}
+                            </span>
+                        </div>
+                        
+                        <h3 class="text-xl font-black text-gray-900 mb-1 uppercase tracking-tight">
+                            {{ $report->semester }} 
+                        </h3>
+                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-6">360-Degree Feedback Summary</p>
+                        
+                        <a href="{{ route('teacher.evaluations.report', [$report->academic_year_id, $report->semester]) }}" 
+                           class="flex items-center justify-center w-full py-3 bg-gray-900 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-600 transition-all shadow-lg shadow-gray-200 hover:shadow-indigo-100">
+                            View Insights
+                        </a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <div class="mt-12 p-6 border border-dashed border-gray-200 rounded-2xl flex items-start gap-4">
+            <div class="text-indigo-500 mt-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <div>
+                <p class="text-xs font-bold text-gray-900 uppercase tracking-widest mb-1">About your privacy</p>
+                <p class="text-xs text-gray-500 leading-relaxed">
+                    Individual student and peer identities are hidden. These reports are generated by aggregating all responses to provide you with a high-level view of your professional growth.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+@endsection

@@ -48,7 +48,13 @@ class Section extends Model
     // Define hasMany relationship with Enrollment model
     public function enrollments()
     {
-        return $this->hasMany(Enrollment::class);
+        return $this->hasMany(Enrollment::class, 'section_id', 'id');
+    }
+
+     // Define hasMany relationship with Courseblocks model
+    public function courseBlocks()
+    {
+        return $this->hasMany(CourseBlock::class, 'section_id', 'id');
     }
 
     // Define hasMany relationship with Enrollment model

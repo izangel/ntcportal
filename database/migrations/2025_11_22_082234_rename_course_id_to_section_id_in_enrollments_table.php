@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('enrollments', function (Blueprint $table) {
-            $table->renameColumn('course_id', 'section_id');
+            // $table->renameColumn('course_id', 'section_id');
         });
     }
 

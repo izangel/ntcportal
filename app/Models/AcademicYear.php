@@ -39,4 +39,14 @@ class AcademicYear extends Model
     {
         return $this->hasMany(LeaveCredit::class);
     }
+
+    public static function getActiveAcademicYear()
+    {
+        // Find the active academic year first
+        $activeAcademicYear = AcademicYear::where('is_active', true)->first();
+
+       
+
+        return  $activeAcademicYear; // No active academic year found
+    }
 }

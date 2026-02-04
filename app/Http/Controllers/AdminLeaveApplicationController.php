@@ -47,7 +47,7 @@ class AdminLeaveApplicationController extends Controller
 
         // Load related data
         /** @var \App\Models\Employee $employee */
-       $employee = Auth::user()->employee;
+       $employee = $leaveApplication->employee;
 
       $remainingCredits = $employee->getRemainingLeaveCredits();
       $message = empty($remainingCredits)
