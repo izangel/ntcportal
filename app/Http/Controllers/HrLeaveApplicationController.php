@@ -27,7 +27,9 @@ class HrLeaveApplicationController extends Controller
      */
     public function index()
     {
-        $pendingApplications = LeaveApplication::where('hr_status', 'pending')
+        // Only show applications that have been approved by Academic Head and are pending HR review
+        $pendingApplications = LeaveApplication::where('ah_status', 'approved')
+                                                ->where('hr_status', 'pending')
                                                 ->with(['employee', 'classesToMiss'])
                                                 ->orderBy('created_at', 'asc')
                                                 ->get();
@@ -61,9 +63,14 @@ class HrLeaveApplicationController extends Controller
             'remarks' => ['nullable', 'string', 'max:500'],
         ]);
 
+        // HIERARCHY CHECK: HR can only review if Academic Head has already approved
+        if ($leaveApplication->ah_status !== 'approved') {
+            return redirect()->back()->with('error', 'This leave application cannot be reviewed by HR yet. Academic Head approval is required first.');
+        }
+
         $decision = $request->input('decision');
         $remarks = $request->input('remarks');
-        $approvedBy = Auth::user()->employee->name;
+        $approverRole = Auth::user()->employee->role; // Get the approver's role
 
         // Prevent re-deciding already processed applications
         if ($leaveApplication->hr_status !== 'pending') {
@@ -111,7 +118,7 @@ class HrLeaveApplicationController extends Controller
         } 
 
         // --- Notify the original employee about the HR decision ---
-        $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, $decision, $approvedBy, $remarks));
+        $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, $decision, $approverRole, $remarks));
 
         return redirect()->route('hr.leave_applications.index')->with('success', "Leave application {$decision} successfully.");
     }

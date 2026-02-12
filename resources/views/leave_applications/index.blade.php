@@ -43,7 +43,7 @@
                         @endforeach
                     @else
                         {{-- Display the message directly if it's not a non-empty array --}}
-                        <p>No remaining leave credits to display. {{ $remainingCredits }}</p>
+                        <p>No remaining leave credits to display.</p>
                     @endif
 
                 </div>
@@ -51,25 +51,14 @@
 
                 {{-- Basic Filter Form (optional) --}}
                 <form action="{{ route('leave_applications.index') }}" method="GET" class="mb-4 bg-gray-50 p-4 rounded-md shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <x-label for="employee_id_filter" value="{{ __('Filter by Employee') }}" />
-                            <select id="employee_id_filter" name="employee_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">All Employees</option>
-                                @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                        {{ $employee->last_name . ', ' . $employee->first_name . ' ' . $employee->mid_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label for="type_filter" value="{{ __('Filter by Leave Type') }}" />
-                            <select id="type_filter" name="type" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="type_filter" name="leave_type_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">All Types</option>
                                 @foreach($leaveTypes as $type)
-                                    <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                                        {{ ucwords(str_replace('_', ' ', $type)) }}
+                                    <option value="{{ $type->id }}" {{ request('leave_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }}
                                     </option>
                                 @endforeach
                             </select>

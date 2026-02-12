@@ -15,9 +15,13 @@
 
                <h1>My Leave Credits</h1>
 
-                @foreach ($remainingCredits as $type => $credits)
-                    <p>{{ $type }}: {{ $credits }} remaining</p>
-                @endforeach
+                @if(!empty($remainingCredits))
+                    @foreach ($remainingCredits as $type => $credits)
+                        <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ $credits }} remaining</p>
+                    @endforeach
+                @else
+                    <p>No leave credits found for this employee.</p>
+                @endif
 
                 <h2>My Leave Transactions</h2>
                 <table>

@@ -69,14 +69,10 @@ class Employee extends Model
     $leaveTypes = LeaveType::all();
 
     foreach ($leaveTypes as $leaveType) {
-        $taken = $this->leaveApplications()
-            ->where('leave_type_id', $leaveType->id)
-            ->where('approval_status', 'approved_with_pay')
-            ->sum('total_days');
-
         $key = strtolower(str_replace(' ', '_', $leaveType->name));
-
-        $remainingCredits[$key] = $leavecredit->{$key} - $taken;
+        // Return the current credit balance directly from database
+        // (Admin already deducts when approving, so no need to subtract again)
+        $remainingCredits[$key] = $leavecredit->{$key};
     }
 
     return $remainingCredits;

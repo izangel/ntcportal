@@ -31,24 +31,39 @@ class LeaveApplicationController extends Controller
      */
     public function index(Request $request)
     {
-
-             $id = Auth::user()->employee->id;
+        $id = Auth::user()->employee->id;
         
-            // Fetch all leave applications with their associated employee data
-            $leaveApplications = LeaveApplication::with('employee')
-                                                ->orderBy('date_filed', 'desc')
-                                            ->where('employee_id',$id)
-                                            ->paginate(10); // Paginate for large datasets
-           
+        // Start the base query
+        $leaveApplications = LeaveApplication::with('employee')
+                                            ->orderBy('date_filed', 'desc')
+                                            ->where('employee_id', $id);
+
+        // 1. GET FILTER VALUES from the URL query string
+        $leaveTypeId = $request->input('leave_type_id');
+        $status = $request->input('status');
+
+        // 2. APPLY FILTERS using conditional 'when' clauses
+
+        // Filter by Leave Type ID
+        $leaveApplications->when($leaveTypeId, function ($query, $leaveTypeId) {
+            return $query->where('leave_type_id', $leaveTypeId);
+        });
+
+        // Filter by Status
+        $leaveApplications->when($status, function ($query, $status) {
+            return $query->where('approval_status', $status);
+        });
+
+        // Execute the final query and paginate
+        $leaveApplications = $leaveApplications->paginate(10);
 
         $employee = Auth::user()->employee;
         $remainingCredits = $employee->getRemainingLeaveCredits();
         
-        
-        // For filter dropdowns (optional)
-        $employees = Employee::orderBy('name')->get();
-        $leaveTypes = ['service_incentive_leave', 'sick_leave', 'vacation_leave', 'other'];
-        $approvalStatuses = ['pending', 'approved_with_pay', 'approved_without_pay', 'rejected']; // Basic statuses
+        // For filter dropdowns
+        $employees = Employee::orderBy('last_name')->get();
+        $leaveTypes = LeaveType::orderBy('name')->get();
+        $approvalStatuses = ['pending', 'approved_with_pay', 'approved_without_pay', 'rejected'];
 
         return view('leave_applications.index', compact('leaveApplications', 'employees', 'leaveTypes', 'approvalStatuses', 'remainingCredits'));
     }
@@ -91,7 +106,7 @@ class LeaveApplicationController extends Controller
         //-------------------------------------------------------------
 
         // For filter dropdowns (optional)
-        $employees = Employee::orderBy('name')->get();
+        $employees = Employee::orderBy('last_name')->get();
         $leaveTypes = LeaveType::all();
         $approvalStatuses = [
             'pending', 
@@ -113,7 +128,7 @@ class LeaveApplicationController extends Controller
     }
 
 
-       /**
+    /**
      * Show the form for creating a new leave application.
      */
     public function create()
@@ -122,24 +137,26 @@ class LeaveApplicationController extends Controller
 
 
         // Fetch all employees (if needed for other dropdowns, otherwise not strictly necessary)
-        $employees = Employee::orderBy('name')->get();
+        $employees = Employee::orderBy('last_name')->get();
 
         
 
         // Fetch employees with 'teacher' role for the substitute dropdown
         $teachers = Employee::where('role', '!=', 'staff')
                      ->where('user_id', '!=', Auth::id())
-                     ->orderBy('name')->get();
+                     ->orderBy('last_name')->get();
 
         // Fetch employees with 'staff' role for the personnel to take over dropdown
-        $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('name')->get();
+        $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('last_name')->get();
 
         $loggedInEmployee = null;
+        $leaveCredits = null;
         if (Auth::check() && Auth::user()->employee) {
             $loggedInEmployee = Auth::user()->employee;
+            $leaveCredits = $loggedInEmployee->leaveCredits()->first();
         }
 
-        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes'));
+        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes', 'leaveCredits'));
     }
 
     /**
@@ -209,8 +226,46 @@ private function calculateWorkDays($startDate, $endDate)
     // Use the helper method
     $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
     
+    // Check leave credits availability
+    $employee = Employee::find($validatedData['employee_id']);
+    $leaveType = LeaveType::find($validatedData['leave_type_id']);
+    
+    if ($employee && $leaveType) {
+        $leaveCredit = $employee->leaveCredits()->first();
+        if ($leaveCredit) {
+            $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
+            $availableCredits = $leaveCredit->$creditColumn ?? 0;
+            
+            // Block if NO credits available
+            if ($availableCredits <= 0) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', "Insufficient leave credits for {$leaveType->name}. You have 0 days available. Cannot file leave application.");
+            }
+            
+            // Block if requested days exceed available credits
+            if ($availableCredits < $validatedData['total_days']) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableCredits} days, Requested: {$validatedData['total_days']} days. Please adjust your dates.");
+            }
+        } else {
+            // No leave credit record found
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Leave credit record not found. Please contact HR to set up your leave credits.");
+        }
+    } else {
+        return redirect()->back()
+            ->withInput()
+            ->with('error', "Invalid employee or leave type.");
+    }
+    
     $validatedData['date_filed'] = Carbon::now();
     $validatedData['approval_status'] = 'pending';
+    $validatedData['ah_status'] = 'pending';  // Initialize Academic Head status as pending
+    $validatedData['hr_status'] = 'pending';  // Initialize HR status as pending
+    $validatedData['admin_status'] = 'pending';  // Initialize Admin status as pending
 
     $classesToSave = $validatedData['classes_data'] ?? [];
     unset($validatedData['classes_data']);
