@@ -11,38 +11,27 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'student_id',
+        'student_id',     // The School ID (e.g., 2024-0001)
         'first_name',
+        'middle_name',    // ADDED: To ensure middle names can be saved/displayed
         'last_name',
         'email',
         'date_of_birth',
         'section_id',
     ];
 
-    // Define relationship with User
+    /**
+     * Relationship with the User account
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Define many-to-many relationship with Course through Enrollment
-    public function courses()
-    {
-        return $this->belongsToMany(Course::class, 'enrollments')
-                    ->withPivot('grade', 'created_at') // Include grade and created_at from pivot table
-                    ->withTimestamps(); // If you want to automatically manage timestamps on the pivot
-    }
-
-    // Define hasMany relationship with Enrollment model
-    public function enrollments()
-    {
-        return $this->hasMany(Enrollment::class);
-    }
-
     /**
-     * Get the section that the student belongs to.
+     * Relationship with Section (Many-to-Many)
+     * This links to your new section_student pivot table
      */
-    // App\Models\Student.php
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student')
@@ -51,31 +40,16 @@ class Student extends Model
     }
 
     /**
-     * Get the program that the student belongs to (through section).
+     * Relationship with Enrollments
      */
-    public function program()
+    public function enrollments()
     {
-        return $this->hasOneThrough(Program::class, Section::class);
+        return $this->hasMany(Enrollment::class);
     }
 
     /**
-     * Determine if the student is 'new' for a given semester.
-     * A student is 'new' if they have no enrollments in semesters that ended before
-     * the start date of the given semester.
+     * Relationship with Course Evaluations
      */
-    public function isNewStudentForSemester(Semester $currentSemester)
-    {
-        // Get enrollments that occurred in semesters that ended *before* the current semester's start date.
-        $previousEnrollments = $this->enrollments()
-                                    ->whereHas('semester', function ($query) use ($currentSemester) {
-                                        // Ensure the semester has an end_date before the current semester's start_date
-                                        $query->where('end_date', '<', $currentSemester->start_date);
-                                    })
-                                    ->count();
-
-        return $previousEnrollments === 0; // If count is 0, they are new.
-    }
-
     public function evaluations()
     {
         return $this->hasMany(CourseEvaluation::class, 'student_id');

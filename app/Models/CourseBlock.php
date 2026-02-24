@@ -20,25 +20,21 @@ class CourseBlock extends Model
     ];
 
     // Relationships
-    public function section()
-    {
-        return $this->belongsTo(Section::class);
-    }
+public function course() {
+    return $this->belongsTo(Course::class);
+}
 
-    public function course()
-    {
-        return $this->belongsTo(Course::class);
-    }
+public function section() {
+    return $this->belongsTo(Section::class);
+}
 
-    public function faculty()
-    {
-        return $this->belongsTo(Employee::class, 'faculty_id');
-    }
+public function faculty() {
+    return $this->belongsTo(Employee::class, 'faculty_id');
+}
 
-    public function academicYear()
-    {
-        return $this->belongsTo(AcademicYear::class);
-    }
+public function academicYear() {
+    return $this->belongsTo(AcademicYear::class, 'academic_year_id');
+}
 
     protected static function booted()
     {

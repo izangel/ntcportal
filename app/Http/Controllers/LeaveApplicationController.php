@@ -46,7 +46,7 @@ class LeaveApplicationController extends Controller
         
         
         // For filter dropdowns (optional)
-        $employees = Employee::orderBy('name')->get();
+        $employees = Employee::orderBy('last_name')->get();
         $leaveTypes = ['service_incentive_leave', 'sick_leave', 'vacation_leave', 'other'];
         $approvalStatuses = ['pending', 'approved_with_pay', 'approved_without_pay', 'rejected']; // Basic statuses
 

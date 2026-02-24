@@ -264,9 +264,10 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('course-blocks') }}" :active="request()->routeIs('course-blocks')">
+                    
+                    <x-nav-link href="{{ route('course_blocks.index') }}" :active="request()->routeIs('course_blocks.index')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Course Blocks') }}
+                        {{ __('Course Blocks 2') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
@@ -280,9 +281,9 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Course To Sections') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('assign.courses') }}" :active="request()->routeIs('assign.courses')">
+                    <x-nav-link href="{{ route('sections.assign.index') }}" :active="request()->routeIs('sections.assign.*')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
-                        {{ __('Students To Course Per Section') }}
+                        {{ __('Students To Section') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('assign.individual') }}" :active="request()->routeIs('assign.individual')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
