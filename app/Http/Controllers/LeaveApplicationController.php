@@ -264,7 +264,12 @@ private function calculateWorkDays($startDate, $endDate)
     
     $validatedData['date_filed'] = Carbon::now();
     $validatedData['approval_status'] = 'pending';
-    $validatedData['ah_status'] = 'pending';  // Initialize Academic Head status as pending
+
+    if($employee->role ==='staff')
+        $validatedData['ah_status'] = 'approved';  // Initialize Academic Head status as pending
+    else
+        $validatedData['ah_status'] = 'pending';  // Initialize Academic Head status as pending
+
     $validatedData['hr_status'] = 'pending';  // Initialize HR status as pending
     $validatedData['admin_status'] = 'pending';  // Initialize Admin status as pending
 

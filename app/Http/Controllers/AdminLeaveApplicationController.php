@@ -28,8 +28,9 @@ class AdminLeaveApplicationController extends Controller
     {
         $pendingApplications = LeaveApplication::where('admin_status', 'pending')
                                                 ->where('hr_status', 'approved')
+                                                ->where('ah_status', 'approved')
                                                 ->with(['employee', 'classesToMiss'])
-                                                ->orderBy('created_at', 'asc')
+                                                ->orderBy('created_at', 'desc')
                                                 ->get();
 
         return view('admin.leave_applications.index', compact('pendingApplications'));
