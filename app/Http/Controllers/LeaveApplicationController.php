@@ -150,22 +150,25 @@ class LeaveApplicationController extends Controller
         $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('last_name')->get();
 
         $loggedInEmployee = null;
-        $leaveCredits = null;
+        $remainingCredits = null;
         if (Auth::check() && Auth::user()->employee) {
             $loggedInEmployee = Auth::user()->employee;
-            $leaveCredits = $loggedInEmployee->leaveCredits()->first();
+            $remainingCredits = $loggedInEmployee->getRemainingLeaveCredits();
         }
 
-        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes', 'leaveCredits'));
+        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes', 'remainingCredits'));
     }
 
     /**
- * Calculate total days excluding weekends and hardcoded holidays.
+ * Calculate total days including weekends but excluding hardcoded holidays.
  */
 private function calculateWorkDays($startDate, $endDate)
 {
     $start = Carbon::parse($startDate);
     $end = Carbon::parse($endDate);
+
+    // Calculate total days inclusive (including weekends)
+    $totalDays = $start->diffInDays($end) + 1;
 
     // Hardcoded Holidays from Today (Dec 28, 2025) until Dec 2026
     $holidays = [
@@ -195,9 +198,14 @@ private function calculateWorkDays($startDate, $endDate)
         '2026-12-31', // Last Day of the Year
     ];
 
-    return $start->diffInDaysFiltered(function (Carbon $date) use ($holidays) {
-        return $date->isWeekday() && !in_array($date->toDateString(), $holidays);
-    }, $end->addDay());
+    // Count holidays within the date range (inclusive)
+    $holidaysInRange = array_filter($holidays, function ($holiday) use ($start, $end) {
+        $h = Carbon::parse($holiday);
+        return $h->between($start, $end, true);
+    });
+
+    // Subtract holidays from total days
+    return $totalDays - count($holidaysInRange);
 }
 
     public function store(Request $request)
@@ -231,29 +239,22 @@ private function calculateWorkDays($startDate, $endDate)
     $leaveType = LeaveType::find($validatedData['leave_type_id']);
     
     if ($employee && $leaveType) {
-        $leaveCredit = $employee->leaveCredits()->first();
-        if ($leaveCredit) {
-            $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
-            $availableCredits = $leaveCredit->$creditColumn ?? 0;
-            
-            // Block if NO credits available
-            if ($availableCredits <= 0) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "Insufficient leave credits for {$leaveType->name}. You have 0 days available. Cannot file leave application.");
-            }
-            
-            // Block if requested days exceed available credits
-            if ($availableCredits < $validatedData['total_days']) {
-                return redirect()->back()
-                    ->withInput()
-                    ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableCredits} days, Requested: {$validatedData['total_days']} days. Please adjust your dates.");
-            }
-        } else {
-            // No leave credit record found
+        $remainingCredits = $employee->getRemainingLeaveCredits();
+        $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
+        $availableCredits = $remainingCredits[$creditColumn] ?? 0;
+        
+        // Block if NO credits available
+        if ($availableCredits <= 0) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', "Leave credit record not found. Please contact HR to set up your leave credits.");
+                ->with('error', "Insufficient leave credits for {$leaveType->name}. You have 0 days available. Cannot file leave application.");
+        }
+        
+        // Block if requested days exceed available credits
+        if ($availableCredits < $validatedData['total_days']) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableCredits} days, Requested: {$validatedData['total_days']} days. Please adjust your dates.");
         }
     } else {
         return redirect()->back()

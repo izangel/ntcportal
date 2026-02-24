@@ -19,7 +19,7 @@
                 <form method="POST" action="{{ route('leave_applications.store') }}" onsubmit="return validateFormSubmission()">
                     @csrf
 
-                    @include('leave_applications._form', ['employees' => $employees, 'loggedInEmployee' => $loggedInEmployee, 'teachers' => $teachers, 'staffPersonnel' => $staffPersonnel, 'leaveTypes' => $leaveTypes, 'leaveCredits' => $leaveCredits])
+                    @include('leave_applications._form', ['employees' => $employees, 'loggedInEmployee' => $loggedInEmployee, 'teachers' => $teachers, 'staffPersonnel' => $staffPersonnel, 'leaveTypes' => $leaveTypes, 'remainingCredits' => $remainingCredits])
 
                     <div class="flex items-center justify-end mt-8 border-t border-gray-200 pt-6">
                         <button type="submit" class="inline-flex items-center px-6 py-3 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
@@ -55,6 +55,14 @@
             }
             
             leaveTypeError.classList.add('hidden');
+            
+            // Check if leave exceeds credits
+            const exceedsContainer = document.getElementById('exceeds_credits_container');
+            if (exceedsContainer && !exceedsContainer.classList.contains('hidden')) {
+                alert('Your leave request exceeds available credits. Please adjust your dates.');
+                return false;
+            }
+            
             return true;
         }
     </script>
