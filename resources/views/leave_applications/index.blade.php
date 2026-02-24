@@ -97,6 +97,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Filed</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -110,7 +111,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->leaveType->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($application->reason, 30) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->total_days }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ max(0, (int) $application->total_days) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
@@ -119,6 +120,15 @@
                                             @else bg-gray-100 text-gray-800 @endif">
                                             {{ ucwords(str_replace('_', ' ', $application->approval_status)) }}
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @if(!empty($application->hr_remarks))
+                                            {{ Str::limit($application->hr_remarks, 60) }}
+                                        @elseif($application->hr_approved_by && $application->ah_status === 'approved' && $application->hr_status === 'approved' && $application->admin_status === 'pending')
+                                            Filed by HR
+                                        @else
+                                            N/A
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->date_filed->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -135,7 +145,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

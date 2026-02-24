@@ -351,27 +351,40 @@
                         {{ __('My Leave Applications') }}
                     </x-nav-link>
                     @if(Auth::user()->hasRole('academic_head'))
-                    <x-nav-link href="{{ route('ah.leave_applications.index') }}" :active="request()->routeIs('ah.leave_applications.index')">
-                        <i class="fas fa-hourglass-half mr-3 text-lg"></i>
-                        {{ __('Pending Leave Applications') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
-                        <i class="fas fa-list-ul mr-3 text-lg"></i>
-                        {{ __('All Leave Applications (HR)') }}
-                    </x-nav-link>
-                    @else
-                    <x-nav-link href="{{ route('hr.leave_applications.index') }}" :active="request()->routeIs('hr.leave_applications.index')">
-                        <i class="fas fa-hourglass-half mr-3 text-lg"></i>
-                        {{ __('Pending Leave Applications') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
-                        <i class="fas fa-list-ul mr-3 text-lg"></i>
-                        {{ __('All Leave Applications') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('hr.leave_credits.all') }}" :active="request()->routeIs('hr.leave_credits.all')">
-                        <i class="fas fa-credit-card mr-3 text-lg"></i>
-                        {{ __('View All Remaining Leave Credits') }}
-                    </x-nav-link>
+                        <x-nav-link href="{{ route('ah.leave_applications.index') }}" :active="request()->routeIs('ah.leave_applications.index')">
+                            <i class="fas fa-hourglass-half mr-3 text-lg"></i>
+                            {{ __('Pending Leave Applications') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
+                            <i class="fas fa-list-ul mr-3 text-lg"></i>
+                            {{ __('All Leave Applications (HR)') }}
+                        </x-nav-link>
+                    @elseif(Auth::user()->hasRole('hr'))
+                        <x-nav-link href="{{ route('hr.leave_applications.index') }}" :active="request()->routeIs('hr.leave_applications.index')">
+                            <i class="fas fa-hourglass-half mr-3 text-lg"></i>
+                            {{ __('Pending Leave Applications') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hr.leave_applications.retroactive_form') }}" :active="request()->routeIs('hr.leave_applications.retroactive_form')">
+                            <i class="fas fa-file-upload mr-3 text-lg"></i>
+                            {{ __('Unfiled Leave Applications') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
+                            <i class="fas fa-list-ul mr-3 text-lg"></i>
+                            {{ __('All Leave Applications') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hr.leave_credits.all') }}" :active="request()->routeIs('hr.leave_credits.all')">
+                            <i class="fas fa-credit-card mr-3 text-lg"></i>
+                            {{ __('View All Remaining Leave Credits') }}
+                        </x-nav-link>
+                    @elseif(Auth::user()->hasRole('admin'))
+                        <x-nav-link href="{{ route('admin.leave_applications.index') }}" :active="request()->routeIs('admin.leave_applications.index')">
+                            <i class="fas fa-hourglass-half mr-3 text-lg"></i>
+                            {{ __('Pending Leave Applications') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
+                            <i class="fas fa-list-ul mr-3 text-lg"></i>
+                            {{ __('All Leave Applications (HR)') }}
+                        </x-nav-link>
                     @endif
                     <x-nav-link href="{{ route('faculty-loadings.index') }}" :active="request()->routeIs('faculty-loadings.*')">
                         <i class="fas fa-chalkboard-teacher mr-3 text-lg"></i>

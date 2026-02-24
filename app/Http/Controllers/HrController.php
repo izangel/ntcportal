@@ -128,7 +128,7 @@ class HrController extends Controller
                         ->sum('total_days');
 
                     $key = strtolower(str_replace(' ', '_', $leaveType->name));
-                    $remainingCredits[$key] = $leavecredit->{$key} - $taken;
+                    $remainingCredits[$key] = max(0, $leavecredit->{$key} - $taken);
                 }
                 $employeeData['credits'] = $remainingCredits;
             }
