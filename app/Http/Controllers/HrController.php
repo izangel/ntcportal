@@ -106,7 +106,7 @@ class HrController extends Controller
     public function showAllEmployeeLeaveCredits()
     {
         $employees = Employee::with('leaveCredits', 'leaveApplications')->get();
-        $allRemainingCredits = [];
+        $allCredits = [];
 
         foreach ($employees as $employee) {
             $leavecredit = $employee->leaveCredits()->first();
@@ -118,25 +118,20 @@ class HrController extends Controller
             ];
 
             if ($leavecredit) {
-                $remainingCredits = [];
+                $credits = [];
                 $leaveTypes = LeaveType::all();
                 
                 foreach ($leaveTypes as $leaveType) {
-                    $taken = $employee->leaveApplications()
-                        ->where('leave_type_id', $leaveType->id)
-                        ->where('approval_status', 'approved_with_pay')
-                        ->sum('total_days');
-
                     $key = strtolower(str_replace(' ', '_', $leaveType->name));
-                    $remainingCredits[$key] = $leavecredit->{$key} - $taken;
+                    $credits[$key] = $leavecredit->{$key};
                 }
-                $employeeData['credits'] = $remainingCredits;
+                $employeeData['credits'] = $credits;
             }
-            $allRemainingCredits[] = $employeeData;
+            $allCredits[] = $employeeData;
         }
 
         return view('hr.leave_credits.all', [
-            'employeesData' => $allRemainingCredits
+            'employeesData' => $allCredits
         ]);
     }
 

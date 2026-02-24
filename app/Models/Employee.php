@@ -69,13 +69,12 @@ class Employee extends Model
     $leaveTypes = LeaveType::all();
 
     foreach ($leaveTypes as $leaveType) {
+        $key = strtolower(str_replace(' ', '_', $leaveType->name));
+        // Calculate remaining by subtracting approved leaves from set credits
         $taken = $this->leaveApplications()
             ->where('leave_type_id', $leaveType->id)
             ->where('approval_status', 'approved_with_pay')
             ->sum('total_days');
-
-        $key = strtolower(str_replace(' ', '_', $leaveType->name));
-
         $remainingCredits[$key] = $leavecredit->{$key} - $taken;
     }
 
