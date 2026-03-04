@@ -40,6 +40,34 @@
                     </div>
                 </div>
 
+                {{-- Remarks Section --}}
+                <div class="mt-6">
+                    <h4 class="text-md font-medium text-gray-900 mb-4">Approval Remarks</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-gray-800">Academic Head Remarks</h5>
+                            <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->ah_remarks ?? 'No remarks provided' }}</p>
+                            @if($leaveApplication->ah_approved_at)
+                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->ah_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->ahApprover ? $leaveApplication->ahApprover->first_name . ' ' . $leaveApplication->ahApprover->last_name : 'N/A' }}</p>
+                            @endif
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-gray-800">HR Remarks</h5>
+                            <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->hr_remarks ?? 'No remarks provided' }}</p>
+                            @if($leaveApplication->hr_approved_at)
+                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->hr_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->hrApprover ? $leaveApplication->hrApprover->first_name . ' ' . $leaveApplication->hrApprover->last_name : 'N/A' }}</p>
+                            @endif
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h5 class="font-semibold text-gray-800">Admin Remarks</h5>
+                            <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->admin_remarks ?? 'No remarks provided' }}</p>
+                            @if($leaveApplication->admin_approved_at)
+                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->admin_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->adminApprover ? $leaveApplication->adminApprover->first_name . ' ' . $leaveApplication->adminApprover->last_name : 'N/A' }}</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
                 @if ($leaveApplication->isTeacher())
                     <h4 class="text-md font-medium text-gray-900 mb-2 mt-4">For Teaching Personnel: Classes to be Missed</h4>
                   

@@ -16,7 +16,7 @@
                     <p class="text-sm text-gray-600">Date Filed: {{ $leaveApplication->date_filed->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600 mt-2 font-semibold">Admin Status: <span class="uppercase">{{ $leaveApplication->admin_status }}</span></p>
                     @if($leaveApplication->admin_status !== 'pending')
-                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->admin_approved_at->format('M d, Y') }} by {{ $leaveApplication->adminApprover->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->admin_approved_at->format('M d, Y') }} by {{ $leaveApplication->adminApprover ? $leaveApplication->adminApprover->first_name . ' ' . $leaveApplication->adminApprover->last_name : 'N/A' }}</p>
                         @if($leaveApplication->admin_remarks)
                             <p class="text-sm text-gray-600">Remarks: "{{ $leaveApplication->admin_remarks }}"</p>
                         @endif
