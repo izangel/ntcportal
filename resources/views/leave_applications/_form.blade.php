@@ -1,6 +1,6 @@
 {{-- resources/views/leave_applications/_form.blade.php --}}
 
-@props(['leaveApplication' => null, 'employees', 'loggedInEmployee' => null, 'teachers', 'staffPersonnel', 'leaveTypes'])
+@props(['leaveApplication' => null, 'employees', 'loggedInEmployee' => null, 'teachers', 'staffPersonnel', 'leaveTypes', 'remainingCredits'])
 
 <div class="space-y-6">
     {{-- Automatic Employee Name --}}
@@ -28,7 +28,11 @@
              @foreach ($leaveTypes as $leaveType)
                 @php
                     $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
+<<<<<<< HEAD
                     $balance = $leaveCredits ? ($leaveCredits->$creditColumn ?? 0) : 0;
+=======
+                    $balance = $remainingCredits ? ($remainingCredits[$creditColumn] ?? 0) : 0;
+>>>>>>> origin/main
                 @endphp
                 <option value="{{ $leaveType->id }}" 
                     data-balance="{{ $balance }}"
@@ -45,7 +49,11 @@
     </div>
 
     {{-- Leave Credit Balance Display --}}
+<<<<<<< HEAD
     @if($leaveCredits)
+=======
+    @if($remainingCredits)
+>>>>>>> origin/main
         <div id="credit_balance_container" class="rounded-lg border border-blue-200 bg-blue-50 p-4 hidden">
             <h4 class="font-semibold text-blue-900 mb-2">Current Leave Credits</h4>
             <div id="credit_balance" class="text-sm text-blue-800">
@@ -124,7 +132,7 @@
     </div>
 
     {{-- Exceeds Leave Credits Notification --}}
-    @if($leaveCredits)
+    @if($remainingCredits)
         <div id="exceeds_credits_container" class="rounded-lg border border-red-200 bg-red-50 p-4 hidden">
             <h4 class="font-semibold text-red-900 mb-2">Leave Duration Exceeds Available Credits</h4>
             <div id="exceeds_credits_message" class="text-sm text-red-800">
@@ -179,6 +187,7 @@
                 const startDate = new Date(startStr);
                 const endDate = new Date(endStr);
                 
+<<<<<<< HEAD
                 let workDays = 0;
                 const currentDate = new Date(startDate);
                 
@@ -191,6 +200,22 @@
                 }
                 
                 return workDays;
+=======
+                // Calculate total days inclusive (including weekends)
+                const timeDiff = endDate.getTime() - startDate.getTime();
+                const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+                
+                // Count holidays within the date range (inclusive)
+                let holidaysInRange = 0;
+                holidays.forEach(holiday => {
+                    const hDate = new Date(holiday);
+                    if (hDate >= startDate && hDate <= endDate) {
+                        holidaysInRange++;
+                    }
+                });
+                
+                return totalDays - holidaysInRange;
+>>>>>>> origin/main
             }
 
             function checkCreditsExceeded() {

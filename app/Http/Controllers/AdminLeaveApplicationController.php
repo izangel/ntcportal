@@ -28,8 +28,9 @@ class AdminLeaveApplicationController extends Controller
     {
         $pendingApplications = LeaveApplication::where('admin_status', 'pending')
                                                 ->where('hr_status', 'approved')
+                                                ->where('ah_status', 'approved')
                                                 ->with(['employee', 'classesToMiss'])
-                                                ->orderBy('created_at', 'asc')
+                                                ->orderBy('created_at', 'desc')
                                                 ->get();
 
         return view('admin.leave_applications.index', compact('pendingApplications'));
@@ -91,20 +92,8 @@ return view('admin.leave_applications.review', compact('leaveApplication', 'rema
 
         // DEDUCT LEAVE CREDITS IF APPROVED
         if ($decision === 'approved_with_pay' || $decision === 'approved_without_pay') {
-            $employee = $leaveApplication->employee;
-            $leaveType = $leaveApplication->leaveType;
-            $leaveCredit = $employee->leaveCredits()->first();
-            
-            if ($leaveCredit) {
-                // Map leave type to credit column
-                $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
-                
-                // Deduct the total days from the corresponding leave credit column
-                if ($leaveCredit->$creditColumn >= $leaveApplication->total_days) {
-                    $leaveCredit->$creditColumn -= $leaveApplication->total_days;
-                    $leaveCredit->save();
-                }
-            }
+            // No longer deducting from LeaveCredit table
+            // Remaining credits will be calculated dynamically in getRemainingLeaveCredits()
         }
 
        
