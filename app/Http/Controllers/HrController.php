@@ -58,7 +58,14 @@ class HrController extends Controller
             'academic_year_id' => 'required|exists:academic_years,id',
         ]);
 
-     
+        // Check if leave credits already exist for this employee and academic year
+        $existingLeaveCredit = LeaveCredit::where('employee_id', $validatedData['employee_id'])
+            ->where('academic_year_id', $validatedData['academic_year_id'])
+            ->first();
+
+        if ($existingLeaveCredit) {
+            return redirect()->back()->with('error', 'Leave credits for this employee and academic year already exist.');
+        }
 
        LeaveCredit::create($validatedData);
 
