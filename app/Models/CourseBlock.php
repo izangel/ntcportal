@@ -36,6 +36,11 @@ public function academicYear() {
     return $this->belongsTo(AcademicYear::class, 'academic_year_id');
 }
 
+public function students()
+{
+    return $this->belongsToMany(Student::class, 'student_courseblock');
+}
+
     protected static function booted()
     {
         static::created(function ($courseBlock) {

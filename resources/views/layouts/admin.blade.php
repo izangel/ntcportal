@@ -269,6 +269,10 @@
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Course Blocks 2') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('student.assign.courseblocks') }}" :active="request()->routeIs('student.assign.courseblocks')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('Students to Course Blocks (for Regular only)') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Faculty Course Blocks') }}
@@ -428,14 +432,15 @@
                     </header>
                 @endif
 
-                {{-- Main Content Area --}}
-                <main class="flex-1 p-6 sm:p-8">
+{{-- Main Content Area --}}
+<main class="flex-1 p-6 sm:p-8">
 
+    @yield('content') {{-- This works for regular controllers --}}
     
-                    @yield('content')
-
-                    
-                </main>
+@if(isset($slot))
+        {{ $slot }}
+    @endif
+</main>
             </div>
         </div>
 

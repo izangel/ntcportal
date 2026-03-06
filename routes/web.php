@@ -11,9 +11,10 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\ReportController;
+use App\Livewire\SectionAssignment;
+use App\Livewire\AssignStudentCourseBlock;
 use App\Http\Controllers\LeaveApplicationController; // For employee-side leave application management
 use App\Http\Controllers\EmployeeController;
-use App\Livewire\SectionAssignment;
 use App\Http\Controllers\AcademicHeadLeaveApplicationController; // Your AH Controller!
 use App\Http\Controllers\HrLeaveApplicationController; // Assuming you have this for HR
 use App\Http\Controllers\NotificationController; // For global notification actions
@@ -186,7 +187,8 @@ Route::middleware([
         ->middleware('auth'); // Ensure this is protected by appropriate middleware
 
         // New Admin Faculty Course View
-       
+        Route::get('/assign-students-to-blocks', AssignStudentCourseBlock::class)
+        ->name('student.assign.courseblocks');
         Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)
         ->name('course-blocks.bulk-uploader');
 
@@ -395,6 +397,8 @@ Route::middleware([
 
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
                 ->name('evaluations.store');
+            Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
+                ->name('assign.courseblocks');
     });
 });
 

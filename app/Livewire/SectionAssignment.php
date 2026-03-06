@@ -57,13 +57,13 @@ public function render()
         session()->flash('message', 'Student added successfully.');
     }
 
-public function confirmDelete($id)
-{
-    $this->assignmentIdBeingDeleted = $id; // Added the $ here
+    public function confirmDelete($id)
+    {
+    $this->assignmentIdBeingDeleted = $id;
     $this->confirmingDeletion = true;
-}
-public function deleteAssignment()
-{
+    }
+    public function deleteAssignment()
+    {
     if ($this->assignmentIdBeingDeleted) {
         SectionStudent::find($this->assignmentIdBeingDeleted)?->delete();
     }
@@ -73,5 +73,5 @@ public function deleteAssignment()
     $this->assignmentIdBeingDeleted = null; 
 
     session()->flash('message', 'Student removed.');
-}
+    }
 }
