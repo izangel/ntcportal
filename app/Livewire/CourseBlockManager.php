@@ -5,19 +5,19 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Section;
 use App\Models\Course;
-use App\Models\Student; 
-use App\Models\Employee; 
-use App\Models\Enrollment; 
+use App\Models\Student;
+use App\Models\Employee;
+use App\Models\Enrollment;
 use App\Models\AcademicYear;
 use App\Models\CourseBlock;
 use App\Models\SectionStudent;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 
 class CourseBlockManager extends Component
 {
     // --- Selection State ---
-    public $academicYearId; 
+    public $academicYearId;
     public $semester;
     public $sectionId;
 
@@ -25,17 +25,17 @@ class CourseBlockManager extends Component
     public $sections = [];
     public $academicYears = [];
     public $semesters = ['1st', '2nd', 'Summer'];
-    public $allCourses; 
-    public $allFaculty; 
+    public $allCourses;
+    public $allFaculty;
 
     // --- Data for Lists (Collections must be initialized correctly) ---
-    public Collection $students; 
+    public Collection $students;
     public Collection $courseBlocks;
     public $selectedSection;
 
     // --- Student Enrollment Form Data (REVISED) ---
     // Holds all students who ARE NOT CURRENTLY in the selected section/context
-    public Collection $availableStudentsForAdd; 
+    public Collection $availableStudentsForAdd;
     public $selectedStudentId = null; // Used by the new dropdown
 
     // --- Form Data for New Block ---
@@ -51,7 +51,7 @@ class CourseBlockManager extends Component
      */
     public function mount()
     {
-        $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); 
+        $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
         $this->sections = Section::with('program')
             ->get()
             // Map the collection to an array of just the ID, Name, and Program Name
@@ -65,7 +65,7 @@ class CourseBlockManager extends Component
             ->toArray();
         $this->allCourses = Course::orderBy('code')->get();
         $this->allFaculty = Employee::orderBy('last_name')->get();
-        
+
         // Initialize Collections
         $this->students = collect();
         $this->courseBlocks = collect();
@@ -113,7 +113,7 @@ class CourseBlockManager extends Component
 
         if (!$this->selectedSection || !$this->academicYearId || !$this->semester) {
             $this->clearDynamicData();
-            return; 
+            return;
         }
 
         // 1. Get IDs of students who are ALREADY in THIS specific section
@@ -133,7 +133,7 @@ class CourseBlockManager extends Component
         ->orderBy('last_name')
         ->get();
 
-    // 4. Update the "Available" list: 
+    // 4. Update the "Available" list:
     // Only show students who are NOT in the 'allTakenStudentIds' list
     $this->availableStudentsForAdd = Student::whereNotIn('id', $allTakenStudentIds)
         ->orderBy('last_name')
@@ -145,7 +145,7 @@ class CourseBlockManager extends Component
                                         ->where('semester', $this->semester)
                                         ->with(['course', 'faculty'])
                                         ->get();
-        
+
         // 6. Reset the selection dropdown state
         $this->selectedStudentId = null;
     }
@@ -155,17 +155,17 @@ class CourseBlockManager extends Component
      */
     protected function clearDynamicData()
     {
-        $this->students = collect(); 
+        $this->students = collect();
         $this->courseBlocks = collect();
-        $this->availableStudentsForAdd = collect(); 
-        
-        $this->reset(['selectedStudentId']); 
+        $this->availableStudentsForAdd = collect();
+
+        $this->reset(['selectedStudentId']);
     }
 
     // ------------------------------------------
     // --- STUDENT MANAGEMENT METHODS (REVISED) ---
     // ------------------------------------------
-    
+
     public function addStudentToSection()
 {
     $this->validate([
@@ -198,7 +198,7 @@ class CourseBlockManager extends Component
     $this->loadSectionData();
     session()->flash('message', "Student successfully added.");
 }
-    
+
     // --- Existing Methods ---
 
     /**
@@ -227,13 +227,13 @@ class CourseBlockManager extends Component
         if ($existingBlock) {
             $courseCode = Course::find($this->newCourseBlock['course_id'])->code;
 
-            session()->flash('error', 
+            session()->flash('error',
                 "The course **{$courseCode}** is already assigned to this section for the selected academic period. Cannot create a duplicate block."
             );
             return;
         }
 
-        // 3. Create the CourseBlock record 
+        // 3. Create the CourseBlock record
         CourseBlock::create([
             'section_id' => $this->sectionId,
             'course_id' => $this->newCourseBlock['course_id'],

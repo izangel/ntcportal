@@ -17,6 +17,11 @@ class CourseBlock extends Model
         'room_name',
         'schedule_string',
         'finalized',
+        'course_code',
+        'course_title',
+        'faculty',
+        'room',
+        'schedule',
     ];
 
     // Relationships
@@ -43,6 +48,9 @@ class CourseBlock extends Model
     protected static function booted()
     {
         static::created(function ($courseBlock) {
+            // Eager load relationships for efficiency
+            $courseBlock->load(['course', 'faculty']);
+
             // 1. Find all students already registered in this section
             $registrations = \App\Models\SectionStudent::where('section_id', $courseBlock->section_id)
                 ->where('academic_year_id', $courseBlock->academic_year_id)
@@ -58,6 +66,23 @@ class CourseBlock extends Model
                     'academic_year_id' => $courseBlock->academic_year_id,
                     'semester'         => $courseBlock->semester,
                 ]);
+
+                // 3. Also create a record in the student_courseblock table
+                \App\Models\StudentCourseblock::firstOrCreate(
+                    [
+                        // Keys to find existing record
+                        'student_id' => $reg->student_id,
+                        'course_code' => $courseBlock->course->code,
+                    ],
+                    [
+                        // Values to create if not found
+                        'course_title' => $courseBlock->course->name,
+                        'faculty' => $courseBlock->faculty ? ($courseBlock->faculty->last_name . ', ' . $courseBlock->faculty->first_name) : 'TBA',
+                        'rooms' => $courseBlock->room_name,
+                        'schedule' => $courseBlock->schedule_string,
+                        'status' => 'Enrolled',
+                    ]
+                );
             }
         });
     }
