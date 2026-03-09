@@ -150,19 +150,6 @@ class LeaveApplicationController extends Controller
         $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('last_name')->get();
 
         $loggedInEmployee = null;
-<<<<<<< HEAD
-        $leaveCredits = null;
-        if (Auth::check() && Auth::user()->employee) {
-            $loggedInEmployee = Auth::user()->employee;
-            $leaveCredits = $loggedInEmployee->leaveCredits()->first();
-        }
-
-        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes', 'leaveCredits'));
-    }
-
-    /**
- * Calculate total days excluding weekends and hardcoded holidays.
-=======
         $remainingCredits = null;
         if (Auth::check() && Auth::user()->employee) {
             $loggedInEmployee = Auth::user()->employee;
@@ -174,19 +161,15 @@ class LeaveApplicationController extends Controller
 
     /**
  * Calculate total days including weekends but excluding hardcoded holidays.
->>>>>>> origin/main
  */
 private function calculateWorkDays($startDate, $endDate)
 {
     $start = Carbon::parse($startDate);
     $end = Carbon::parse($endDate);
 
-<<<<<<< HEAD
-=======
     // Calculate total days inclusive (including weekends)
     $totalDays = $start->diffInDays($end) + 1;
 
->>>>>>> origin/main
     // Hardcoded Holidays from Today (Dec 28, 2025) until Dec 2026
     $holidays = [
         // Remaining 2025
@@ -215,11 +198,6 @@ private function calculateWorkDays($startDate, $endDate)
         '2026-12-31', // Last Day of the Year
     ];
 
-<<<<<<< HEAD
-    return $start->diffInDaysFiltered(function (Carbon $date) use ($holidays) {
-        return $date->isWeekday() && !in_array($date->toDateString(), $holidays);
-    }, $end->addDay());
-=======
     // Count holidays within the date range (inclusive)
     $holidaysInRange = array_filter($holidays, function ($holiday) use ($start, $end) {
         $h = Carbon::parse($holiday);
@@ -228,7 +206,6 @@ private function calculateWorkDays($startDate, $endDate)
 
     // Subtract holidays from total days
     return $totalDays - count($holidaysInRange);
->>>>>>> origin/main
 }
 
     public function store(Request $request)
