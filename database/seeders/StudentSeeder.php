@@ -13,20 +13,18 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get the first user, or create one if none exists
-        $user = User::first();
-        if (!$user) {
-            $user = User::factory()->firstOrCreate([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-                'password' => bcrypt('password'),
-                'role' => 'student', // Assign a default role
-            ]);
-        }
+        // 1. Create a specific Student User for testing
+        $user = User::firstOrCreate([
+            'email' => 'student@example.com',
+        ], [
+            'name' => 'Test Student',
+            'password' => bcrypt('password'),
+            'role' => 'student',
+        ]);
 
         // Create a student linked to the 'student' user
         Student::firstOrCreate([
-            'user_id' => User::where('email', 'student@example.com')->first()->id ?? null, // Link to the 'student' user created by DatabaseSeeder
+            'user_id' => $user->id,
             'student_id' => 'S001',
             'first_name' => 'Alice',
             'last_name' => 'Smith',

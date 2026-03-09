@@ -4,43 +4,51 @@
     <div class="flex items-center justify-between">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Dashboard') }}
-            @php
-                $roleColors = [
-                    'student' => 'text-blue-500',
-                    'academic_head' => 'text-gray-500',
-                    'hr' => 'text-gray-500',
-                    'admin' => 'text-red-500',
-                    'teacher' => 'text-indigo-500'
-                ];
-                $roleNames = [
-                    'student' => 'Student',
-                    'academic_head' => 'Academic Head',
-                    'hr' => 'HR Manager',
-                    'admin' => 'Administrator',
-                    'teacher' => 'Teacher'
-                ];
-            @endphp
-            @foreach($roleNames as $role => $name)
-                @if(Auth::user()->hasRole($role) || (Auth::user()->employee && Auth::user()->employee->role === $role))
-                    <span class="text-sm {{ $roleColors[$role] ?? 'text-gray-500' }}"> ({{ $name }})</span>
-                @endif
-            @endforeach
         </h2>
-        <span class="text-sm text-gray-500 font-medium">{{ now()->format('l, F j, Y') }}</span>
+        <div class="flex items-center gap-4">
+            {{-- Dynamic Ongoing Indicator (Lalabas kung ano mang event ang nangyayari ngayon) --}}
+            @php
+                $ongoingEvent = \App\Models\ImportantDate::all()->first(function ($date) {
+                    $start = $date->start_date ?? $date->date ?? $date->created_at;
+                    $end = $date->end_date ?? $start;
+
+                    try {
+                        $now = now()->startOfDay();
+                        $startDate = \Carbon\Carbon::parse($start)->startOfDay();
+                        $endDate = \Carbon\Carbon::parse($end)->endOfDay();
+                        return $now->betweenIncluded($startDate, $endDate);
+                    } catch (\Exception $e) {
+                        return false;
+                    }
+                });
+            @endphp
+
+            @if($ongoingEvent)
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200 shadow-sm">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    {{ $ongoingEvent->title }}: ONGOING
+                </span>
+            @endif
+
+            <span class="text-sm text-gray-500 font-medium">{{ now()->format('l, F j, Y') }}</span>
+        </div>
     </div>
 @endsection
 
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-        
+
         {{-- 1. Welcome & Notifications Section --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
                     <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
                     <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
-                    
+
                     @if(!Auth::user()->hasRole('student'))
                         <div class="mt-6 flex gap-4">
                             @php
@@ -49,7 +57,7 @@
                                 elseif(Auth::user()->hasRole('academic_head')) $route = 'ah.leave_applications.all';
                                 else $route = null;
                             @endphp
-                            
+
                             @if($route)
                                 <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
                                     Review Pending Leaves
@@ -88,8 +96,42 @@
             </div>
         </div>
 
-        {{-- 2. Important Dates Widget --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        {{-- 2. Important Dates Widget (Replaced with FullCalendar) --}}
+        <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+
+        @php
+            $calendarEvents = \App\Models\ImportantDate::all()->flatMap(function($item) {
+                $title = $item->title ?? $item->name ?? 'Important Date';
+                $startStr = $item->date ?? $item->start_date ?? $item->created_at;
+                $endStr = $item->end_date ?? $startStr;
+
+                $events = [];
+
+                if ($startStr) {
+                    try {
+                        $startDate = \Carbon\Carbon::parse($startStr)->startOfDay();
+                        $endDate = \Carbon\Carbon::parse($endStr)->startOfDay();
+
+                        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                            $events[] = [
+                                'title' => $title,
+                                'start' => $date->format('Y-m-d'),
+                                'backgroundColor' => 'transparent',
+                                'borderColor' => 'transparent',
+                                'textColor' => 'black',
+                                'allDay' => true,
+                            ];
+                        }
+                    } catch (\Exception $e) {}
+                }
+
+                return $events;
+            })->filter(function($item) {
+                return !empty($item['start']);
+            })->values();
+        @endphp
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
             <div class="flex items-center justify-between mb-6">
                 <h4 class="text-lg font-bold text-gray-800 flex items-center">
                     <span class="p-2 bg-indigo-100 rounded-lg mr-3">
@@ -97,36 +139,87 @@
                     </span>
                     School Calendar & Events
                 </h4>
-                <a href="{{ route('important_dates.index') }}" class="text-xs font-bold text-indigo-600 hover:underline uppercase">View Full Schedule</a>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                @forelse($recentDates as $date)
-                    @php
-                        $today = now()->startOfDay();
-                        $isOngoing = $today->between($date->start_date->startOfDay(), ($date->end_date ?? $date->start_date)->endOfDay());
-                    @endphp
-                    <div class="relative p-4 rounded-xl border {{ $isOngoing ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-white border-gray-100' }} transition-all duration-300 hover:shadow-md">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="text-center">
-                                <p class="text-[10px] font-bold uppercase {{ $isOngoing ? 'text-indigo-600' : 'text-gray-400' }}">{{ $date->start_date->format('M') }}</p>
-                                <p class="text-xl font-black {{ $isOngoing ? 'text-indigo-700' : 'text-gray-800' }}">{{ $date->start_date->format('d') }}</p>
-                            </div>
-                            @if($isOngoing)
-                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full animate-pulse">ONGOING</span>
-                            @endif
-                        </div>
-                        <h5 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 mb-2">{{ $date->title }}</h5>
-                    </div>
-                @empty
-                    <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 italic">No scheduled events found.</div>
-                @endforelse
-            </div>
+            <div id="calendar" class="text-gray-700 font-sans z-0 relative"></div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var calendarEl = document.getElementById('calendar');
+                if (calendarEl) {
+                    var calendar = new FullCalendar.Calendar(calendarEl, {
+                        initialView: 'dayGridMonth',
+                        events: @json($calendarEvents),
+
+                        eventContent: function(arg) {
+                            let title = arg.event.title;
+                            let html = '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; color: black; white-space: normal !important; word-wrap: break-word !important; line-height: 1.3 !important;">' + title + '</div>';
+                            return { html: html };
+                        },
+
+                        headerToolbar: {
+                            left: '',
+                            left: 'title',
+                            right: ''
+                        },
+                        height: 'auto',
+                        buttonText: {
+                            today: 'Today'
+                        },
+                        datesSet: function(info) {
+                            let monthInput = document.getElementById('calendarMonth');
+                            if (monthInput) {
+                                let d = info.view.currentStart;
+                                let year = d.getFullYear();
+                                let m = String(d.getMonth() + 1).padStart(2, '0');
+                                monthInput.value = `${year}-${m}`;
+                            }
+                        }
+                    });
+                    calendar.render();
+
+                    let rightToolbar = calendarEl.querySelector('.fc-toolbar-chunk:last-child');
+                    if (rightToolbar) {
+                        rightToolbar.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <label for="calendarMonth" class="text-sm font-medium text-gray-700 whitespace-nowrap">Select Month:</label>
+                                <input type="month" id="calendarMonth" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm cursor-pointer py-1.5 px-3">
+                            </div>
+                        `;
+
+                        let d = calendar.getDate();
+                        let year = d.getFullYear();
+                        let m = String(d.getMonth() + 1).padStart(2, '0');
+                        document.getElementById('calendarMonth').value = `${year}-${m}`;
+
+                        document.getElementById('calendarMonth').addEventListener('change', function(e) {
+                            if(e.target.value) {
+                                calendar.gotoDate(e.target.value + '-01');
+                            }
+                        });
+                    }
+                }
+            });
+        </script>
+
+        <style>
+            .fc-event { white-space: normal !important; height: auto !important; }
+            .fc-event-main { white-space: normal !important; overflow: visible !important; }
+            .fc .fc-daygrid-day-top { flex-direction: row !important; font-weight: bold !important; }
+            .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid { border-color: #F3F4F6; }
+            .fc .fc-button-primary { text-transform: capitalize; font-weight: bold; font-size: 0.875rem; border-radius: 0.5rem; }
+            .fc .fc-button-primary:hover { border-color: #4338CA !important; }
+            .fc .fc-button-primary:not(:disabled).fc-button-active { background-color: #3730A3 !important; border-color: #3730A3 !important; }
+            .fc .fc-toolbar-title { font-size: 24px; font-weight: bold; color: #111827; }
+            .fc-col-header-cell-cushion { color: #6B7280; font-weight: 600; padding: 8px 0; text-transform: uppercase; font-size: 0.75rem; }
+            .fc-daygrid-day-number { color: #374151; font-weight: 500; font-size: 0.875rem; padding: 4px 8px; }
+            .fc .fc-day-today { background-color: transparent !important; }
+        </style>
 
         {{-- 3. Role-Specific Main Content --}}
         @if(Auth::user()->hasRole('student'))
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
                 <div class="lg:col-span-2 space-y-8">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                         <div class="flex justify-between items-center mb-4">
@@ -135,7 +228,7 @@
                                 {{ $semesterName }} Semester
                             </span>
                         </div>
-                        
+
                         <div class="divide-y divide-gray-100">
                             @forelse($upcomingSchedule as $block)
                                 <div class="py-4 flex justify-between items-center hover:bg-gray-50 transition px-2 rounded-lg">
@@ -158,7 +251,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 {{-- GPA Sidebar --}}
                 <div class="space-y-6">
                     <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-white">
@@ -172,12 +265,10 @@
                 </div>
             </div>
 
-
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}
-            
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {{-- 🔑 My Course Load Table (Half Width) --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 mt-8">
+                {{-- 🔑 My Course Load Table --}}
                 @if(isset($myCourses) && count($myCourses) > 0)
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div class="p-4 border-b border-gray-50 bg-gray-50/50 flex justify-between items-center">
@@ -185,7 +276,6 @@
                                 <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 My Course Load
                             </h4>
-                            
                         </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-100">
@@ -221,19 +311,9 @@
                     </div>
                 @endif
 
-                {{-- Leave Management / Quick Actions (The other Half) --}}
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-center text-center">
-                    <h4 class="text-lg font-bold text-gray-800 mb-2">Leave Management</h4>
-                    <p class="text-sm text-gray-500 mb-6">Review balances and submit applications.</p>
-                    <a href="{{ route('leaveapplicationstatus') }}" class="w-full py-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-700 text-sm font-bold hover:bg-indigo-100 transition">
-                        Open Leave Portal
-                    </a>
-                </div>
-
-                
             </div>
 
-            {{-- Full-Width Work Week Leave Summary (Mon-Fri) --}}
+            {{-- Full-Width Work Week Leave Summary --}}
             @if(!Auth::user()->hasRole('student'))
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
                 <div class="flex items-center justify-between mb-6">
@@ -250,16 +330,15 @@
                     </span>
                 </div>
 
-                {{-- 5-Column Grid --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     @foreach($daysOfWeek as $day)
-                        @php 
+                        @php
                             $dateStr = $day->toDateString();
                             $isToday = $day->isToday();
-                            $dailyLeaves = $leavesByDay[$dateStr];
+                            $dailyLeaves = $leavesByDay[$dateStr] ?? [];
                         @endphp
                         <div class="flex flex-col min-h-[180px] rounded-xl border {{ $isToday ? 'bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50' : 'bg-gray-50/30 border-gray-100' }}">
-                            
+
                             <div class="p-3 text-center border-b {{ $isToday ? 'border-indigo-100 bg-indigo-100/30' : 'border-gray-100 bg-gray-50/50' }} rounded-t-xl">
                                 <p class="text-[10px] font-black uppercase tracking-tighter {{ $isToday ? 'text-indigo-600' : 'text-gray-400' }}">
                                     {{ $day->format('l') }}
@@ -298,12 +377,12 @@
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 @php
                     $stats = [
-                        ['label' => 'Students', 'val' => $totalStudents, 'color' => 'bg-blue-500'],
-                        ['label' => 'Teachers', 'val' => $totalTeachers, 'color' => 'bg-green-500'],
-                        ['label' => 'Courses', 'val' => $totalCourses, 'color' => 'bg-purple-500'],
-                        ['label' => 'Programs', 'val' => $totalPrograms, 'color' => 'bg-yellow-500'],
-                        ['label' => 'Enrollments', 'val' => $totalEnrollments, 'color' => 'bg-indigo-500'],
-                        ['label' => 'Users', 'val' => $totalUsers, 'color' => 'bg-gray-800'],
+                        ['label' => 'Students', 'val' => $totalStudents ?? 0, 'color' => 'bg-blue-500'],
+                        ['label' => 'Teachers', 'val' => $totalTeachers ?? 0, 'color' => 'bg-green-500'],
+                        ['label' => 'Courses', 'val' => $totalCourses ?? 0, 'color' => 'bg-purple-500'],
+                        ['label' => 'Programs', 'val' => $totalPrograms ?? 0, 'color' => 'bg-yellow-500'],
+                        ['label' => 'Enrollments', 'val' => $totalEnrollments ?? 0, 'color' => 'bg-indigo-500'],
+                        ['label' => 'Users', 'val' => $totalUsers ?? 0, 'color' => 'bg-gray-800'],
                     ];
                 @endphp
                 @foreach($stats as $stat)
@@ -319,7 +398,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h4 class="text-lg font-bold text-gray-800 mb-4">Recently Enrolled Students</h4>
                     <div class="space-y-3">
-                        @foreach($recentStudents as $student)
+                        @foreach($recentStudents ?? [] as $student)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <div class="flex items-center">
                                     <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs mr-3">
@@ -336,7 +415,7 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <h4 class="text-lg font-bold text-gray-800 mb-4">Latest Courses</h4>
                     <div class="space-y-3">
-                        @foreach($recentCourses as $course)
+                        @foreach($recentCourses ?? [] as $course)
                             <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                 <span class="text-sm font-bold text-gray-700">{{ $course->code }}</span>
                                 <span class="text-[10px] text-gray-400">{{ $course->credits }} Credits</span>

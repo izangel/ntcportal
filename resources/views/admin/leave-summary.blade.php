@@ -10,19 +10,19 @@
 @section('content')
 <div class="p-6 bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto">
-        
+
         <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-800 tracking-tight">{{ $monthName }}</h1>
                 <p class="text-sm text-gray-500">Approved employee leaves summary</p>
             </div>
-            
+
             <form action="{{ route('admin.leave.summary') }}" method="GET" class="flex items-center gap-2">
                 <label for="month" class="text-sm font-medium text-gray-700">Select Month:</label>
-                <input type="month" name="month" id="month" 
-                       value="{{ $currentMonth }}"
-                       onchange="this.form.submit()"
-                       class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                <input type="month" name="month" id="month"
+                    value="{{ $currentMonth }}"
+                    onchange="this.form.submit()"
+                    class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
             </form>
         </div>
 
@@ -41,7 +41,7 @@
                 @endfor
 
                 @foreach($calendar as $date => $leaves)
-                    @php 
+                    @php
                         $isToday = $date == date('Y-m-d');
                     @endphp
                     <div class="h-32 border-b border-r border-gray-100 p-2 transition-colors hover:bg-gray-50 relative {{ $isToday ? 'bg-indigo-50/30' : '' }}">

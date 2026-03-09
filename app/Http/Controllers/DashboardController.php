@@ -12,9 +12,7 @@ use App\Models\LeaveApplication;
 use App\Models\ImportantDate;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
-
 use App\Models\Semester;
-
 use App\Models\SectionStudent;
 
 use Illuminate\Http\Request;
@@ -27,7 +25,7 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $todayStr = now()->toDateString(); 
+        $todayStr = now()->toDateString();
         $notifications = $user->unreadNotifications;
 
         $recentDates = ImportantDate::with('categories')
@@ -41,6 +39,37 @@ class DashboardController extends Controller
             ->orderBy('start_date', 'asc')
             ->take(5)
             ->get();
+
+        // CALENDAR GRID LOGIC (Current Month)
+        $calendarDate = Carbon::now();
+        $startOfMonth = $calendarDate->copy()->startOfMonth();
+        $endOfMonth = $calendarDate->copy()->endOfMonth();
+
+        $calendarEvents = ImportantDate::where(function($query) use ($startOfMonth, $endOfMonth) {
+            $query->whereBetween('start_date', [$startOfMonth, $endOfMonth])
+                  ->orWhereBetween('end_date', [$startOfMonth, $endOfMonth])
+                  ->orWhere(function($q) use ($startOfMonth, $endOfMonth) {
+                      $q->where('start_date', '<=', $startOfMonth)
+                        ->where('end_date', '>=', $endOfMonth);
+                  });
+        })->get();
+
+        $daysInMonth = $calendarDate->daysInMonth;
+        $firstDayOfWeek = $startOfMonth->dayOfWeek; // 0 (Sun) - 6 (Sat)
+
+        $calendarGrid = [];
+        for ($i = 0; $i < $firstDayOfWeek; $i++) {
+            $calendarGrid[] = null; // Empty slots
+        }
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $currentDayDate = $startOfMonth->copy()->day($day);
+            $hasEvent = $calendarEvents->contains(function($event) use ($currentDayDate) {
+                $start = Carbon::parse($event->start_date)->startOfDay();
+                $end = $event->end_date ? Carbon::parse($event->end_date)->endOfDay() : $start->endOfDay();
+                return $currentDayDate->between($start, $end);
+            });
+            $calendarGrid[] = ['day' => $day, 'isToday' => $currentDayDate->isToday(), 'hasEvent' => $hasEvent];
+        }
 
         // LOGIC FOR WORK WEEK (MONDAY - FRIDAY)
         $startOfWeek = now()->startOfWeek(); // Carbon default is Monday
@@ -60,7 +89,7 @@ class DashboardController extends Controller
             $dateStr = $day->toDateString();
             $leavesByDay[$dateStr] = $rawLeaves->filter(function ($leave) use ($day) {
                 return $day->between(
-                    Carbon::parse($leave->start_date)->startOfDay(), 
+                    Carbon::parse($leave->start_date)->startOfDay(),
                     Carbon::parse($leave->end_date)->endOfDay()
                 );
             });
@@ -73,18 +102,18 @@ class DashboardController extends Controller
                 'employee.leaveApplications.adminApprover'
             ]);
         }
-        
+
         $staffData = [];
         $studentData = [];
-        $pendingApplications = collect(); 
+        $pendingApplications = collect();
 
         if ($user->hasRole('student') && $user->student) {
             $student = $user->student;
-            
+
             // 1. GET ACTIVE SEMESTER LOGIC (From Monitoring Controller)
             $activeSemester = Semester::where('is_active', 1)->first();
             $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
-            
+
             $enrolledCourses = collect([]);
             $upcomingSchedule = collect([]);
 
@@ -114,14 +143,14 @@ class DashboardController extends Controller
 
             $studentData = [
                 'enrolledCourses' => $student->enrollments, // Keep all for GPA
-                'currentGPA' => $this->calculateGPA($student->enrollments), 
+                'currentGPA' => $this->calculateGPA($student->enrollments),
                 'totalCredits' => $student->enrollments->sum('course.credits'),
                 'upcomingSchedule' => $upcomingSchedule,
                 'activeSemester' => $activeSemester,
                 'semesterName' => $semesterName,
             ];
         }
-        else { 
+        else {
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
             $staffData['totalEnrollments'] = Enrollment::count();
@@ -147,7 +176,7 @@ class DashboardController extends Controller
                         'name'      => $group->first()->course->name,
                         'schedule'  => $group->first()->schedule_string,
                         'sections'  => $group->map(fn($i) => ($i->section->program->name ?? '').'-'.($i->section->name ?? ''))->unique()->implode(', '),
-                        'finalized' => $group->first()->finalized 
+                        'finalized' => $group->first()->finalized
                     ])
                     ->sortBy('schedule')
                     ->values();
@@ -167,9 +196,65 @@ class DashboardController extends Controller
             $staffData['pendingApplications'] = $pendingApplications;
         }
 
+        // --- FETCH AND PREPARE CALENDAR DATA HERE ---
+        $allImportantDates = ImportantDate::all();
+
+        // Check if "8 Week College" is currently ongoing (For global top header)
+        $is8WeekOngoing = $allImportantDates->contains(function ($date) {
+            $title = $date->title ?? $date->name ?? '';
+            $start = $date->start_date ?? $date->date ?? $date->created_at;
+            $end = $date->end_date ?? $start;
+
+            if (stripos($title, '8 Week') !== false || stripos($title, 'Week 8') !== false) {
+                try {
+                    $now = now()->startOfDay();
+                    $startDate = \Carbon\Carbon::parse($start)->startOfDay();
+                    $endDate = \Carbon\Carbon::parse($end)->endOfDay();
+                    return $now->betweenIncluded($startDate, $endDate);
+                } catch (\Exception $e) {
+                    return false;
+                }
+            }
+            return false;
+        });
+
+        // GINAMIT ANG flatMap PARA GAWING INDIVIDUAL NA EVENT KADA ARAW (Saktong-sakto sa drawing mo)
+        $fullCalendarEvents = $allImportantDates->flatMap(function($item) {
+            $title = $item->title ?? $item->name ?? 'Important Date';
+            $startStr = $item->date ?? $item->start_date ?? $item->created_at;
+            $endStr = $item->end_date ?? $startStr;
+
+            $events = [];
+
+            if ($startStr) {
+                try {
+                    $startDate = \Carbon\Carbon::parse($startStr)->startOfDay();
+                    $endDate = \Carbon\Carbon::parse($endStr)->startOfDay();
+
+                    // Loop para lumabas isaisang text sa bawat araw na cover ng event
+                    for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+                        $events[] = [
+                            'title' => $title,
+                            'start' => $date->format('Y-m-d'),
+                            'backgroundColor' => 'transparent',
+                            'borderColor' => 'transparent',
+                            'textColor' => 'black',
+                            'allDay' => true,
+                            'isOngoing' => false // Nakaset sa false para di lumabas ang badge sa loob ng calendar grid
+                        ];
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            return $events;
+        })->filter(function($item) {
+            return !empty($item['start']);
+        })->values();
+        // --- END CALENDAR PREPARATION ---
+
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
-            $staffData, 
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 'calendarGrid', 'calendarDate', 'is8WeekOngoing', 'fullCalendarEvents'),
+            $staffData,
             $studentData
         );
 
@@ -189,7 +274,7 @@ class DashboardController extends Controller
         $totalPoints = 0; $totalCredits = 0;
         foreach ($enrollments as $enrollment) {
             if ($enrollment->course && !empty($enrollment->grade)) {
-                $gradePoint = $this->convertToGradePoint($enrollment->grade); 
+                $gradePoint = $this->convertToGradePoint($enrollment->grade);
                 $credits = $enrollment->course->credits;
                 $totalPoints += ($gradePoint * $credits);
                 $totalCredits += $credits;
@@ -216,7 +301,7 @@ class DashboardController extends Controller
                         'title' => $enrollment->course->name ?? 'N/A',
                         'course_name' => $enrollment->course->code ?? 'N/A',
                         'time_display' => $block->schedule_string . ' in ' . $block->room_name,
-                        'sort_order' => rand(1, 4), 
+                        'sort_order' => rand(1, 4),
                     ]);
                 }
             }
