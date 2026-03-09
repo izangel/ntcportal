@@ -268,8 +268,13 @@ Route::middleware([
         Route::get('/', [HrLeaveApplicationController::class, 'index'])->name('index'); // HR Dashboard / Pending review list
         Route::get('/review/{leaveApplication}', [HrLeaveApplicationController::class, 'review'])->name('review')->middleware('signed'); // View/Review specific application
         Route::post('/decide/{leaveApplication}', [HrLeaveApplicationController::class, 'decide'])->name('decide'); // Process decision
+        Route::get('/retroactive', [HrLeaveApplicationController::class, 'showRetroactiveForm'])->name('retroactive_form'); // Show retroactive leave form
+        Route::post('/retroactive', [HrLeaveApplicationController::class, 'storeRetroactive'])->name('store_retroactive'); // Store retroactive leave
         // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
     });
+
+    // API route for getting employee leave credits (no role restriction needed for HR)
+    Route::middleware(['role:hr'])->get('/hr/employee-leave-credits/{employeeId}', [HrLeaveApplicationController::class, 'getEmployeeLeaveCredits'])->name('hr.employee_leave_credits');
 
      // Admin Leave Application Management Routes (Assuming AdminLeaveApplicationController exists)
     Route::middleware(['role:admin'])->prefix('admin/leave-applications')->name('admin.leave_applications.')->group(function () {

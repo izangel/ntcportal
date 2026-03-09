@@ -55,6 +55,8 @@
             }
             
             leaveTypeError.classList.add('hidden');
+<<<<<<< HEAD
+=======
             
             // Check if leave exceeds credits
             const exceedsContainer = document.getElementById('exceeds_credits_container');
@@ -63,6 +65,7 @@
                 return false;
             }
             
+>>>>>>> origin/main
             return true;
         }
     </script>

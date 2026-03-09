@@ -179,20 +179,18 @@
                 const startDate = new Date(startStr);
                 const endDate = new Date(endStr);
                 
-                // Calculate total days inclusive (including weekends)
-                const timeDiff = endDate.getTime() - startDate.getTime();
-                const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+                let workDays = 0;
+                const currentDate = new Date(startDate);
                 
-                // Count holidays within the date range (inclusive)
-                let holidaysInRange = 0;
-                holidays.forEach(holiday => {
-                    const hDate = new Date(holiday);
-                    if (hDate >= startDate && hDate <= endDate) {
-                        holidaysInRange++;
+                // Include the end date
+                while (currentDate <= endDate) {
+                    if (isWeekday(currentDate) && !isHoliday(currentDate)) {
+                        workDays++;
                     }
-                });
+                    currentDate.setDate(currentDate.getDate() + 1);
+                }
                 
-                return totalDays - holidaysInRange;
+                return workDays;
             }
 
             function checkCreditsExceeded() {
