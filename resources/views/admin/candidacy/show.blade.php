@@ -41,13 +41,23 @@
                         <p class="text-lg font-lg text-gray-900">{{ ucwords(str_replace('_', ' ', $candidacy->student->last_name ?? '')) }}, {{ ucwords(str_replace('_', ' ', $candidacy->student->first_name ?? '')) }} {{ ucwords(str_replace('_', ' ', $candidacy->student->middle_name ?? '')) }}</p>
                     </div>
                     <div>
-                        <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Email</h4>
-                        <p class="text-lg font-lg text-gray-900">{{ $candidacy->student->user->email ?? 'N/A' }}</p>
+                        <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Academic Year</h4>
+                        <p class="text-lg text-gray-900">
+                            @if($candidacy->academicYear)
+                                {{ $candidacy->academicYear->start_year }}-{{ $candidacy->academicYear->end_year }}
+                            @else
+                                N/A
+                            @endif
+                        </p>
                     </div>
                     <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Date of birth</h4>
                         <p class="text-lg font-lg text-gray-900">{{ $candidacy->student->date_of_birth ?? 'N/A' }}</p>
                     </div>
+                    <div>
+                        <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Email</h4>
+                        <p class="text-lg font-lg text-gray-900">{{ $candidacy->student->user->email ?? 'N/A' }}</p>
+                    </div>           
                     <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Position Applied</h4>
                         <p class="text-lg font-lg text-gray-900">{{ ucwords(str_replace('_', ' ', $candidacy->position_applied)) }}</p>
@@ -63,13 +73,18 @@
                         </p>
                     </div>
                     <div>
-                        <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Academic Year</h4>
-                        <p class="text-lg text-gray-900">{{ $candidacy->academic_year ?? 'N/A' }}</p>
-                    </div>
-                    <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Submitted On</h4>
                         <p class="text-lg text-gray-900">{{ $candidacy->submitted_at ? $candidacy->submitted_at->format('F d, Y h:i A') : $candidacy->created_at->format('F d, Y h:i A') }}</p>
                     </div>
+                    <div>
+                        <label class="text-sm font-medium text-gray-500 uppercase mb-2">Student ID Pictures</label><br>
+                            <a href="https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F" target="_blank" 
+                            class="inline-flex items-center text-sm font-bold text-blue-700 hover:text-blue-800 underline decoration-2 underline-offset-4">
+                             Candidate's Student ID 
+                             <i class="fas fa-external-link-alt ml-2 text-xs"></i>
+                        </a>
+                    </div>                  
+                    
                     @if($candidacy->reviewed_at)
                     <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Reviewed On</h4>

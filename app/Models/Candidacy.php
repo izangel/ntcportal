@@ -11,10 +11,10 @@ class Candidacy extends Model
 
     protected $fillable = [
         'student_id',
+        'academic_year_id',
         'position_applied',
         'partylist',
         'is_independent',
-        'academic_year',
         'status',
         'remarks',
         'submitted_at',
@@ -34,6 +34,14 @@ class Candidacy extends Model
     public function student()
     {
         return $this->belongsTo(Student::class);
+    }
+
+    /**
+     * Get the academic year for the candidacy.
+     */
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 
     /**

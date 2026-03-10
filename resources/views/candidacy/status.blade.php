@@ -63,7 +63,13 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Academic Year</p>
-                            <p class="font-medium text-gray-900">{{ $application->academic_year ?? 'N/A' }}</p>
+                            <p class="font-medium text-gray-900">
+                                @if($application->academicYear)
+                                    {{ $application->academicYear->start_year }}-{{ $application->academicYear->end_year }}
+                                @else
+                                    N/A
+                                @endif
+                            </p>
                         </div>
                     </div>
                 </div>

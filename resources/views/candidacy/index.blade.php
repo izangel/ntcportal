@@ -100,6 +100,10 @@
                                         <p class="w-full border-b border-gray-400 py-1 text-center text-gray-900">{{ Auth::user()->student->email ?? '' }}</p>
                                         <p class="text-xs text-gray-500 text-center mt-1">Email</p>
                                     </div>
+                                    <div class="col-span-12 md:col-span-2">
+                                        <p class="w-full border-b border-gray-400 py-1 text-center text-gray-900">{{ $activeAcademicYear ? $activeAcademicYear->start_year . '-' . $activeAcademicYear->end_year : '' }}</p>
+                                        <p class="text-xs text-gray-500 text-center mt-1">Academic Year</p>
+                                    </div>
                                 </div>
                             </div>
 
