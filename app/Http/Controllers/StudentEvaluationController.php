@@ -9,6 +9,19 @@ use Illuminate\Support\Facades\Auth;
 
 class StudentEvaluationController extends Controller
 {
+    private function resolveSemesterName(?Semester $semester): string
+    {
+        if (!$semester) {
+            return 'N/A';
+        }
+
+        return match (true) {
+            str_contains($semester->name, 'First')  => '1st',
+            str_contains($semester->name, 'Second') => '2nd',
+            default                                 => 'Summer',
+        };
+    }
+
     /**
      * Display the list of courses and their evaluation status.
      */
@@ -18,13 +31,18 @@ public function index()
 {
     $user = auth()->user();
     $student = \App\Models\Student::where('user_id', $user->id)->first();
-    $activeSemester = \App\Models\Semester::where('is_active', 1)->first();
+    $activeSemester = \App\Models\Semester::with('academicYear')->where('is_active', 1)->first();
+    $semesterName = $this->resolveSemesterName($activeSemester);
 
-    $semesterName = match (true) {
-        str_contains($activeSemester->name, 'First')  => '1st',
-        str_contains($activeSemester->name, 'Second') => '2nd',
-        default                                        => 'Summer',
-    };
+    if (!$student || !$activeSemester) {
+        return view('student.evaluations.index', [
+            'enrolledCourses' => collect([]),
+            'activeSemester'  => $activeSemester,
+            'semesterName'    => $semesterName,
+            'completedCount'  => 0,
+            'totalCount'      => 0,
+        ]);
+    }
 
     $studentSection = \App\Models\SectionStudent::where('student_id', $student->id)
         ->where('academic_year_id', $activeSemester->academic_year_id)
@@ -32,7 +50,15 @@ public function index()
         ->first();
 
 
-    if (!$studentSection) return view('student.evaluations.index', ['enrolledCourses' => collect([])]);
+    if (!$studentSection) {
+        return view('student.evaluations.index', [
+            'enrolledCourses' => collect([]),
+            'activeSemester'  => $activeSemester,
+            'semesterName'    => $semesterName,
+            'completedCount'  => 0,
+            'totalCount'      => 0,
+        ]);
+    }
 
     $enrolledCourseIds = \App\Models\Enrollment::where('student_id', $student->id)
         ->where('academic_year_id', $activeSemester->academic_year_id)
@@ -76,11 +102,13 @@ public function store(Request $request, CourseBlock $courseBlock)
     ]);
 
     $activeSemester = \App\Models\Semester::where('is_active', 1)->first();
-    $semesterName = match (true) {
-        str_contains($activeSemester->name, 'First')  => '1st',
-        str_contains($activeSemester->name, 'Second') => '2nd',
-        default                                        => 'Summer',
-    };
+
+    if (!$activeSemester) {
+        return redirect()->route('student.evaluations.index')
+            ->with('error', 'No active semester found.');
+    }
+
+    $semesterName = $this->resolveSemesterName($activeSemester);
 
     // Calculate the mean_score
     $meanScore = array_sum($request->ratings) / count($request->ratings);
@@ -121,12 +149,13 @@ public function create(CourseBlock $courseBlock)
 
     // 3. Sync Semester Logic with your Index method
     $activeSemester = \App\Models\Semester::with('academicYear')->where('is_active', 1)->first();
-    
-    $semesterName = match (true) {
-        str_contains($activeSemester->name, 'First')  => '1st',
-        str_contains($activeSemester->name, 'Second') => '2nd',
-        default                                        => 'Summer',
-    };
+
+    if (!$activeSemester) {
+        return redirect()->route('student.evaluations.index')
+            ->with('error', 'No active semester found.');
+    }
+
+    $semesterName = $this->resolveSemesterName($activeSemester);
 
     return view('student.evaluations.form', compact('courseBlock', 'activeSemester', 'semesterName'));
 }

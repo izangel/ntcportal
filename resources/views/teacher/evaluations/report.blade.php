@@ -88,27 +88,36 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
-                                @foreach($breakdown[$type]['questions'] as $key => $score)
+    @foreach($breakdown[$type]['questions'] as $q)
                                     <tr>
-                                        <td class="px-6 py-4 text-xs font-bold text-gray-700 uppercase tracking-tight">{{ $key }}</td>
+                                        <td class="px-6 py-4 text-xs text-gray-700">
+                                            <span class="font-bold uppercase tracking-tight mr-2">{{ $q['key'] }}:</span> 
+                                            <span class="font-normal">{{ $q['text'] }}</span>
+                                        </td>
                                         <td class="px-6 py-4 text-right">
-                                            <span class="font-black text-gray-900">{{ number_format($score, 2) }}</span>
+                                            <span class="font-black text-gray-900">{{ number_format($q['score'], 2) }}</span>
                                         </td>
                                     </tr>
                                 @endforeach
-                            </tbody>
+</tbody>
                         </table>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
                         @foreach($breakdown[$type]['meta']['feedback'] as $fb)
-                            @if($fb['helped'] || $fb['improved'])
+                            @php
+                                $comment = $fb['comments'] ?? $fb['Comments'] ?? null;
+                            @endphp
+                            @if(!empty($fb['helped']) || !empty($fb['improved']) || !empty($comment))
                                 <div class="p-5 border border-gray-200 rounded-xl bg-white">
-                                    @if($fb['helped'])
+                                    @if(!empty($fb['helped']))
                                         <p class="text-xs text-gray-600 mb-2"><strong class="text-green-600 uppercase text-[8px] block mb-1">Strength:</strong> "{{ $fb['helped'] }}"</p>
                                     @endif
-                                    @if($fb['improved'])
-                                        <p class="text-xs text-gray-600"><strong class="text-amber-600 uppercase text-[8px] block mb-1">Growth Area:</strong> "{{ $fb['improved'] }}"</p>
+                                    @if(!empty($fb['improved']))
+                                        <p class="text-xs text-gray-600 mb-2"><strong class="text-amber-600 uppercase text-[8px] block mb-1">Growth Area:</strong> "{{ $fb['improved'] }}"</p>
+                                    @endif
+                                    @if(!empty($comment))
+                                        <p class="text-xs text-gray-600"><strong class="text-indigo-600 uppercase text-[8px] block mb-1">Additional Comments:</strong> "{{ $comment }}"</p>
                                     @endif
                                 </div>
                             @endif
@@ -181,10 +190,10 @@ function generateCompactPrint() {
     const rawData = @json($breakdown);
     
     // Variables from Laravel
-    const teacherName = "{{ auth()->user()->employee->first_name }} {{ auth()->user()->employee->last_name }}";
-    const academicYear = "{{ $academicYear->start_year }}-{{ $academicYear->end_year }}";
-    const semester = "{{ $semester }}";
-    const overallScore = "{{ number_format($overallScore, 2) }}";
+    const teacherName = @json(auth()->user()->employee->first_name . ' ' . auth()->user()->employee->last_name);
+    const academicYear = @json($academicYear->start_year . '-' . $academicYear->end_year);
+    const semester = @json($semester);
+    const overallScore = @json(number_format($overallScore, 2));
 
     if (!rawData) {
         alert("No evaluation data found.");
@@ -282,11 +291,11 @@ function generateCompactPrint() {
                         <span class="tag">n=${cat.meta.count || 0}</span>
                     </div>
                     <table class="score-table">
-                        ${cat.questions ? Object.entries(cat.questions).map(([q, val]) => `
+                        ${cat.questions ? cat.questions.map(q => `
                             <tr>
-                                <td style="font-weight: bold; width: 15px; color: #444;">${q}</td>
-                                <td>Performance Criterion Result</td>
-                                <td class="score-col">${parseFloat(val).toFixed(2)}</td>
+                                <td style="font-weight: bold; width: 25px; color: #444;">${q.key}</td>
+                                <td>${q.text}</td>
+                                <td class="score-col">${parseFloat(q.score).toFixed(2)}</td>
                             </tr>
                         `).join('') : ''}
                     </table>
@@ -297,47 +306,48 @@ function generateCompactPrint() {
 
     htmlContent += `</div>`; // Close Grid
 
-    // --- Student Feedback Section ---
-    const studentCat = rawData['student'] || {};
-    const meta = studentCat.meta || {};
-    // Object.values ensures the loop works even if IDs are non-sequential
-    const studentFeedbackList = Object.values(meta.feedback || meta.comments || []);
-
-    htmlContent += `
-        <div class="qual-title">Detailed Student Qualitative Feedback</div>
-        <table class="feedback-table">
-            <thead>
-                <tr>
-                    <th style="width: 33%;">Strengths (What helped learning)</th>
-                    <th style="width: 33%;">Growth Areas (What to improve)</th>
-                    <th style="width: 34%;">Additional Comments</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    if (studentFeedbackList.length > 0) {
-        studentFeedbackList.forEach(f => {
-            // Only add the row if it's not completely empty
-            if (f.helped || f.improved || f.comments || f.Comments) {
-                htmlContent += `
-                    <tr>
-                        <td>${f.helped || '-'}</td>
-                        <td>${f.improved || '-'}</td>
-                        <td>${f.comments || f.Comments || '-'}</td>
-                    </tr>
-                `;
-            }
-        });
-    } else {
-        htmlContent += `<tr><td colspan="3" style="text-align:center; padding: 15px; color: #666;">No written feedback submitted by students.</td></tr>`;
-    }
-
-    htmlContent += `
-            </tbody>
-        </table>
+    // --- Qualitative Feedback Section (All Categories) ---
+    categoriesOrder.forEach(type => {
+        const cat = rawData[type] || {};
+        const meta = cat.meta || {};
+        const feedbackList = Object.values(meta.feedback || meta.comments || []);
         
-        <div style="margin-top: 25px; border-top: 1px solid #000; pt: 5px; text-align: center; font-size: 6.5pt; color: #666; text-transform: uppercase; font-weight: bold;">
+        if (feedbackList.length > 0) {
+            const hasContent = feedbackList.some(f => f.helped || f.improved || f.comments || f.Comments);
+            
+            if (hasContent) {
+                htmlContent += `
+                    <div class="qual-title">${type.charAt(0).toUpperCase() + type.slice(1)} Qualitative Feedback</div>
+                    <table class="feedback-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 33%;">Strengths</th>
+                                <th style="width: 33%;">Growth Areas</th>
+                                <th style="width: 34%;">Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                feedbackList.forEach(f => {
+                    if (f.helped || f.improved || f.comments || f.Comments) {
+                        htmlContent += `
+                            <tr>
+                                <td>${f.helped || '-'}</td>
+                                <td>${f.improved || '-'}</td>
+                                <td>${f.comments || f.Comments || '-'}</td>
+                            </tr>
+                        `;
+                    }
+                });
+
+                htmlContent += `</tbody></table>`;
+            }
+        }
+    });
+
+    htmlContent += `
+        <div style="margin-top: 25px; border-top: 1px solid #000; padding-top: 5px; text-align: center; font-size: 6.5pt; color: #666; text-transform: uppercase; font-weight: bold;">
             Faculty Performance Report • Confidential Document • Generated ${new Date().toLocaleDateString()}
         </div>
     </body>
