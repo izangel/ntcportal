@@ -7,7 +7,11 @@
         <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm flex justify-between items-center">
             <div>
                 <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">Student Feedback</p>
-                <h1 class="text-xl font-bold text-gray-900">Academic Evaluation: {{ $semesterName }} Semester,  {{ $activeSemester->academicYear->start_year }}-{{ $activeSemester->academicYear->end_year }}</h1>
+                <h1 class="text-xl font-bold text-gray-900">
+                    Academic Evaluation:
+                    {{ $semesterName !== 'N/A' ? $semesterName . ' Semester' : 'No Active Semester' }},
+                    {{ $activeSemester?->academicYear?->start_year ?? 'N/A' }}-{{ $activeSemester?->academicYear?->end_year ?? 'N/A' }}
+                </h1>
             </div>
             <div class="flex items-center gap-4">
                 <div class="text-right">
