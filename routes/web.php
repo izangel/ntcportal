@@ -27,6 +27,7 @@ use App\Http\Controllers\EmployeeLeaveController;
 use App\Http\Controllers\HrController;
 
 use App\Http\Controllers\ChangePasswordController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
 use App\Http\Controllers\CourseToSectionController;
@@ -64,6 +65,10 @@ use App\Http\Controllers\Admin\StudentAccountController;
 use App\Http\Controllers\Teacher\MyEvaluationController;
 
 use App\Http\Controllers\Admin\EvaluationMonitoringController;
+
+use App\Http\Controllers\Admin\CandidacyManagementController;
+
+use App\Http\Controllers\CandidacyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -284,6 +289,15 @@ Route::middleware([
         // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
     });
 
+    // OSA - Candidacy Management Routes (for teachers/staff/admin)
+    Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
+        Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
+        Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+        Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+        Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
+        Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
+    });
+
 
     // Global Notifications routes (can be accessed by any authenticated user)
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
@@ -295,6 +309,15 @@ Route::middleware([
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/profile/personal-information', [ProfileController::class, 'personalInformation'])
+        ->name('profile.personal-information');
+
+    Route::get('/profile/personal-information/edit', [ProfileController::class, 'editPersonalInformation'])
+        ->name('profile.personal-information.edit');
+
+    Route::put('/profile/personal-information', [ProfileController::class, 'updatePersonalInformation'])
+        ->name('profile.personal-information.update');
+
     Route::get('/profile/password', [ChangePasswordController::class, 'edit'])
         ->name('password.edit');
 
@@ -386,6 +409,12 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
 
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
                 ->name('evaluations.store');
+
+            // Candidacy Routes
+            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
+            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
+            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
+            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
     });
 });
 

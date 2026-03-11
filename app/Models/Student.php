@@ -14,6 +14,7 @@ class Student extends Model
         'student_id',
         'first_name',
         'last_name',
+        'middle_name',
         'email',
         'date_of_birth',
         'section_id',
@@ -55,7 +56,16 @@ class Student extends Model
      */
     public function program()
     {
-        return $this->hasOneThrough(Program::class, Section::class);
+        $section = $this->sections()->latest('pivot_created_at')->first();
+        return $section ? $section->program : null;
+    }
+
+    /**
+     * Get the program attribute (accessor for blade templates).
+     */
+    public function getProgramAttribute()
+    {
+        return $this->program();
     }
 
     /**
@@ -79,5 +89,13 @@ class Student extends Model
     public function evaluations()
     {
         return $this->hasMany(CourseEvaluation::class, 'student_id');
+    }
+
+    /**
+     * Get the candidacies for the student.
+     */
+    public function candidacies()
+    {
+        return $this->hasMany(Candidacy::class);
     }
 }
