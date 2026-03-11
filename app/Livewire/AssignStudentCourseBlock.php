@@ -28,24 +28,24 @@ public function render()
 
 public function getStudents()
 {
-    if (!$this->course_block_id) return collect();
+    // The list only displays AFTER a section is selected
+    if (!$this->target_section_id || !$this->academic_year_id || !$this->semester) {
+        return collect();
+    }
 
-    // Use the relationship directly. This is cleaner and avoids manual column naming issues.
-return Student::whereHas('courseBlocks', function($query) {
-        $query->where('student_courseblock.courseblock_id', $this->course_block_id);
-    })
-    ->whereDoesntHave('sections', function($query) {
-        // Exclude students already in the target section for this term
-        $query->where('section_id', $this->target_section_id)
-              ->where('academic_year_id', $this->academic_year_id);
-    })
-    ->get();
+    // Fetch only students belonging to the selected section for this term
+    return Student::whereHas('sections', function($query) {
+        $query->where('section_student.section_id', $this->target_section_id)
+              ->where('section_student.academic_year_id', $this->academic_year_id)
+              ->where('section_student.semester', $this->semester);
+    })->get();
 }
 
 public function addAllStudents()
 {
     $this->validate([
         'target_section_id' => 'required',
+        'course_block_id'   => 'required',
         'academic_year_id'  => 'required',
         'semester'          => 'required',
     ]);
@@ -53,24 +53,30 @@ public function addAllStudents()
     $students = $this->getStudents();
 
     if ($students->isEmpty()) {
-        session()->flash('error', 'No students found in this block to assign.');
+        session()->flash('message', 'No students found in this section.');
         return;
     }
 
-    foreach ($students as $student) {
-        DB::table('section_student')->updateOrInsert(
-            [
-                'student_id' => $student->id,
-                'academic_year_id' => $this->academic_year_id,
-                'semester' => $this->semester
-            ],
-            ['section_id' => $this->target_section_id]
-        );
+    // 1. Check if any student in this list is already assigned to this block
+    $existingAssignments = DB::table('student_courseblock')
+        ->where('courseblock_id', $this->course_block_id)
+        ->whereIn('student_id', $students->pluck('id'))
+        ->exists();
+
+    if ($existingAssignments) {
+        // Use flash('error') to trigger the red alert style
+        session()->flash('error', 'Error: Some or all students in this section are already assigned to this Course Block.');
+        return;
     }
 
-    // SUCCESS ACTION: Reset the selections so the list "refreshes" and clears
-    $this->reset(['course_block_id', 'target_section_id']);
+    // 2. If no duplicates, proceed with the assignment
+    foreach ($students as $student) {
+        DB::table('student_courseblock')->insert([
+            'student_id'     => $student->id,
+            'courseblock_id' => $this->course_block_id,
+        ]);
+    }
 
-    session()->flash('message', 'All students successfully assigned to the section!');
+    session()->flash('message', 'All students successfully assigned to the Course Block!');
 }
 }

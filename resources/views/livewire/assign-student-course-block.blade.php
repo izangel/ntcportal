@@ -18,43 +18,42 @@
     </div>
 
     <div class="mb-6">
-<div class="mb-4">
-    <label class="block text-sm font-medium text-gray-700">Select Course Block</label>
-    <select wire:model.live="course_block_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-        <option value="">-- Select a Block --</option>
-        @foreach($courseBlocks as $block)
-            <option value="{{ $block->id }}">
-                {{-- Match: MK201 - Principles of Marketing --}}
-                {{ $block->course->code ?? 'N/A' }} - {{ $block->course->name ?? 'No Name' }} | 
-                
-                {{-- Match: Smith, Jane --}}
-                Faculty: {{ $block->faculty->name ?? 'Unassigned' }} | 
-                
-                {{-- Match: MWF 10:00 AM - 11:30 AM --}}
-                Sched: {{ $block->schedule_string ?? ($block->days . ' ' . $block->start_time . ' - ' . $block->end_time) }}
-            </option>
-        @endforeach
-    </select>
-</div>
+        <label class="block text-sm font-medium text-gray-700">Select Course Block to Assign</label>
+        <select wire:model.live="course_block_id" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 border p-2">
+            <option value="">-- Select a Block --</option>
+            @foreach($courseBlocks as $block)
+                <option value="{{ $block->id }}">
+                    {{ $block->course->code ?? 'N/A' }} - {{ $block->course->name ?? 'No Name' }} | 
+                    Faculty: {{ $block->faculty->last_name ?? 'Unassigned' }}, {{ $block->faculty->first_name ?? '' }} | 
+                    Sched: {{ $block->days ?? '' }} 
+                           {{ $block->start_time ? date('g:i A', strtotime($block->start_time)) : '' }} - 
+                           {{ $block->end_time ? date('g:i A', strtotime($block->end_time)) : '' }}
+                </option>
+            @endforeach
+        </select>
     </div>
 
     <div class="overflow-x-auto mb-6 border rounded">
         <table class="min-w-full bg-white">
-            <thead class="bg-gray-100">
-                <tr>
-                    <th class="p-3 text-left">Student ID</th>
-                    <th class="p-3 text-left">Name</th>
+            <thead class="bg-gray-100 border-b">
+                <tr class="text-xs font-semibold uppercase text-gray-700">
+                    <th class="p-3 text-left">LAST NAME</th>
+                    <th class="p-3 text-left">FIRST NAME</th>
+                    <th class="p-3 text-left">STUDENT ID</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($students as $student)
-                    <tr class="border-t">
-                        <td class="p-3">{{ $student->student_id }}</td>
-                        <td class="p-3">{{ $student->last_name }}, {{ $student->first_name }}</td>
+                    <tr class="border-t hover:bg-gray-50">
+                        <td class="p-3 uppercase text-sm font-medium">{{ $student->last_name }}</td>
+                        <td class="p-3 uppercase text-sm font-medium">{{ $student->first_name }}</td>
+                        <td class="p-3 text-sm text-blue-600 font-bold">{{ $student->student_id }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="2" class="p-6 text-center text-gray-400">No students assigned to this block yet.</td>
+                        <td colspan="4" class="p-8 text-center text-gray-400">
+                            {{ $target_section_id ? 'No students found in this section.' : 'Please select a Section below to view the student list.' }}
+                        </td>
                     </tr>
                 @endforelse
             </tbody>
@@ -64,8 +63,8 @@
     <div class="flex items-center gap-4 bg-gray-50 p-4 rounded border">
         <div class="flex-1">
             <select wire:model.live="target_section_id" 
-                @disabled(!$academic_year_id || !$semester || !$course_block_id)
-                class="border p-2 rounded w-full disabled:bg-gray-200">
+                @disabled(!$academic_year_id || !$semester)
+                class="border p-2 rounded w-full disabled:bg-gray-200 border-blue-400">
                 <option value="">Select Section...</option>
                 @foreach($sections as $section)
                     <option value="{{ $section->id }}">{{ $section->name }}</option>
@@ -73,18 +72,19 @@
             </select>
         </div>
 
-<button wire:click="addAllStudents" 
-    wire:loading.attr="disabled"
-    @disabled(!$target_section_id)
-    class="bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center">
-    
-    {{-- Show a spinner or text change while processing --}}
-    <span wire:loading.remove>Add All Students</span>
-    <span wire:loading>Processing...</span>
-</button>
+        <button wire:click="addAllStudents" 
+            wire:loading.attr="disabled"
+            @disabled(!$target_section_id || !$course_block_id)
+            class="bg-blue-600 text-white px-8 py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50 flex items-center shadow-md">
+            
+            <span wire:loading.remove>Add All Students</span>
+            <span wire:loading>Processing...</span>
+        </button>
     </div>
 
     @if (session()->has('message'))
-        <div class="mt-4 p-3 bg-green-100 text-green-700 rounded">{{ session('message') }}</div>
+        <div class="mt-4 p-3 bg-green-100 text-green-700 rounded shadow-sm border border-green-200 text-sm">
+            {{ session('message') }}
+        </div>
     @endif
 </div>
