@@ -107,7 +107,7 @@ Route::middleware([
     Route::middleware(['can:post-announcements'])->group(function () {
         Route::get('/announcements/create', [AnnouncementController::class, 'create'])->name('announcements.create');
         Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
-        
+
         // ADD THESE THREE LINES:
         Route::get('/announcements/{announcement}/edit', [AnnouncementController::class, 'edit'])->name('announcements.edit');
         Route::put('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
@@ -130,7 +130,7 @@ Route::middleware([
 
     // Admin and Teacher specific routes (apply roles middleware)
     Route::middleware(['role:academic_head|registrar|hr|admin'])->group(function () {
-        
+
         Route::resource('courses', CourseController::class);
        // Route::resource('enrollments', EnrollmentController::class);
          Route::resource('coursetosections', CourseToSectionController::class);
@@ -147,20 +147,20 @@ Route::middleware([
         Route::get('/assignment/individual', AssignCoursesIndividual::class)->name('assign.individual');
        Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
        Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
-        
+
        Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
-       
+
 
     });
 
-   
+
 
     // HR specific routes (apply roles middleware)
     Route::middleware(['role:hr|admin|academic_head'])->group(function () {
 
-        
+
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])
          ->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);
@@ -172,13 +172,13 @@ Route::middleware([
         Route::get('/hr/all-applications', [LeaveApplicationController::class, 'all'])->name('hr.leave_applications.all');
 
         Route::resource('employees', EmployeeController::class);
-        
+
         Route::post('/employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
         ->name('employees.reset-password')
         ->middleware('auth'); // Ensure this is protected by appropriate middleware
 
         // New Admin Faculty Course View
-       
+
         Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)
         ->name('course-blocks.bulk-uploader');
 
@@ -186,8 +186,8 @@ Route::middleware([
         Route::get('/admin/leave-summary', [LeaveApplicationController::class, 'leaveSummary'])
             ->name('admin.leave.summary');
 
-       
-    
+
+
         //HR Peer assignment
         Route::get('/peer-assignments', [PeerAssignmentController::class, 'index'])
             ->name('hr.peer-assignments.index');
@@ -202,7 +202,7 @@ Route::middleware([
         Route::post('/supervisor-assignments', [SupervisorAssignmentController::class, 'store'])->name('hr.supervisor-assignments.store');
         Route::delete('/supervisor-assignments/{assignment}', [SupervisorAssignmentController::class, 'destroy'])
                 ->name('hr.supervisor-assignments.destroy');
-        
+
 
         //bulk upload student user accounts
         Route::get('/admin/bulk-upload', [BulkUserController::class, 'index'])->name('admin.bulk-upload');
@@ -219,9 +219,9 @@ Route::middleware([
     });
 
 
-   
+
     Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
-    
+
     // Reports Routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
@@ -289,7 +289,7 @@ Route::middleware([
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/test/markall', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 
-    
+
     // Route::get('/test', [TestController::class, 'index'])->name('test.index');
     // Route::post('/test/call', [TestController::class, 'call'])->name('test.call');
 });
@@ -309,7 +309,7 @@ Route::middleware('auth')->group(function () {
     // 1. Route to show the initial page with filters (No results yet)
     Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])
         ->name('faculty.course_load');
-        
+
     // 2. Route to show the filtered results
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
         ->name('faculty.course_load.show');
@@ -322,7 +322,7 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
 // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])
         ->name('student.courses');
-    
+
     Route::post('/my-courses/evaluate', [StudentCourseController::class, 'storeEvaluation'])
     ->name('student.courses.evaluate');
 
@@ -348,7 +348,7 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
     // 1. The Landing Page: Shows a list of semesters where the teacher has reports
     Route::get('/my-evaluations', [MyEvaluationController::class, 'index'])
         ->name('teacher.evaluations.index');
-    
+
     // 2. The Detailed Report: Displays the 360-degree aggregated data for a specific period
     // Example URL: /teacher/my-evaluations/1/1st
     Route::get('/my-evaluations/{academic_year_id}/{semester}', [MyEvaluationController::class, 'show'])
@@ -377,7 +377,7 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
         ->prefix('student')    // URLs start with /student/...
         ->name('student.')     // Names start with student....
         ->group(function () {
-            
+
             Route::get('/evaluations', [StudentEvaluationController::class, 'index'])
                 ->name('evaluations.index'); // Actual name: student.evaluations.index
 
@@ -389,5 +389,22 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
     });
 });
 
-// Standard Jetstream authentication routes
+Route::view('profile', 'profile')
+    ->middleware(['auth'])
+    ->name('profile');
+
+// Student Routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('student/course-blocks', \App\Livewire\StudentCourseBlock::class)->name('student.course-blocks');
+
+    // Placeholders for missing routes to fix 500 errors
+    Route::get('student/evaluations', function() { return 'Course Evaluation Page'; })->name('student.evaluations.index');
+    Route::get('announcements', function() { return 'Announcements Page'; })->name('announcements.index');
+    Route::get('important-dates', function() { return 'Important Dates Page'; })->name('important_dates.index');
+    Route::get('profile/password', function() { return 'Change Password Page'; })->name('password.edit');
+
+    // Admin/Registrar Routes
+    Route::get('admin/course-blocks', \App\Livewire\CourseBlockManager::class)->name('course-blocks');
+});
+
 require __DIR__.'/auth.php';
