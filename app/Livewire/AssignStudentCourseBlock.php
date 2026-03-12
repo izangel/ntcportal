@@ -23,7 +23,8 @@ public function render()
         
         'sections'      => \App\Models\Section::all(),
         'students'      => $this->getStudents(),
-    ])->layout('layouts.admin');
+    ])->extends('layouts.admin')
+            ->section('content');
 }
 
 public function getStudents()
