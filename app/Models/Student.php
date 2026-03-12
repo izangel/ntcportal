@@ -11,8 +11,9 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'student_id',
+        'student_id',     // The School ID (e.g., 2024-0001)
         'first_name',
+        'middle_name',    // ADDED: To ensure middle names can be saved/displayed
         'last_name',
         'middle_name',
         'email',
@@ -20,36 +21,39 @@ class Student extends Model
         'section_id',
     ];
 
-    // Define relationship with User
+    /**
+     * Relationship with the User account
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Define many-to-many relationship with Course through Enrollment
-    public function courses()
-    {
-        return $this->belongsToMany(Course::class, 'enrollments')
-                    ->withPivot('grade', 'created_at') // Include grade and created_at from pivot table
-                    ->withTimestamps(); // If you want to automatically manage timestamps on the pivot
-    }
-
-    // Define hasMany relationship with Enrollment model
-    public function enrollments()
-    {
-        return $this->hasMany(Enrollment::class);
-    }
-
     /**
-     * Get the section that the student belongs to.
+     * Relationship with Section (Many-to-Many)
+     * This links to your new section_student pivot table
      */
-    // App\Models\Student.php
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student')
                     ->withPivot('academic_year_id', 'semester')
                     ->withTimestamps();
     }
+
+    /**
+     * Relationship with Enrollments
+     */
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+   
+public function courseBlocks() {
+    return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'courseblock_id');
+}
+
+
 
     /**
      * Get the program that the student belongs to (through section).
