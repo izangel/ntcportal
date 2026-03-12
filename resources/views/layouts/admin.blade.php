@@ -320,6 +320,10 @@
                         <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
                         {{ __('Course Blocks') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('student.assign.courseblocks') }}" :active="request()->routeIs('student.assign.courseblocks')">
+                        <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
+                        {{ __('Assign Students to Courseblocks (Regular Students)') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-solid fa-chalkboard-user mr-3 text-lg"></i>
                         {{ __('Faculty Course Blocks') }}
