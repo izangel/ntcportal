@@ -316,7 +316,7 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('course-blocks.index') }}" :active="request()->routeIs('course-blocks.index')">
+                    <x-nav-link href="{{ route('course_blocks.index') }}" :active="request()->routeIs('course_blocks.index')">
                         <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
                         {{ __('Course Blocks') }}
                     </x-nav-link>
