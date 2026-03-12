@@ -29,6 +29,7 @@ use App\Http\Controllers\EmployeeLeaveController;
 use App\Http\Controllers\HrController;
 
 use App\Http\Controllers\ChangePasswordController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
 use App\Http\Controllers\CourseToSectionController;
@@ -66,6 +67,10 @@ use App\Http\Controllers\Admin\StudentAccountController;
 use App\Http\Controllers\Teacher\MyEvaluationController;
 
 use App\Http\Controllers\Admin\EvaluationMonitoringController;
+
+use App\Http\Controllers\Admin\CandidacyManagementController;
+
+use App\Http\Controllers\CandidacyController;
 
 use App\Http\Controllers\CourseBlockController;
 /*
@@ -278,8 +283,13 @@ Route::middleware([
         Route::get('/', [HrLeaveApplicationController::class, 'index'])->name('index'); // HR Dashboard / Pending review list
         Route::get('/review/{leaveApplication}', [HrLeaveApplicationController::class, 'review'])->name('review')->middleware('signed'); // View/Review specific application
         Route::post('/decide/{leaveApplication}', [HrLeaveApplicationController::class, 'decide'])->name('decide'); // Process decision
+        Route::get('/retroactive', [HrLeaveApplicationController::class, 'showRetroactiveForm'])->name('retroactive_form'); // Show retroactive leave form
+        Route::post('/retroactive', [HrLeaveApplicationController::class, 'storeRetroactive'])->name('store_retroactive'); // Store retroactive leave
         // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
     });
+
+    // API route for getting employee leave credits (no role restriction needed for HR)
+    Route::middleware(['role:hr'])->get('/hr/employee-leave-credits/{employeeId}', [HrLeaveApplicationController::class, 'getEmployeeLeaveCredits'])->name('hr.employee_leave_credits');
 
      // Admin Leave Application Management Routes (Assuming AdminLeaveApplicationController exists)
     Route::middleware(['role:admin'])->prefix('admin/leave-applications')->name('admin.leave_applications.')->group(function () {
@@ -287,6 +297,15 @@ Route::middleware([
         Route::get('/review/{leaveApplication}', [AdminLeaveApplicationController::class, 'review'])->name('review')->middleware('signed'); // View/Review specific application
         Route::post('/decide/{leaveApplication}', [AdminLeaveApplicationController::class, 'decide'])->name('decide'); // Process decision
         // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
+    });
+
+    // OSA - Candidacy Management Routes (for teachers/staff/admin)
+    Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
+        Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
+        Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+        Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+        Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
+        Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
     });
 
 
@@ -306,6 +325,16 @@ Route::middleware([
         ->name('course_blocks.update');
     Route::delete('/course-blocks/{courseBlock}', [CourseBlockController::class, 'destroy'])
         ->name('course_blocks.destroy');
+
+    Route::get('/profile/personal-information', [ProfileController::class, 'personalInformation'])
+        ->name('profile.personal-information');
+
+    Route::get('/profile/personal-information/edit', [ProfileController::class, 'editPersonalInformation'])
+        ->name('profile.personal-information.edit');
+
+    Route::put('/profile/personal-information', [ProfileController::class, 'updatePersonalInformation'])
+        ->name('profile.personal-information.update');
+
     Route::get('/profile/password', [ChangePasswordController::class, 'edit'])
         ->name('password.edit');
 
@@ -399,6 +428,12 @@ Route::middleware([
                 ->name('evaluations.store');
             Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
                 ->name('assign.courseblocks');
+
+            // Candidacy Routes
+            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
+            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
+            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
+            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
     });
 });
 

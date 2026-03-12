@@ -36,6 +36,9 @@
                                             HR Status
                                         </th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Remarks
+                                        </th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -52,7 +55,7 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm text-gray-900">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</div>
-                                                <div class="text-sm text-gray-500">({{ $application->total_days }} days)</div>
+                                                <div class="text-sm text-gray-500">({{ max(0, (int) $application->total_days) }} days)</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -69,6 +72,15 @@
                                                     @else bg-gray-100 text-gray-800 @endif">
                                                     {{ ucfirst($application->hr_status) }}
                                                 </span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                @php
+                                                    $remarksDisplay = 'N/A';
+                                                    if (is_null($application->ah_approved_by) && !is_null($application->hr_approved_by) && ($application->admin_status === 'pending')) {
+                                                        $remarksDisplay = 'Filed By HR';
+                                                    }
+                                                @endphp
+                                                {{ $remarksDisplay }}
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 @if($application->ah_status === 'pending')

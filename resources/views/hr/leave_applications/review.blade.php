@@ -13,9 +13,10 @@
                     <p class="text-sm text-gray-600">Type: {{ $leaveApplication->leaveType->name }}</p>
                     <p class="text-sm text-gray-600">Period: {{ $leaveApplication->start_date->format('M d, Y') }} - {{ $leaveApplication->end_date->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600">Reason: {{ $leaveApplication->reason }}</p>
+                    <p class="text-sm text-gray-600">Date Filed: {{ $leaveApplication->date_filed->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600 mt-2 font-semibold">HR Status: <span class="uppercase">{{ $leaveApplication->hr_status }}</span></p>
                     @if($leaveApplication->hr_status !== 'pending')
-                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->hr_approved_at->format('M d, Y') }} by {{ $leaveApplication->hrApprover->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->hr_approved_at->format('M d, Y') }} by {{ $leaveApplication->hrApprover ? $leaveApplication->hrApprover->first_name . ' ' . $leaveApplication->hrApprover->last_name : 'N/A' }}</p>
                         @if($leaveApplication->hr_remarks)
                             <p class="text-sm text-gray-600">Remarks: "{{ $leaveApplication->hr_remarks }}"</p>
                         @endif

@@ -29,10 +29,11 @@
                     <p class="text-sm text-gray-600">Type: {{ $leaveApplication->leaveType->name }}</p>
                     <p class="text-sm text-gray-600">Period: {{ $leaveApplication->start_date->format('M d, Y') }} - {{ $leaveApplication->end_date->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600">Reason: {{ $leaveApplication->reason }}</p>
+                    <p class="text-sm text-gray-600">Date Filed: {{ $leaveApplication->date_filed->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600 mt-2 font-semibold">Academic Head Status: <span class="uppercase {{ $leaveApplication->ah_status === 'approved' ? 'text-green-700' : ($leaveApplication->ah_status === 'rejected' ? 'text-red-700' : 'text-gray-700') }}">{{ $leaveApplication->ah_status }}</span></p>
 
                     @if($leaveApplication->ah_status !== 'pending' && $leaveApplication->ah_approved_at)
-                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->ah_approved_at->format('M d, Y') }} by {{ $leaveApplication->ahApprover->name ?? 'N/A' }}</p>
+                        <p class="text-sm text-gray-600">Decision on: {{ $leaveApplication->ah_approved_at->format('M d, Y') }} by {{ $leaveApplication->ahApprover ? $leaveApplication->ahApprover->first_name . ' ' . $leaveApplication->ahApprover->last_name : 'N/A' }}</p>
                         @if($leaveApplication->ah_remarks)
                             <p class="text-sm text-gray-600">Remarks: "{{ $leaveApplication->ah_remarks }}"</p>
                         @endif
