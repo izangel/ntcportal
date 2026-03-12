@@ -129,6 +129,19 @@
                 </div>
             </div>
 
+            {{-- Records Per Position --}}
+            <div class="p-6 bg-white border-b border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-4">Records Per Position</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+                    @foreach($positionOrder as $positionKey => $positionLabel)
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ $positionLabel }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ $positionCounts[$positionKey] ?? 0 }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
             {{-- Table --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Candidacy;
 use App\Models\Setting;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,11 @@ class CandidacyManagementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Candidacy::with('student.user')->latest();
+        $query = Candidacy::with('student.user');
+
+        $this->applyPositionOrdering($query)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('created_at');
 
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
@@ -25,17 +30,31 @@ class CandidacyManagementController extends Controller
         // Search by name
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+            $query->whereHas('student', function ($studentQuery) use ($search) {
+                $studentQuery->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%");
             });
         }
 
         $applications = $query->paginate(15);
+        $positionOrder = [
+            'president' => 'President',
+            'vice_president' => 'Vice President',
+            'secretary' => 'Secretary',
+            'treasurer' => 'Treasurer',
+            'auditor' => 'Auditor',
+            'pio' => 'PIO',
+            'business_manager' => 'Business Manager',
+        ];
+        $positionCounts = Candidacy::query()
+            ->selectRaw('position_applied, COUNT(*) as total')
+            ->groupBy('position_applied')
+            ->pluck('total', 'position_applied');
         $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
         $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
 
-        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen'));
+        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen', 'positionOrder', 'positionCounts'));
     }
 
     /**
@@ -90,10 +109,37 @@ class CandidacyManagementController extends Controller
     {
         $candidates = Candidacy::with('student.user')
             ->where('status', 'approved')
-            ->latest()
+            ->orderByRaw($this->positionOrderCaseStatement())
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('created_at')
             ->paginate(15);
 
         return view('admin.candidacy.candidates', compact('candidates'));
+    }
+
+    /**
+     * Apply fixed position ordering for candidacy records.
+     */
+    private function applyPositionOrdering(Builder $query): Builder
+    {
+        return $query->orderByRaw($this->positionOrderCaseStatement());
+    }
+
+    /**
+     * SQL CASE statement for ordering positions consistently.
+     */
+    private function positionOrderCaseStatement(): string
+    {
+        return "CASE position_applied
+            WHEN 'president' THEN 1
+            WHEN 'vice_president' THEN 2
+            WHEN 'secretary' THEN 3
+            WHEN 'treasurer' THEN 4
+            WHEN 'auditor' THEN 5
+            WHEN 'pio' THEN 6
+            WHEN 'business_manager' THEN 7
+            ELSE 99
+        END";
     }
 
     /**

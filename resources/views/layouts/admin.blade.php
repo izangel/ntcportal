@@ -118,6 +118,25 @@
                 </div>
             </div>
 
+            {{-- SSG Voting (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">SSG Voting</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.voting.index') }}" :active="request()->routeIs('student.voting.index')">
+                        <i class="fas fa-vote-yea mr-3 text-lg"></i>
+                        {{ __('Cast Vote') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.voting.results') }}" :active="request()->routeIs('student.voting.results')">
+                        <i class="fas fa-poll mr-3 text-lg"></i>
+                        {{ __('View Results') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
         @endif
             
         @if(Auth::user()->hasRole('teacher') || Auth::user()->hasRole('staff') || Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
@@ -288,7 +307,7 @@
                         <i class="fas fa-users mr-3 text-lg"></i>
                         {{ __('Manage Candidates') }}
                     </x-nav-link>
-                    <x-nav-link href="#">
+                    <x-nav-link href="{{ route('faculty.election.results') }}" :active="request()->routeIs('faculty.election.results')">
                         <i class="fas fa-poll mr-3 text-lg"></i>
                         {{ __('Election Results') }}
                     </x-nav-link>

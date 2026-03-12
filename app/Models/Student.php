@@ -106,4 +106,12 @@ class Student extends Model
     {
         return $this->hasMany(Candidacy::class);
     }
+
+    /**
+     * Get the election votes submitted by the student.
+     */
+    public function electionVotes()
+    {
+        return $this->hasMany(ElectionVote::class);
+    }
 }

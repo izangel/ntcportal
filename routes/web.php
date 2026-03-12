@@ -69,6 +69,7 @@ use App\Http\Controllers\Admin\EvaluationMonitoringController;
 use App\Http\Controllers\Admin\CandidacyManagementController;
 
 use App\Http\Controllers\CandidacyController;
+use App\Http\Controllers\StudentVotingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -362,6 +363,12 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
     Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])
         ->name('faculty.reports.view');
 
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
 
     //Faculty Peer evaluations
     Route::get('/peer-evaluations', [PeerEvaluationController::class, 'index'])->name('faculty.peer-evaluations.index');
@@ -417,6 +424,11 @@ Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-lo
             Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
             Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
             Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
+
+            // Voting Routes
+            Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
+            Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
+            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
     });
 });
 
