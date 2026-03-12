@@ -53,6 +53,22 @@
                         <i class="fas fa-eye mr-2"></i> View Application Status
                     </a>
                 </div>
+            @elseif(!$isApplicationOpen)
+                {{-- Applications Closed Message --}}
+                <div class="text-center py-12">
+                    <div class="mb-6">
+                        <div class="w-20 h-20 mx-auto rounded-full bg-red-100 flex items-center justify-center">
+                            <i class="fas fa-door-closed text-red-600 text-4xl"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Applications Closed</h3>
+                    <p class="text-gray-600 mb-6">Candidacy applications are currently closed. Please check back later or contact the Office of Student Affairs for more information.</p>
+                    
+                    <a href="{{ route('dashboard') }}" 
+                        class="inline-block px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i> Back to Dashboard
+                    </a>
+                </div>
             @else
                 {{-- Disclaimer Section --}}
                 <div class="border border-gray-300 p-4 mb-6">
@@ -148,7 +164,7 @@
                                         <div>
                                             <label class="block text-sm font-semibold text-gray-800">Requirement: Student ID Upload</label>
                                             <p class="text-sm text-gray-600 mb-2">Please upload a scanned copy of your Student ID to our official Google Drive folder before submitting.</p>
-                                            <a href="https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F" target="_blank" 
+                                            <a href="{{ $googleDriveLink }}" target="_blank" 
                                             class="inline-flex items-center text-sm font-bold text-blue-700 hover:text-blue-800 underline decoration-2 underline-offset-4">
                                                 Upload Candidate's Scanned Copy of Student ID 
                                                 <i class="fas fa-external-link-alt ml-2 text-xs"></i>

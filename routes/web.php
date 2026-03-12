@@ -293,6 +293,8 @@ Route::middleware([
     Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
         Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
         Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+        Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
+        Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
         Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
         Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
         Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');

@@ -20,6 +20,71 @@
             </div>
         @endif
 
+        {{-- Google Drive Link Settings --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+            <div class="p-6 border-b border-gray-200 bg-blue-50">
+                <div class="flex items-start gap-3">
+                    <i class="fab fa-google-drive text-blue-600 text-2xl mt-1"></i>
+                    <div class="flex-1">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-1">Student ID Upload Link (Google Drive)</h3>
+                        <p class="text-sm text-gray-600 mb-3">This link will be shown to students in the candidacy application form for uploading their Student ID.</p>
+                        
+                        <form action="{{ route('admin.candidacy.updateDriveLink') }}" method="POST" class="flex flex-col md:flex-row gap-3">
+                            @csrf
+                            <input type="url" name="google_drive_link" value="{{ $googleDriveLink }}" 
+                                class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                                placeholder="https://drive.google.com/drive/folders/..." required>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm whitespace-nowrap">
+                                <i class="fas fa-save mr-1"></i> Update Link
+                            </button>
+                        </form>
+                        @error('google_drive_link')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                        
+                        <a href="{{ $googleDriveLink }}" target="_blank" class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 mt-2">
+                            <i class="fas fa-external-link-alt mr-1"></i> Open Current Link
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Application Status Toggle --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+            <div class="p-6 {{ $isApplicationOpen ? 'bg-green-50' : 'bg-red-50' }}">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full {{ $isApplicationOpen ? 'bg-green-100' : 'bg-red-100' }} flex items-center justify-center">
+                            <i class="fas {{ $isApplicationOpen ? 'fa-door-open text-green-600' : 'fa-door-closed text-red-600' }} text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold {{ $isApplicationOpen ? 'text-green-800' : 'text-red-800' }}">
+                                Application Status: {{ $isApplicationOpen ? 'OPEN' : 'CLOSED' }}
+                            </h3>
+                            <p class="text-sm {{ $isApplicationOpen ? 'text-green-600' : 'text-red-600' }}">
+                                @if($isApplicationOpen)
+                                    Students can currently submit their candidacy applications.
+                                @else
+                                    Students cannot submit candidacy applications at this time.
+                                @endif
+                            </p>
+                        </div>
+                    </div>
+                    <form action="{{ route('admin.candidacy.toggleApplication') }}" method="POST">
+                        @csrf
+                        <button type="submit" 
+                            class="px-5 py-2.5 rounded-md text-white font-medium text-sm transition
+                            {{ $isApplicationOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
+                            onclick="return confirm('Are you sure you want to {{ $isApplicationOpen ? 'close' : 'open' }} candidacy applications?')">
+                            <i class="fas {{ $isApplicationOpen ? 'fa-lock' : 'fa-unlock' }} mr-2"></i>
+                            {{ $isApplicationOpen ? 'Close Applications' : 'Open Applications' }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             {{-- Header & Filters --}}
             <div class="p-6 border-b border-gray-200">

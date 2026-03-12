@@ -26,6 +26,14 @@ class Student extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Get the section that the student directly belongs to.
+     */
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
+
     // Define many-to-many relationship with Course through Enrollment
     public function courses()
     {

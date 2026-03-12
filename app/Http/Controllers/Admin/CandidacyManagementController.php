@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Candidacy;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -31,8 +32,10 @@ class CandidacyManagementController extends Controller
         }
 
         $applications = $query->paginate(15);
+        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
+        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
 
-        return view('admin.candidacy.index', compact('applications'));
+        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen'));
     }
 
     /**
@@ -91,5 +94,38 @@ class CandidacyManagementController extends Controller
             ->paginate(15);
 
         return view('admin.candidacy.candidates', compact('candidates'));
+    }
+
+    /**
+     * Update the Google Drive link setting.
+     */
+    public function updateGoogleDriveLink(Request $request)
+    {
+        $request->validate([
+            'google_drive_link' => 'required|url|max:500',
+        ]);
+
+        Setting::set('candidacy_google_drive_link', $request->google_drive_link, 'Google Drive folder link for candidacy student ID uploads');
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Google Drive link has been updated successfully.');
+    }
+
+    /**
+     * Toggle the candidacy application open/closed status.
+     */
+    public function toggleApplicationStatus()
+    {
+        $currentStatus = Setting::get('candidacy_application_open', 'true');
+        $newStatus = $currentStatus === 'true' ? 'false' : 'true';
+        
+        Setting::set('candidacy_application_open', $newStatus, 'Whether candidacy applications are open for students');
+
+        $message = $newStatus === 'true' 
+            ? 'Candidacy applications are now OPEN for students.' 
+            : 'Candidacy applications are now CLOSED for students.';
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', $message);
     }
 }
