@@ -12,10 +12,9 @@ use App\Models\LeaveApplication;
 use App\Models\ImportantDate;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
-
 use App\Models\Semester;
-
 use App\Models\SectionStudent;
+use App\Models\SystemUpdate;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -27,15 +26,15 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $todayStr = now()->toDateString(); 
+        $todayStr = now()->toDateString();
         $notifications = $user->unreadNotifications;
 
         $recentDates = ImportantDate::with('categories')
             ->where(function($query) use ($todayStr) {
                 $query->where('end_date', '>=', $todayStr)
-                      ->orWhere(function($q) use ($todayStr) {
-                          $q->whereNull('end_date')->where('start_date', '>=', $todayStr);
-                      });
+                    ->orWhere(function($q) use ($todayStr) {
+                        $q->whereNull('end_date')->where('start_date', '>=', $todayStr);
+                    });
             })
             ->orderByRaw("CASE WHEN '$todayStr' BETWEEN start_date AND COALESCE(end_date, start_date) THEN 1 ELSE 2 END ASC")
             ->orderBy('start_date', 'asc')
@@ -60,7 +59,7 @@ class DashboardController extends Controller
             $dateStr = $day->toDateString();
             $leavesByDay[$dateStr] = $rawLeaves->filter(function ($leave) use ($day) {
                 return $day->between(
-                    Carbon::parse($leave->start_date)->startOfDay(), 
+                    Carbon::parse($leave->start_date)->startOfDay(),
                     Carbon::parse($leave->end_date)->endOfDay()
                 );
             });
@@ -73,18 +72,18 @@ class DashboardController extends Controller
                 'employee.leaveApplications.adminApprover'
             ]);
         }
-        
+
         $staffData = [];
         $studentData = [];
-        $pendingApplications = collect(); 
+        $pendingApplications = collect();
 
         if ($user->hasRole('student') && $user->student) {
             $student = $user->student;
-            
+
             // 1. GET ACTIVE SEMESTER LOGIC (From Monitoring Controller)
             $activeSemester = Semester::where('is_active', 1)->first();
             $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
-            
+
             $enrolledCourses = collect([]);
             $upcomingSchedule = collect([]);
 
@@ -114,14 +113,14 @@ class DashboardController extends Controller
 
             $studentData = [
                 'enrolledCourses' => $student->enrollments, // Keep all for GPA
-                'currentGPA' => $this->calculateGPA($student->enrollments), 
+                'currentGPA' => $this->calculateGPA($student->enrollments),
                 'totalCredits' => $student->enrollments->sum('course.credits'),
                 'upcomingSchedule' => $upcomingSchedule,
                 'activeSemester' => $activeSemester,
                 'semesterName' => $semesterName,
             ];
         }
-        else { 
+        else {
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
             $staffData['totalEnrollments'] = Enrollment::count();
@@ -133,6 +132,8 @@ class DashboardController extends Controller
             $staffData['totalUsers'] = User::count();
             $staffData['recentStudents'] = Student::latest()->take(5)->get();
             $staffData['recentCourses'] = Course::latest()->take(5)->get();
+
+            $staffData['recentUpdates'] = SystemUpdate::latest()->take(5)->get();
 
             $staffData['myCourses'] = collect();
             if ($user->employee) {
@@ -147,7 +148,7 @@ class DashboardController extends Controller
                         'name'      => $group->first()->course->name,
                         'schedule'  => $group->first()->schedule_string,
                         'sections'  => $group->map(fn($i) => ($i->section->program->name ?? '').'-'.($i->section->name ?? ''))->unique()->implode(', '),
-                        'finalized' => $group->first()->finalized 
+                        'finalized' => $group->first()->finalized
                     ])
                     ->sortBy('schedule')
                     ->values();
@@ -168,8 +169,8 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
-            $staffData, 
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
+            $staffData,
             $studentData
         );
 
@@ -189,7 +190,7 @@ class DashboardController extends Controller
         $totalPoints = 0; $totalCredits = 0;
         foreach ($enrollments as $enrollment) {
             if ($enrollment->course && !empty($enrollment->grade)) {
-                $gradePoint = $this->convertToGradePoint($enrollment->grade); 
+                $gradePoint = $this->convertToGradePoint($enrollment->grade);
                 $credits = $enrollment->course->credits;
                 $totalPoints += ($gradePoint * $credits);
                 $totalCredits += $credits;
@@ -216,7 +217,7 @@ class DashboardController extends Controller
                         'title' => $enrollment->course->name ?? 'N/A',
                         'course_name' => $enrollment->course->code ?? 'N/A',
                         'time_display' => $block->schedule_string . ' in ' . $block->room_name,
-                        'sort_order' => rand(1, 4), 
+                        'sort_order' => rand(1, 4),
                     ]);
                 }
             }
