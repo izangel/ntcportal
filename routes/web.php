@@ -71,7 +71,6 @@ Route::middleware([
     
     // Primary Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/portal-updates', \App\Livewire\User\SystemUpdateList::class)->name('portal-updates.list');
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
@@ -122,7 +121,7 @@ Route::middleware([
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
 
-        Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
+
     });
 
     // -- HR specific routes --
