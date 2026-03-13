@@ -479,7 +479,7 @@
                         <div x-show="open" x-collapse.duration.300ms>
                             <x-nav-link href="{{ route('system-updates.manager') }}" :active="request()->routeIs('system-updates.*')">
                                 <i class="fas fa-solid fa-wrench mr-3 text-lg"></i>
-                                {{ __('Post System Update') }}
+                                {{ __('System Update') }}
                             </x-nav-link>
                         </div>
                     </div>
