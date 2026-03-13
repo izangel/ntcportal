@@ -9,6 +9,7 @@ use App\Models\Program;
 use App\Models\Section;
 use App\Models\User;
 use App\Models\LeaveApplication;
+use App\Models\LeaveApplicationClass;
 use App\Models\ImportantDate;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
@@ -77,6 +78,16 @@ class DashboardController extends Controller
         $staffData = [];
         $studentData = [];
         $pendingApplications = collect(); 
+        $pendingSubstitutions = collect(); // Initialize for all users
+
+        // Fetch pending substitute assignments for all employees with teacher, academic_head, hr, or admin role
+        if ($user->employee && in_array($user->employee->role, ['teacher', 'academic_head', 'hr', 'admin'])) {
+            $pendingSubstitutions = LeaveApplicationClass::where('substitute_teacher_id', $user->employee->id)
+                ->whereNull('sub_ack_at') // Not yet acknowledged
+                ->with(['leaveApplication.employee', 'leaveApplication.leaveType'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
         if ($user->hasRole('student') && $user->student) {
             $student = $user->student;
@@ -168,7 +179,7 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 'pendingSubstitutions'), 
             $staffData, 
             $studentData
         );

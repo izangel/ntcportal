@@ -142,6 +142,7 @@ class LeaveApplicationController extends Controller
         
 
         // Fetch employees with 'teacher' role for the substitute dropdown
+        // Include all employees except those with 'staff' role
         $teachers = Employee::where('role', '!=', 'staff')
                      ->where('user_id', '!=', Auth::id())
                      ->orderBy('last_name')->get();

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\LeaveApplicationClass;
+use App\Notifications\SubstituteTeacherAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
@@ -31,10 +32,16 @@ class SubstituteAcknowledgementController extends Controller
     }
 
     /**
-     * Process the substitute teacher's acknowledgment.
+     * Process the substitute teacher's acknowledgment or rejection.
      */
     public function processAcknowledgement(Request $request, LeaveApplicationClass $classId)
     {
+        // Validate the request
+        $validated = $request->validate([
+            'action' => 'required|in:accept,reject',
+            'rejection_reason' => 'nullable|string|max:500',
+        ]);
+
         // Basic authentication check
         if (!Auth::check()) {
             throw ValidationException::withMessages([
@@ -50,20 +57,36 @@ class SubstituteAcknowledgementController extends Controller
 
         // Check if already acknowledged to prevent duplicate entries
         if ($classId->sub_ack_at) { // Using the new shorter column name
-            return redirect()->route('dashboard')->with('info', 'This assignment has already been acknowledged.');
+            return redirect()->route('dashboard')->with('info', 'This assignment has already been processed.');
         }
 
-        // Acknowledge the assignment
-        $classId->sub_ack_at = Carbon::now(); // Record acknowledgment timestamp
-        $classId->sub_ack_by = Auth::user()->employee->id; // Record who acknowledged
-        $classId->save();
+        $action = $validated['action'];
 
-        // Mark the related notification as read (optional, but good practice)
-        // Assuming the substitute teacher will see this notification in their dashboard
-        if (Auth::user()->unreadNotifications->where('data.leave_application_class_id', $classId->id)->first()) {
-            Auth::user()->unreadNotifications->where('data.leave_application_class_id', $classId->id)->first()->markAsRead();
+        if ($action === 'accept') {
+            // Acknowledge the assignment
+            $classId->sub_ack_at = now(); // Record acknowledgment timestamp
+            $classId->sub_ack_by = Auth::user()->employee->id; // Record who acknowledged
+            $classId->save();
+
+            // Mark the related notification as read
+            Auth::user()->notifications()
+                ->where('type', SubstituteTeacherAssignment::class)
+                ->whereJsonContains('data->leave_application_class_id', $classId->id)
+                ->update(['read_at' => now()]);
+
+            return redirect()->route('dashboard')->with('success', 'Thank you for accepting the substitute assignment for ' . $classId->course_code . '!');
+        } elseif ($action === 'reject') {
+            // Record rejection timestamp but not who rejected
+            $classId->sub_ack_at = now();
+            $classId->save();
+
+            // Mark the related notification as read
+            Auth::user()->notifications()
+                ->where('type', SubstituteTeacherAssignment::class)
+                ->whereJsonContains('data->leave_application_class_id', $classId->id)
+                ->update(['read_at' => now()]);
+
+            return redirect()->route('dashboard')->with('warning', 'You have rejected the substitute assignment for ' . $classId->course_code . '. Please contact HR immediately.');
         }
-
-        return redirect()->route('dashboard')->with('success', 'Thank you for acknowledging the substitute assignment!');
     }
 }

@@ -29,11 +29,16 @@
                     <div>
                         <p><strong class="text-gray-900">Current Status:</strong>
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                @if ($leaveApplication->approval_status === 'pending') bg-yellow-100 text-yellow-800
+                                @if ($leaveApplication->isRejected()) bg-red-100 text-red-800
+                                @elseif ($leaveApplication->approval_status === 'pending') bg-yellow-100 text-yellow-800
                                 @elseif ($leaveApplication->approval_status === 'approved_with_pay' || $leaveApplication->approval_status === 'approved_without_pay') bg-green-100 text-green-800
                                 @elseif ($leaveApplication->approval_status === 'rejected') bg-red-100 text-red-800
                                 @else bg-gray-100 text-gray-800 @endif">
-                                {{ ucwords(str_replace('_', ' ', $leaveApplication->approval_status)) }}
+                                @if ($leaveApplication->isRejected())
+                                    Rejected
+                                @else
+                                    {{ ucwords(str_replace('_', ' ', $leaveApplication->approval_status)) }}
+                                @endif
                             </span>
                         </p>
                         {{-- Future approval timestamps will go here --}}
@@ -81,6 +86,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day/Time/Room</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topics</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Substitute Teacher</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -91,12 +97,26 @@
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $class['day_time_room'] ?? '' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $class['topics'] ?? '' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $class->substituteTeacher->name ?? '' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @if($class->sub_ack_by)
+                                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                                        Accepted
+                                                    </span>
+                                                @elseif($class->sub_ack_at)
+                                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                        Rejected
+                                                    </span>
+                                                @else
+                                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                        No Response Yet
+                                                    </span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
                             </table>
                         </div>
-                        <p><strong class="text-gray-900">Acknowledgement of Subject Teacher:</strong> {{ $leaveApplication->acknowledgement_subject_teacher ?? 'N/A' }}</p>
                     @else
                         <p>No classes to miss details provided.</p>
                     @endif
@@ -111,7 +131,7 @@
                     <a href="{{ route('leave_applications.index') }}" class="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-800 uppercase tracking-widest hover:bg-gray-300 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
                         Back to List
                     </a>
-                    @if ($leaveApplication->approval_status === 'pending') {{-- Only allow edit/delete if pending --}}
+                    @if ($leaveApplication->approval_status === 'pending' && !$leaveApplication->isRejected()) {{-- Only allow edit/delete if pending and not rejected --}}
                         <a href="{{ route('leave_applications.edit', $leaveApplication) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 ml-2">
                             Edit Application
                         </a>

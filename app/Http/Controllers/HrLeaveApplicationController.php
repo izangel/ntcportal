@@ -7,9 +7,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use App\Models\User;
-use App\Notifications\LeaveApplicationDecision; // We'll create this next
-use Illuminate\Notifications\DatabaseNotification;
+use App\Notifications\LeaveApplicationDecision;
+use App\Notifications\LeaveApplicationSubmittedForHR;
 use App\Notifications\LeaveApplicationSubmittedForAdmin;
+use Illuminate\Notifications\DatabaseNotification;
 
 
 class HrLeaveApplicationController extends Controller
@@ -84,23 +85,11 @@ class HrLeaveApplicationController extends Controller
         $leaveApplication->hr_remarks = $remarks;
         $leaveApplication->save();
 
-        // ----------------------------------------------------------------------
-        // NEW: Mark the HR Manager's notification for this leave application as read
-        $notification = Auth::user()->unreadNotifications()
-                            ->where('type', 'App\Notifications\LeaveApplicationSubmittedForHR') // HR notification type
-                            ->whereJsonContains('data->leave_application_id', $leaveApplication->id)
-                            ->first();
-
-        if ($notification) {
-            $notification->markAsRead();
-        }
-        // ----------------------------------------------------------------------
-
-
-        // Mark HR notification as read
-        if (Auth::user()->unreadNotifications->where('data.leave_application_id', $leaveApplication->id)->first()) {
-            Auth::user()->unreadNotifications->where('data.leave_application_id', $leaveApplication->id)->first()->markAsRead();
-        }
+        // Mark the HR notification as read
+        Auth::user()->notifications()
+            ->where('type', LeaveApplicationSubmittedForHR::class)
+            ->whereJsonContains('data->leave_application_id', $leaveApplication->id)
+            ->update(['read_at' => now()]);
 
         
         //Notify Admin

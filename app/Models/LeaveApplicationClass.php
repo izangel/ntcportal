@@ -19,6 +19,7 @@ class LeaveApplicationClass extends Model
         'acknowledgement_signature',
         'sub_ack_at', // NEW: Timestamp of substitute's acknowledgment
         'sub_ack_by', // NEW: ID of the employee who acknowledged (the substitute)
+        'sub_rejection_reason', // NEW: Reason for rejection if substitute rejected
     ];
 
     protected $casts = [

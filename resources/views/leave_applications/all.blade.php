@@ -109,17 +109,22 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->total_days }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                            @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
+                                            @if ($application->isRejected()) bg-red-100 text-red-800
+                                            @elseif ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
                                             @elseif ($application->approval_status === 'approved_with_pay' || $application->approval_status === 'approved_without_pay') bg-green-100 text-green-800
                                             @elseif ($application->approval_status === 'rejected') bg-red-100 text-red-800
                                             @else bg-gray-100 text-gray-800 @endif">
-                                            {{ ucwords(str_replace('_', ' ', $application->approval_status)) }}
+                                            @if ($application->isRejected())
+                                                Rejected
+                                            @else
+                                                {{ ucwords(str_replace('_', ' ', $application->approval_status)) }}
+                                            @endif
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->date_filed->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <a href="{{ route('leave_applications.show', $application) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
-                                        @if ($application->approval_status === 'pending')
+                                        @if ($application->approval_status === 'pending' && !$application->isRejected())
                                             <a href="{{ route('leave_applications.edit', $application) }}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
                                             <form action="{{ route('leave_applications.destroy', $application) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this leave application? This action cannot be undone.');">
                                                 @csrf

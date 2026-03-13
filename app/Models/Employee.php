@@ -123,4 +123,12 @@ public function performedEvaluations()
     return $this->hasMany(Evaluation::class, 'evaluator_id');
 }
 
+/**
+ * Get the full name of the employee (Last Name, First Name Middle Name)
+ */
+public function getNameAttribute()
+{
+    return trim("{$this->last_name}, {$this->first_name} {$this->middle_name}");
+}
+
 }

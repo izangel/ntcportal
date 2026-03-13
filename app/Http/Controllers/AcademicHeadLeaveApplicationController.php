@@ -100,7 +100,7 @@ class AcademicHeadLeaveApplicationController extends Controller
             }
         } elseif ($request->ah_status === 'rejected') {
             // Notify the employee directly about the rejection by the Academic Head
-            $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication));
+            $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, 'rejected', 'academic_head', $request->ah_remarks));
         }
 
         // 6. Redirect back to the AH dashboard with a success message.

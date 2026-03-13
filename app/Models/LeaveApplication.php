@@ -134,4 +134,33 @@ class LeaveApplication extends Model
         return $this->belongsTo(LeaveType::class);
     }
 
+    /**
+     * Check if the leave application has been rejected by any approver
+     * @return bool
+     */
+    public function isRejected()
+    {
+        return $this->ah_status === 'rejected' || 
+               $this->hr_status === 'rejected' || 
+               $this->admin_status === 'rejected';
+    }
+
+    /**
+     * Get the rejection reason (from whichever approver rejected it)
+     * @return string|null
+     */
+    public function getRejectionReason()
+    {
+        if ($this->ah_status === 'rejected') {
+            return 'Rejected by Academic Head';
+        }
+        if ($this->hr_status === 'rejected') {
+            return 'Rejected by HR';
+        }
+        if ($this->admin_status === 'rejected') {
+            return 'Rejected by Administrator';
+        }
+        return null;
+    }
+
 }

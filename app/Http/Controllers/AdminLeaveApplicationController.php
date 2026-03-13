@@ -6,7 +6,8 @@ use App\Models\LeaveApplication;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
-use App\Notifications\LeaveApplicationDecision; // We'll create this next
+use App\Notifications\LeaveApplicationDecision;
+use App\Notifications\LeaveApplicationSubmittedForAdmin;
 use Illuminate\Notifications\DatabaseNotification;
 
 
@@ -96,26 +97,12 @@ return view('admin.leave_applications.review', compact('leaveApplication', 'rema
             // Remaining credits will be calculated dynamically in getRemainingLeaveCredits()
         }
 
-       
-       
+        // Mark the Admin notification as read
+        Auth::user()->notifications()
+            ->where('type', LeaveApplicationSubmittedForAdmin::class)
+            ->whereJsonContains('data->leave_application_id', $leaveApplication->id)
+            ->update(['read_at' => now()]);
 
-        // ----------------------------------------------------------------------
-        // NEW: Mark the Admin Manager's notification for this leave application as read
-        $notification = Auth::user()->unreadNotifications()
-                            ->where('type', 'App\Notifications\LeaveApplicationSubmittedForAdmin') // Admin notification type
-                            ->whereJsonContains('data->leave_application_id', $leaveApplication->id)
-                            ->first();
-
-        if ($notification) {
-            $notification->markAsRead();
-        }
-        // ----------------------------------------------------------------------
-
-
-        // Mark Admin notification as read
-        if (Auth::user()->unreadNotifications->where('data.leave_application_id', $leaveApplication->id)->first()) {
-            Auth::user()->unreadNotifications->where('data.leave_application_id', $leaveApplication->id)->first()->markAsRead();
-        }
 
         // --- Notify the original employee about the HR decision ---
         $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, $decision, $approverRole, $remarks));
