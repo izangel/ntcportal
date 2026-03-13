@@ -1,134 +1,54 @@
 @extends('layouts.admin')
 
-
-
 @push('scripts')
     <style>
-        /* Pinakonti natin ang CSS. Ito na lang ang naiwan para sa Page layout at Table borders */
-
         .print-only-header {
-
             display: none;
-
         }
-
-
-
         @media print {
-
             @page {
-
                 margin: 20mm;
-
             }
-
-
-
             * {
-
                 -webkit-print-color-adjust: exact !important;
-
                 print-color-adjust: exact !important;
-
             }
-
-
-
-            header,
-
-            aside,
-
-            nav,
-
-            form,
-
-            button,
-
-            a {
-
+            header, aside, nav, form, button, a {
                 display: none !important;
-
             }
 
-
-
-            body,
-
-            main,
-
-            .max-w-7xl,
-
-            .py-12,
-
-            .bg-white {
-
+            body, main, .max-w-7xl, .py-12, bg-white {
                 width: 100% !important;
-
                 max-width: 100% !important;
-
                 margin: 0 !important;
-
                 padding: 0 !important;
-
                 box-shadow: none !important;
-
                 background-color: white !important;
-
             }
-
-
-
             table {
-
                 width: 100% !important;
-
                 border-collapse: collapse !important;
-
                 margin-top: 10px !important;
-
             }
 
-
-
-            th,
-
-            td {
-
+            th, td {
                 border: 1px solid #000 !important;
-
                 padding: 10px 8px !important;
-
                 text-align: left !important;
-
             }
-
-
-
             .web-only-title {
-
                 display: none !important;
-
             }
-
-
-
             .print-only-header {
-
                 display: block !important;
-
             }
-
         }
     </style>
 @endpush
 
-
-
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight web-only-title">
-
         {{ __('Important Dates & Events') }}
-
     </h2>
 @endsection
 
@@ -157,7 +77,7 @@
                         @endif
                     </div>
                 </div>
-                
+
                 {{-- Alert Notifications --}}
                 @if (session('success'))
                     <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 web-only-title"
@@ -197,7 +117,7 @@
                     </div>
                 </form>
 
-                {{-- 🖨️ CUSTOM HEADER PARA SA PRINTING (Perfectly Centered with Logo) --}}
+                {{-- 🖨️ (Perfectly Centered with Logo) --}}
                 <div class="print-only-header" style="width: 100%; text-align: center; margin-bottom: 20px;">
                     <h1 class="font-serif text-2xl font-black text-black text-center uppercase m-0 p-0">
                         NORTHLINK TECHNOLOGICAL COLLEGE
@@ -213,20 +133,20 @@
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
-                                {{-- Itatago sa print: Status --}}
+
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">
                                     Status
                                 </th>
-                                {{-- Ipi-print: Event Date --}}
+
                                 <th class="px-6 py-3 text-center text-sm font-bold text-black uppercase tracking-wider">
                                     Date
                                 </th>
-                                {{-- Ipi-print: Title --}}
+
                                 <th class="px-6 py-3 text-center text-sm font-bold text-black uppercase tracking-wider">
                                     Title
                                 </th>
-                                {{-- Itatago sa print: Categories, Posted By, Actions --}}
+
                                 <th
                                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider print:hidden">
                                     Categories
@@ -244,7 +164,7 @@
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse ($dates as $date)
                                 <tr>
-                                    {{-- Status Data - Itatago sa print --}}
+                                    {{-- Status Data --}}
                                     <td class="px-6 py-4 whitespace-nowrap print:hidden">
                                         @php
                                             $now = now()->startOfDay();
@@ -269,21 +189,18 @@
                                             </span>
                                         @endif
                                     </td>
-                                    {{-- Event Date Data - I-pi-print ito --}}
+                                    {{-- Event Date Data --}}
                                     <td
                                         class="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 print:text-black">
                                         {{ $date->formatted_date }}
                                     </td>
-                                    {{-- Title Data - I-pi-print ito --}}
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        {{-- Ginaya ang font style ng Event Date --}}
                                         <div class="text-sm font-bold text-indigo-600 print:text-black">{{ $date->title }}
                                         </div>
-                                        {{-- Itatago yung maliit na description kapag nag-print --}}
                                         <div class="text-sm text-black truncate max-w-xs print:hidden">
                                             {{ $date->description }}</div>
                                     </td>
-                                    {{-- Categories Data - Itatago sa print --}}
+                                    {{-- Categories Data --}}
                                     <td class="px-6 py-4 whitespace-nowrap print:hidden">
                                         <div class="flex flex-wrap gap-1">
                                             @foreach ($date->categories as $cat)
@@ -294,11 +211,11 @@
                                             @endforeach
                                         </div>
                                     </td>
-                                    {{-- Posted By Data - Itatago sa print --}}
+                                    {{-- Posted By Data --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 print:hidden">
                                         {{ $date->author->name ?? 'System' }}
                                     </td>
-                                    {{-- Actions Data - Itatago sa print --}}
+                                    {{-- Actions Data --}}
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium print:hidden">
                                         @if (auth()->user()->role === 'admin' || auth()->id() === $date->user_id)
                                             <a href="{{ route('important_dates.edit', $date) }}"
