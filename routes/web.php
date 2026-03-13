@@ -155,6 +155,8 @@ Route::middleware([
         Route::get('/assignment/individual', AssignCoursesIndividual::class)->name('assign.individual');
        //Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
        Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
+        Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
+                ->name('assign.courseblocks');
         
        Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
@@ -426,8 +428,7 @@ Route::middleware([
 
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
                 ->name('evaluations.store');
-            Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
-                ->name('assign.courseblocks');
+           
 
             // Candidacy Routes
             Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
@@ -435,6 +436,10 @@ Route::middleware([
             Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
             Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
     });
+});
+
+Livewire::setUpdateRoute(function ($handle) {
+    return Route::post('/ntcportal/livewire/update', $handle);
 });
 
 // Standard Jetstream authentication routes
