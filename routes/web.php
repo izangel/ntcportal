@@ -397,11 +397,6 @@ Route::view('profile', 'profile')
 Route::middleware(['auth'])->group(function () {
     Route::get('student/course-blocks', \App\Livewire\StudentCourseBlock::class)->name('student.course-blocks');
 
-    // Placeholders for missing routes to fix 500 errors
-    Route::get('student/evaluations', function() { return 'Course Evaluation Page'; })->name('student.evaluations.index');
-    Route::get('announcements', function() { return 'Announcements Page'; })->name('announcements.index');
-    Route::get('important-dates', function() { return 'Important Dates Page'; })->name('important_dates.index');
-    Route::get('profile/password', function() { return 'Change Password Page'; })->name('password.edit');
 
     // Admin/Registrar Routes
     Route::get('admin/course-blocks', \App\Livewire\CourseBlockManager::class)->name('course-blocks');
