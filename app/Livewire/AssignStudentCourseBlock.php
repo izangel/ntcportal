@@ -60,7 +60,7 @@ public function addAllStudents()
 
     // 1. Check if any student in this list is already assigned to this block
     $existingAssignments = DB::table('student_courseblock')
-        ->where('courseblock_id', $this->course_block_id)
+        ->where('course_block_id', $this->course_block_id)
         ->whereIn('student_id', $students->pluck('id'))
         ->exists();
 
@@ -74,7 +74,7 @@ public function addAllStudents()
     foreach ($students as $student) {
         DB::table('student_courseblock')->insert([
             'student_id'     => $student->id,
-            'courseblock_id' => $this->course_block_id,
+            'course_block_id' => $this->course_block_id,
         ]);
     }
 
