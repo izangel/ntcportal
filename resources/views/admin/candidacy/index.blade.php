@@ -203,11 +203,14 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-3">
+                                        {{-- View Link --}}
                                         <a href="{{ route('admin.candidacy.show', $application) }}" 
                                             class="text-blue-600 hover:text-blue-900 hover:underline">
                                             View
                                         </a>
+
                                         @if($application->status == 'pending')
+                                            {{-- Approve Form --}}
                                             <form action="{{ route('admin.candidacy.approve', $application) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('PATCH')
@@ -216,11 +219,24 @@
                                                     Approve
                                                 </button>
                                             </form>
+
+                                            {{-- Reject Button --}}
                                             <button type="button" class="text-red-600 hover:text-red-900 hover:underline"
                                                 onclick="openRejectModal({{ $application->id }})">
                                                 Reject
                                             </button>
                                         @endif
+
+                                        {{-- Delete Button --}}
+                                        <form action="{{ route('admin.candidacy.destroy', $application) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                class="text-red-600 hover:text-red-900 hover:underline"
+                                                onclick="return confirm('WARNING: This will permanently delete the application. This action cannot be undone. Proceed?')">
+                                                Delete
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

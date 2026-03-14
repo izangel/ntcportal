@@ -291,6 +291,8 @@ Route::middleware([
     });
 
     // OSA - Candidacy Management Routes (for teachers/staff/admin)
+    Route::delete('/admin/candidacy/{application}', [CandidacyController::class, 'destroy'])
+    ->name('admin.candidacy.destroy');
     Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
         Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
         Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');

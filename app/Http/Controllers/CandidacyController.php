@@ -86,4 +86,14 @@ class CandidacyController extends Controller
     {
         return view('candidacy.requirements');
     }
+
+    public function destroy(\App\Models\Candidacy $application)
+    {
+        // Optional: If you want to delete files from storage if they exist
+        // Storage::delete($application->id_path); 
+
+        $application->delete();
+
+        return back()->with('success', 'Application deleted successfully.');
+    }
 }
