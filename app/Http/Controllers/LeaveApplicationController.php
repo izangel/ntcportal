@@ -360,6 +360,8 @@ private function calculateWorkDays($startDate, $endDate)
             $loggedInEmployee = Auth::user()->employee;
         }
 
+        $remainingCredits = $leaveApplication->employee->getRemainingLeaveCredits();
+
         // Map existing classes to include acknowledgedBy name for Blade display
         $existingClasses = $leaveApplication->classesToMiss->map(function ($class) {
             $data = $class->toArray();
@@ -367,7 +369,7 @@ private function calculateWorkDays($startDate, $endDate)
             return $data;
         })->toArray();
 
-        return view('leave_applications.edit', compact('leaveApplication', 'employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'existingClasses', 'leaveTypes'));
+        return view('leave_applications.edit', compact('leaveApplication', 'employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'existingClasses', 'leaveTypes', 'remainingCredits'));
     }
 
    
@@ -376,6 +378,7 @@ private function calculateWorkDays($startDate, $endDate)
 {
     $rules = [
         'employee_id' => 'required|exists:employees,id',
+        'leave_type_id' => 'required|exists:leave_types,id',
         'reason' => 'required|string|max:1000',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
@@ -438,7 +441,19 @@ private function calculateWorkDays($startDate, $endDate)
         }
     }
 
-    return redirect()->route('leave_applications.index')->with('success', 'Leave application updated successfully.');
+    // After updating, redirect based on the role:
+    // - HR / Admin / Academic Head: back to the consolidated HR view (/hr/all-applications)
+    // - Others (e.g., staff): back to the standard index.
+    $user = Auth::user();
+    $role = $user && $user->employee ? $user->employee->role : null;
+
+    if (in_array($role, ['hr', 'admin', 'academic_head'], true)) {
+        return redirect()->route('hr.leave_applications.all')
+            ->with('success', 'Leave application updated successfully.');
+    }
+
+    return redirect()->route('leave_applications.index')
+        ->with('success', 'Leave application updated successfully.');
 } // end of update
 
    

@@ -6,13 +6,18 @@
     {{-- Automatic Employee Name --}}
     <div>
         <x-label for="employee_name_display" value="{{ __('Employee') }}" class="font-semibold text-gray-700" />
-        @if($loggedInEmployee)
-            <p id="employee_name_display" class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 p-2 text-gray-700 shadow-sm">
+        @if($leaveApplication)
+            <p id="employee_name_display" class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 p-2 text-gray-700">
+                {{ $leaveApplication->employee->last_name .', '.$leaveApplication->employee->first_name.' '.$leaveApplication->employee->mid_name }} ({{ ucwords($leaveApplication->employee->role) }})
+            </p>
+            <input type="hidden" name="employee_id" value="{{ $leaveApplication->employee->id }}">
+        @elseif($loggedInEmployee)
+            <p id="employee_name_display" class="mt-1 block w-full rounded-md border border-gray-300 bg-gray-100 p-2 text-gray-700">
                 {{ $loggedInEmployee->last_name .', '.$loggedInEmployee->first_name.' '.$loggedInEmployee->mid_name }} ({{ ucwords($loggedInEmployee->role) }})
             </p>
             <input type="hidden" name="employee_id" value="{{ $loggedInEmployee->id }}">
         @else
-            <p class="mt-1 block w-full p-2 text-sm text-red-500">Error: Logged-in employee not found. Please ensure your user account is linked to an employee.</p>
+            <p class="mt-1 block w-full p-2 text-sm text-red-500">Error: Employee not found. Please ensure your user account is linked to an employee.</p>
             <input type="hidden" name="employee_id" value="">
         @endif
         @error('employee_id')

@@ -16,7 +16,7 @@
                     @csrf
                     @method('PUT') {{-- Use PUT method for updates --}}
 
-                    @include('leave_applications._form', ['leaveApplication' => $leaveApplication, 'employees' => $employees])
+                    @include('leave_applications._form', ['leaveApplication' => $leaveApplication, 'employees' => $employees, 'remainingCredits' => $remainingCredits])
 
                     <div class="flex items-center justify-end mt-4">
                         <x-button class="ml-4">
