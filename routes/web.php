@@ -71,6 +71,7 @@ use App\Http\Controllers\Admin\EvaluationMonitoringController;
 use App\Http\Controllers\Admin\CandidacyManagementController;
 
 use App\Http\Controllers\CandidacyController;
+use App\Http\Controllers\StudentVotingController;
 
 use App\Http\Controllers\CourseBlockController;
 
@@ -327,10 +328,16 @@ Route::middleware([
     });
 
     // OSA - Candidacy Management Routes (for teachers/staff/admin)
+    Route::delete('/admin/candidacy/{application}', [CandidacyController::class, 'destroy'])
+    ->name('admin.candidacy.destroy');
     Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
         Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
         Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+        Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
+        Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
         Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+        Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
+        Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
         Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
         Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
     });
@@ -404,6 +411,12 @@ Route::middleware([
    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
     Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
 
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
     Route::get('/assign-students', App\Livewire\SectionAssignment::class)
     ->name('sections.assign.index');
 
@@ -460,6 +473,11 @@ Route::middleware([
             Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
             Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
             Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
+
+            // Voting Routes
+            Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
+            Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
+            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
     });
 });
 

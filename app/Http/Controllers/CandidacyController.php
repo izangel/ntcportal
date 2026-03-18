@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Candidacy;
 use App\Models\AcademicYear;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,8 +18,10 @@ class CandidacyController extends Controller
         $student = Auth::user()->student;
         $existingCandidacy = $student ? Candidacy::where('student_id', $student->id)->latest()->first() : null;
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
+        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
+        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
         
-        return view('candidacy.index', compact('existingCandidacy', 'activeAcademicYear'));
+        return view('candidacy.index', compact('existingCandidacy', 'activeAcademicYear', 'googleDriveLink', 'isApplicationOpen'));
     }
 
     /**
@@ -26,6 +29,13 @@ class CandidacyController extends Controller
      */
     public function store(Request $request)
     {
+        // Check if applications are open
+        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
+        if (!$isApplicationOpen) {
+            return redirect()->route('student.candidacy.index')
+                ->with('error', 'Candidacy applications are currently closed.');
+        }
+
         $request->validate([
             'position' => 'required|string|max:255',
             'partylist' => 'nullable|string|max:255',
@@ -75,5 +85,15 @@ class CandidacyController extends Controller
     public function requirements()
     {
         return view('candidacy.requirements');
+    }
+
+    public function destroy(\App\Models\Candidacy $application)
+    {
+        // Optional: If you want to delete files from storage if they exist
+        // Storage::delete($application->id_path); 
+
+        $application->delete();
+
+        return back()->with('success', 'Application deleted successfully.');
     }
 }

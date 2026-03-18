@@ -53,6 +53,14 @@ class Candidacy extends Model
     }
 
     /**
+     * Get election votes for this candidacy.
+     */
+    public function electionVotes()
+    {
+        return $this->hasMany(ElectionVote::class);
+    }
+
+    /**
      * Scope for pending candidacies.
      */
     public function scopePending($query)

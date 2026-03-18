@@ -30,6 +30,28 @@ class Student extends Model
     }
 
     /**
+     * Get the section that the student directly belongs to.
+     */
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
+    }
+
+    // Define many-to-many relationship with Course through Enrollment
+    public function courses()
+    {
+        return $this->belongsToMany(Course::class, 'enrollments')
+                    ->withPivot('grade', 'created_at') // Include grade and created_at from pivot table
+                    ->withTimestamps(); // If you want to automatically manage timestamps on the pivot
+    }
+
+    // Define hasMany relationship with Enrollment model
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    /**
      * Relationship with Section (Many-to-Many)
      * This links to your new section_student pivot table
      */
@@ -101,5 +123,13 @@ public function courseBlocks() {
     public function candidacies()
     {
         return $this->hasMany(Candidacy::class);
+    }
+
+    /**
+     * Get the election votes submitted by the student.
+     */
+    public function electionVotes()
+    {
+        return $this->hasMany(ElectionVote::class);
     }
 }
