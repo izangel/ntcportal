@@ -423,6 +423,12 @@ Route::middleware([
             ->name('faculty.election.results');
     });
 
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
     Route::get('/assign-students', App\Livewire\SectionAssignment::class)
     ->name('sections.assign.index');
 
