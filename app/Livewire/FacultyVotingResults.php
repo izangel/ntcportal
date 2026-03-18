@@ -11,6 +11,22 @@ class FacultyVotingResults extends Component
 {
     use VotingQueries;
 
+    public $electionStatus = 'open';
+
+    public function mount()
+    {
+        $this->electionStatus = \App\Models\Setting::get('election_status', 'open');
+    }
+
+    public function toggleElectionStatus()
+    {
+        $newStatus = $this->electionStatus === 'open' ? 'closed' : 'open';
+        \App\Models\Setting::set('election_status', $newStatus, 'Current status of the SSG election');
+        $this->electionStatus = $newStatus;
+        
+        session()->flash('message', 'Election has been ' . $newStatus . '.');
+    }
+
     public function render()
     {
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();

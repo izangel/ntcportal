@@ -37,7 +37,7 @@ class CandidacyManagementController extends Controller
             });
         }
 
-        $applications = $query->paginate(15);
+        $applications = $query->paginate(10);
         $positionOrder = [
             'president' => 'President',
             'vice_president' => 'Vice President',
@@ -64,13 +64,44 @@ class CandidacyManagementController extends Controller
     {
         $candidacy->load('student.user');
         return view('admin.candidacy.show', compact('candidacy'));
+    } 
+
+    /**
+     * Show the form for editing the specified candidacy application.
+     */
+    public function edit(Candidacy $candidacy)
+    {
+        $candidacy->load('student.user');
+        $positions = [
+            'president' => 'President',
+            'vice_president' => 'Vice President',
+            'secretary' => 'Secretary',
+            'treasurer' => 'Treasurer',
+            'auditor' => 'Auditor',
+            'pio' => 'PIO',
+            'business_manager' => 'Business Manager',
+        ];
+        return view('admin.candidacy.edit', compact('candidacy', 'positions'));
     }
 
     /**
-     * Approve a candidacy application.
+     * Update the specified candidacy application.
      */
-    public function approve(Request $request, Candidacy $candidacy)
+    public function update(Request $request, Candidacy $candidacy)
     {
+        $request->validate([
+            'position_applied' => 'required|string|in:president,vice_president,secretary,treasurer,auditor,pio,business_manager',
+            'is_independent' => 'required|boolean',
+            'partylist' => 'nullable|string|max:255',
+        ]);
+
+        $data = $request->only(['position_applied', 'is_independent']);
+        $data['partylist'] = $request->is_independent ? null : $request->partylist;
+
+        $candidacy->update($data);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Candidacy application updated successfully.');
         $candidacy->update([
             'status' => 'approved',
             'remarks' => $request->remarks,
@@ -112,7 +143,7 @@ class CandidacyManagementController extends Controller
             ->orderByRaw($this->positionOrderCaseStatement())
             ->orderByDesc('submitted_at')
             ->orderByDesc('created_at')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('admin.candidacy.candidates', compact('candidates'));
     }

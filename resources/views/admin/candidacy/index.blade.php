@@ -204,9 +204,15 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-3">
                                         {{-- View Link --}}
-                                        <a href="{{ route('admin.candidacy.show', $application) }}" 
+                                        <a href="{{ route('admin.candidacy.show', $application) }}"
                                             class="text-blue-600 hover:text-blue-900 hover:underline">
                                             View
+                                        </a>
+
+                                        {{-- Edit Link --}}
+                                        <a href="{{ route('admin.candidacy.edit', $application) }}"
+                                            class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                            Edit
                                         </a>
 
                                         @if($application->status == 'pending')

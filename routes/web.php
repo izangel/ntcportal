@@ -299,6 +299,8 @@ Route::middleware([
         Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
         Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
         Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+        Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
+        Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
         Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
         Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
     });

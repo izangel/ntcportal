@@ -24,6 +24,11 @@ class StudentVotingController extends Controller
         $student = Auth::user()->student;
         abort_unless($student, 403);
 
+        $electionStatus = \App\Models\Setting::get('election_status', 'open');
+        if ($electionStatus !== 'open') {
+            return redirect()->route('dashboard')->with('error', 'The election is currently closed.');
+        }
+
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
         $positions = $this->positionOrder();
 
@@ -54,6 +59,11 @@ class StudentVotingController extends Controller
     {
         $student = Auth::user()->student;
         abort_unless($student, 403);
+
+        $electionStatus = \App\Models\Setting::get('election_status', 'open');
+        if ($electionStatus !== 'open') {
+            return redirect()->route('dashboard')->with('error', 'The election is currently closed.');
+        }
 
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
 
