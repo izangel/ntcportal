@@ -115,4 +115,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ImportantDate::class);
     }
+    public function hasAnyRole(array $roles)
+{
+    // Adjust this logic to match how your roles are stored (e.g., a 'role' string or a relationship)
+    return in_array($this->role, $roles);
+}
 }

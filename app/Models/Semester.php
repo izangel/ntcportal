@@ -26,9 +26,11 @@ class Semester extends Model
     /**
      * Get the academic year that owns the semester.
      */
+    // app/Models/Semester.php
     public function academicYear()
     {
-        return $this->belongsTo(AcademicYear::class);
+        // Ensure 'academic_year_id' is the column name in your semesters table
+        return $this->belongsTo(AcademicYear::class, 'academic_year_id');
     }
 
     /**
