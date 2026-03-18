@@ -49,4 +49,9 @@ class AcademicYear extends Model
 
         return  $activeAcademicYear; // No active academic year found
     }
+
+    // AcademicYear.php
+    public function getLabelAttribute() {
+        return "{$this->start_year} - {$this->end_year}";
+    }
 }

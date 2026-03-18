@@ -11,9 +11,9 @@ return new class extends Migration
      */
     // public function up(): void
     // {
-    //     Schema::table('announcements', function (Blueprint $table) {
-    //         // We'll use a string for the category
-    //         $table->string('category')->after('title')->default('ADMIN');
+    //     Schema::create('section_student', function (Blueprint $table) {
+    //         $table->id();
+    //         $table->timestamps();
     //     });
     // }
 
@@ -22,8 +22,6 @@ return new class extends Migration
     //  */
     // public function down(): void
     // {
-    //     Schema::table('announcements', function (Blueprint $table) {
-    //         //
-    //     });
+    //     Schema::dropIfExists('section_student');
     // }
 };
