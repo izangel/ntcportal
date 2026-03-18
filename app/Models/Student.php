@@ -50,7 +50,7 @@ class Student extends Model
 
    
 public function courseBlocks() {
-    return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'courseblock_id');
+    return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'course_block_id');
 }
 
 

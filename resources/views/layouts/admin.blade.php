@@ -322,7 +322,7 @@
                     </x-nav-link>
                     <x-nav-link href="{{ route('assign.courseblocks') }}" :active="request()->routeIs('assign.courseblocks')">
                         <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
-                        {{ __('Assign Students to Courseblocks (Regular Students)') }}
+                        {{ __('Section Load Manager') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-solid fa-chalkboard-user mr-3 text-lg"></i>
@@ -344,9 +344,13 @@
                         <i class="fas fa-solid fa-user-plus mr-3 text-lg"></i>
                         {{ __('Students To Course (Individual)') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
+                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.index')">
                         <i class="fas fa-solid fa-users-gear mr-3 text-lg"></i>
                         {{ __('Manage Students') }}
+                    </x-nav-link>
+                     <x-nav-link href="{{ route('students.studentportal') }}" :active="request()->routeIs('students.studentportal')">
+                        <i class="fas fa-solid fa-users-gear mr-3 text-lg"></i>
+                        {{ __('Manage Student Sections') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('courses.index') }}" :active="request()->routeIs('courses.*')">
                         <i class="fas fa-solid fa-book-journal-whills mr-3 text-lg"></i>
@@ -466,6 +470,10 @@
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('Department Head Assignment') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.reports.summary') }}" :active="request()->routeIs('faculty.reports.summary')">
+                        <i class="fas fa-calendar-minus mr-3 text-lg"></i>
+                        {{ __('PES Result') }}
+                    </x-nav-link>
                    
                 </div>
             </div>
@@ -510,7 +518,7 @@
 {{-- Main Content Area --}}
 <main class="flex-1 p-6 sm:p-8">
 
-    @yield('content') {{-- This works for regular controllers --}}
+   
     
                     @yield('content')
 

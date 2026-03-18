@@ -73,6 +73,12 @@ use App\Http\Controllers\Admin\CandidacyManagementController;
 use App\Http\Controllers\CandidacyController;
 
 use App\Http\Controllers\CourseBlockController;
+
+use App\Http\Controllers\StudentPortalController;
+
+use App\Livewire\CourseAssignment;
+
+use App\Livewire\ViewCourseBlockStudents;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -169,6 +175,18 @@ Route::middleware([
     // Create & Store (Existing)
     Route::get('/course-blocks/create', [CourseBlockController::class, 'create'])->name('course_blocks.create');
     Route::post('/course-blocks', [CourseBlockController::class, 'store'])->name('course_blocks.store');
+
+
+
+    Route::get('/studentsportal', [StudentPortalController::class, 'index'])->name('students.studentportal');
+    Route::put('/students/{student}/update-section', [StudentPortalController::class, 'updateSection'])->name('students.updateSection');
+    
+    Route::get('/course-blocks/{id}/students', ViewCourseBlockStudents::class)->name('view-block-students');
+
+    // Student Evaluation Compliance Tracker
+    Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
+        ->name('faculty.reports.student_compliance');
+
     });
 
    
@@ -233,6 +251,10 @@ Route::middleware([
 
         //view student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
+
+
+        Route::get('/admin/assign-courses', CourseAssignment::class)
+        ->name('courses.assign');
     });
 
 
@@ -243,6 +265,9 @@ Route::middleware([
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
     Route::get('/reports/student-types', [ReportController::class, 'studentTypes'])->name('reports.studentTypes');
+
+    Route::get('/reports/class-list/{section_id}/{academic_year_id}/{semester}', [ReportController::class, 'classList'])
+    ->name('admin.reports.class-list');
 
     // API route for dynamic semester loading (for reports filter)
     Route::get('/api/semesters-by-academic-year', function (Request $request) {
@@ -376,8 +401,8 @@ Route::middleware([
         ->name('faculty.reports.index');
 
     // Results page (The 360 Consolidated View)
-    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])
-        ->name('faculty.reports.view');
+   Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
+    Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
 
     Route::get('/assign-students', App\Livewire\SectionAssignment::class)
     ->name('sections.assign.index');

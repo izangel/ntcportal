@@ -223,10 +223,9 @@ Route::middleware([
     Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
     
     // Reports Routes
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
-    Route::get('/reports/student-types', [ReportController::class, 'studentTypes'])->name('reports.studentTypes');
-
+    Route::get('/reports/class-list/{section_id}/{academic_year_id}/{semester}', [ReportController::class, 'classList'])
+    ->name('admin.reports.class-list');
+    
     // API route for dynamic semester loading (for reports filter)
     Route::get('/api/semesters-by-academic-year', function (Request $request) {
         $academicYearId = $request->input('academic_year_id');
