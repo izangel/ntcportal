@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('program_id')->constrained()->onDelete('cascade'); // Link to programs table
             $table->string('name'); // e.g., '1A', '1B'
+            $table->foreignId('student_id')->constrained()->onDelete('cascade');
+            $table->foreignId('section_id')->constrained()->onDelete('cascade');
+            $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
+            $table->string('semester'); // '1st Semester', '2nd Semester', etc.
             $table->timestamps();
         });
     }
