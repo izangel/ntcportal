@@ -103,7 +103,6 @@ class CandidacyManagementController extends Controller
         return redirect()->route('admin.candidacy.index')
             ->with('success', 'Candidacy application updated successfully.');
     }
-
     /**
      * Approve a candidacy application.
      */
