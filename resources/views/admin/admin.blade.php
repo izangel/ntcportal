@@ -186,6 +186,10 @@
                         <i class="fas fa-solid fa-users mr-3 text-lg"></i>
                         {{ __('My Students / Class Details') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.generate-student-account') }}" :active="request()->routeIs('faculty.generate-student-account')">
+                        <i class="fas fa-solid fa-user-plus mr-3 text-lg"></i>
+                        {{ __('Generate Student Account') }}
+                    </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-solid fa-folder-open mr-3 text-lg"></i>
                         {{ __('Course Materials') }}

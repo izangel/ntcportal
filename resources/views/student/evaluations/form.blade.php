@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('admin.admin')
 
 @section('content')
 <div class="bg-gray-50 min-h-screen py-8 antialiased">

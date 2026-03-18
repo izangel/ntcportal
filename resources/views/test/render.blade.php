@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('admin.admin')
 
 @section('content')
     <div style="background-color: yellow; padding: 20px;">

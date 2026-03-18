@@ -1,4 +1,4 @@
-@extends('layouts.admin') {{-- Use your teacher or admin layout --}}
+@extends('admin.admin') {{-- Use your teacher or admin layout --}}
 
 @section('content')
 <div class="bg-gray-50 min-h-screen py-10 antialiased">

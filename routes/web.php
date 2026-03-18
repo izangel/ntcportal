@@ -73,6 +73,7 @@ use App\Http\Controllers\Admin\CandidacyManagementController;
 use App\Http\Controllers\CandidacyController;
 
 use App\Http\Controllers\CourseBlockController;
+use App\Http\Controllers\GenerateStudentAccountController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -360,6 +361,9 @@ Route::middleware([
 
       // NEW My Course Load Page
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
+
+    // Generate Student Account
+    Route::get('/generate-student-account', [GenerateStudentAccountController::class, 'index'])->name('faculty.generate-student-account');
 
 // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])

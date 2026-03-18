@@ -1,6 +1,6 @@
 {{-- resources/views/leave_applications/create.blade.php --}}
 
-@extends('layouts.admin')
+@extends('admin.admin')
 
 @section('header')
     <header class="bg-white shadow">

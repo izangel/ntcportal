@@ -1,6 +1,6 @@
 {{-- resources/views/students/upload.blade.php --}}
 
-@extends('layouts.admin')
+@extends('admin.admin')
 
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight">

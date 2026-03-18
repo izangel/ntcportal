@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+@extends('admin.admin')
 
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

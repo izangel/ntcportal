@@ -1,4 +1,4 @@
-@extends('layouts.admin') {{-- CHANGE THIS FROM layouts.app --}}
+@extends('admin.admin') {{-- CHANGE THIS FROM layouts.app --}}
 
 @section('header') {{-- Add this section for page heading --}}
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">

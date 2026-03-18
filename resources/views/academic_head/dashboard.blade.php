@@ -1,4 +1,4 @@
-@extends('layouts.admin') {{-- IMPORTANT: Adjust this to your actual main layout file --}}
+@extends('admin.admin') {{-- IMPORTANT: Adjust this to your actual main layout file --}}
 
 @section('header')
     <h2 class="font-semibold text-xl text-gray-800 leading-tight">
