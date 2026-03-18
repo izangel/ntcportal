@@ -286,14 +286,14 @@
             {{-- General Statistics --}}
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 @php
-$stats = [
-    ['label' => 'Students', 'val' => $totalStudents ?? 0, 'color' => 'bg-blue-500'],
-    ['label' => 'Teachers', 'val' => $totalTeachers ?? 0, 'color' => 'bg-green-500'],
-    ['label' => 'Courses', 'val' => $totalCourses ?? 0, 'color' => 'bg-purple-500'],
-    ['label' => 'Programs', 'val' => $totalPrograms ?? 0, 'color' => 'bg-yellow-500'],
-    ['label' => 'Enrollments', 'val' => $totalEnrollments ?? 0, 'color' => 'bg-indigo-500'],
-    ['label' => 'Users', 'val' => $totalUsers ?? 0, 'color' => 'bg-gray-800'],
-];
+            $stats = [
+                ['label' => 'Students', 'val' => $totalStudents ?? 0, 'color' => 'bg-blue-500'],
+                ['label' => 'Teachers', 'val' => $totalTeachers ?? 0, 'color' => 'bg-green-500'],
+                ['label' => 'Courses', 'val' => $totalCourses ?? 0, 'color' => 'bg-purple-500'],
+                ['label' => 'Programs', 'val' => $totalPrograms ?? 0, 'color' => 'bg-yellow-500'],
+                ['label' => 'Enrollments', 'val' => $totalEnrollments ?? 0, 'color' => 'bg-indigo-500'],
+                ['label' => 'Users', 'val' => $totalUsers ?? 0, 'color' => 'bg-gray-800'],
+            ];
                 @endphp
                 @foreach($stats as $stat)
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
