@@ -205,4 +205,20 @@ class CandidacyManagementController extends Controller
         return redirect()->route('admin.candidacy.index')
             ->with('success', $message);
     }
+
+    /**
+     * Approve a candidacy application.
+     */
+    public function approve(Request $request, Candidacy $candidacy)
+    {
+        $candidacy->update([
+            'status' => 'approved',
+            'remarks' => $request->remarks,
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+        ]);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Candidacy application has been approved.');
+    }
 }

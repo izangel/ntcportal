@@ -62,13 +62,6 @@ class Student extends Model
                     ->withTimestamps();
     }
 
-    /**
-     * Relationship with Enrollments
-     */
-    public function enrollments()
-    {
-        return $this->hasMany(Enrollment::class);
-    }
 
    
 public function courseBlocks() {
