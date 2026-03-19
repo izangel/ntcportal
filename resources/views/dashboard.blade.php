@@ -35,36 +35,25 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
         
         {{-- 1. Welcome & Notifications Section --}}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
-                    <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
-                    <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
-                    
-                    @if(!Auth::user()->hasRole('student'))
-                        <div class="mt-6 flex gap-4">
-                            @php
-                                if(Auth::user()->hasRole('admin')) $route = 'admin.leave_applications.index';
-                                elseif(Auth::user()->hasRole('hr')) $route = 'hr.leave_applications.index';
-                                elseif(Auth::user()->hasRole('academic_head')) $route = 'ah.leave_applications.all';
-                                else $route = null;
-                            @endphp
-                            
-                            @if($route)
-                                <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
-                                    Review Pending Leaves
-                                </a>
-                            @endif
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-800">Welcome back, {{ $user->name }}!</h1>
+    
+    <div class="flex flex-wrap items-center gap-4 mt-2">
+        <div class="flex items-center gap-2 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-100">
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white">
+                {{ $activeAYCount }}
+            </span>
+            <span class="text-sm font-semibold text-cyan-700">Active A.Y.: {{ $currentAYName }}</span>
+        </div>
 
-                            @if(Auth::user()->employee && Auth::user()->employee->role === 'teacher')
-                                <a href="{{ route('faculty.course-load') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
-                                    View Detailed Load
-                                </a>
-                            @endif
-                        </div>
-                    @endif
-                </div>
-            </div>
+        <div class="flex items-center gap-2 bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+                {{ $activeSemesterCount }}
+            </span>
+            <span class="text-sm font-semibold text-rose-700">Active Sem: {{ $currentSemName }}</span>
+        </div>
+    </div>
+</div>
 
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full">
@@ -297,14 +286,14 @@
             {{-- General Statistics --}}
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 @php
-                    $stats = [
-                        ['label' => 'Students', 'val' => $totalStudents, 'color' => 'bg-blue-500'],
-                        ['label' => 'Teachers', 'val' => $totalTeachers, 'color' => 'bg-green-500'],
-                        ['label' => 'Courses', 'val' => $totalCourses, 'color' => 'bg-purple-500'],
-                        ['label' => 'Programs', 'val' => $totalPrograms, 'color' => 'bg-yellow-500'],
-                        ['label' => 'Enrollments', 'val' => $totalEnrollments, 'color' => 'bg-indigo-500'],
-                        ['label' => 'Users', 'val' => $totalUsers, 'color' => 'bg-gray-800'],
-                    ];
+            $stats = [
+                ['label' => 'Students', 'val' => $totalStudents ?? 0, 'color' => 'bg-blue-500'],
+                ['label' => 'Teachers', 'val' => $totalTeachers ?? 0, 'color' => 'bg-green-500'],
+                ['label' => 'Courses', 'val' => $totalCourses ?? 0, 'color' => 'bg-purple-500'],
+                ['label' => 'Programs', 'val' => $totalPrograms ?? 0, 'color' => 'bg-yellow-500'],
+                ['label' => 'Enrollments', 'val' => $totalEnrollments ?? 0, 'color' => 'bg-indigo-500'],
+                ['label' => 'Users', 'val' => $totalUsers ?? 0, 'color' => 'bg-gray-800'],
+            ];
                 @endphp
                 @foreach($stats as $stat)
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">

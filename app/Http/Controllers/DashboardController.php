@@ -30,6 +30,16 @@ class DashboardController extends Controller
         $todayStr = now()->toDateString(); 
         $notifications = $user->unreadNotifications;
 
+        $activeAYCount = \App\Models\AcademicYear::where('is_active', 1)->count();
+        $activeSemesterCount = \App\Models\Semester::where('is_active', 1)->count();
+
+    // 2. Fetch the specific names (optional, but looks better in a sub-header)
+        $activeAY = \App\Models\AcademicYear::where('is_active', 1)->first();
+        $activeSem = \App\Models\Semester::where('is_active', 1)->first();
+    
+        $currentAYName = $activeAY ? "{$activeAY->start_year}-{$activeAY->end_year}" : 'N/A';
+        $currentSemName = $activeSem ? $this->getSemesterName($activeSem->name) : 'N/A';
+
         $recentDates = ImportantDate::with('categories')
             ->where(function($query) use ($todayStr) {
                 $query->where('end_date', '>=', $todayStr)
@@ -168,13 +178,14 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
-            $staffData, 
-            $studentData
-        );
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 
+            'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
+        $staffData, 
+        $studentData
+    );
 
-        return view('dashboard', $viewData);
-    }
+    return view('dashboard', $viewData);
+}
 
     // Helper to map semester names
     private function getSemesterName($name) {

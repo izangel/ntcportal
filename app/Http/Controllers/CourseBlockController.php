@@ -40,14 +40,31 @@ public function store(Request $request)
     }
 
     // Add this method inside the class
-public function index()
+public function index(Request $request)
 {
-    // Eager load relationships to prevent N+1 query issues
-    $courseBlocks = CourseBlock::with(['section', 'course', 'faculty', 'academicYear'])
-                    ->orderBy('created_at', 'desc')
-                    ->paginate(10); // Show 10 items per page
+    // 1. Get Academic Years for the dropdown
+    $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
-    return view('course_blocks.index', compact('courseBlocks'));
+    // 2. Start Query
+    $query = CourseBlock::with(['section.program', 'course', 'faculty', 'academicYear']);
+
+    // 3. APPLY STRICT FILTERS 
+    // This ensures only the chosen Year and Semester are returned.
+    if ($request->filled('academic_year_id')) {
+        $query->where('academic_year_id', $request->academic_year_id);
+    }
+
+    if ($request->filled('semester')) {
+        // We use a strict where match here
+        $query->where('semester', $request->semester);
+    }
+
+    // 4. Execute Query
+    $courseBlocks = $query->latest()
+                          ->paginate(10)
+                          ->withQueryString(); 
+
+    return view('course_blocks.index', compact('courseBlocks', 'academicYears'));
 }
 
 public function edit(CourseBlock $courseBlock)
