@@ -35,6 +35,11 @@
                                     <x-dropdown-link href="{{ route('students.index') }}">
                                         {{ __('Students') }}
                                     </x-dropdown-link>
+
+                                    <x-dropdown-link href="{{ route('students.profile.bank') }}">
+                                        {{ __('Student Profile') }}
+                                    </x-dropdown-link>
+
                                     <x-dropdown-link href="{{ route('courses.index') }}">
                                         {{ __('Courses') }}
                                     </x-dropdown-link>
@@ -172,9 +177,14 @@
                     <div class="block px-4 py-2 text-xs text-gray-400">
                         {{ __('Admin/Teacher Panel') }}
                     </div>
-                    <x-responsive-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
+                    <x-responsive-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.index')">
                         {{ __('Manage Students') }}
                     </x-responsive-nav-link>
+
+                    <x-responsive-nav-link href="{{ route('students.profile.bank') }}" :active="request()->routeIs('students.profile.bank')">
+                        {{ __('Student Profile') }}
+                    </x-responsive-nav-link>
+
                     <x-responsive-nav-link href="{{ route('courses.index') }}" :active="request()->routeIs('courses.*')">
                         {{ __('Manage Courses') }}
                     </x-responsive-nav-link>

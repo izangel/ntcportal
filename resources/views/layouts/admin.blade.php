@@ -25,7 +25,7 @@
         <h2 class="text-2xl font-bold tracking-tight">Admin Panel</h2>
     </div>
     <nav class="p-4 space-y-2">
-        
+
         {{-- Standard Links (Accessible by All) --}}
         <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
             <i class="fas fa-home mr-3 text-lg"></i>
@@ -55,7 +55,7 @@
                         <i class="fas fa-key mr-3 text-lg"></i>
                         {{ __('Change Password') }}
                     </x-nav-link>
-                    
+
                 </div>
             </div>
 
@@ -65,7 +65,7 @@
                 <h3 class="text-left">Library Resources</h3>
                 <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
             </button>
-            
+
             <div x-show="open" x-collapse.duration.300ms>
                 <x-nav-link href="#">
                     <i class="fas fa-solid fa-book-open /> mr-3 text-lg"></i>
@@ -84,14 +84,14 @@
                     <h3 class="text-left">COURSE EVALUATION</h3>
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
-                
+
                 <div x-show="open" x-collapse.duration.300ms>
                     <x-nav-link href="{{ route('student.evaluations.index') }}" :active="request()->routeIs('student.evaluations.index')">
                         <i class="fas fa-solid  fa-clipboard-check mr-3 text-lg"></i>
                         {{ __('Course Evaluation') }}
                     </x-nav-link>
 
-                   
+
                 </div>
             </div>
 
@@ -101,7 +101,7 @@
                     <h3 class="text-left">Apply for Candidacy</h3>
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
-                
+
                 <div x-show="open" x-collapse.duration.300ms>
                     <x-nav-link href="{{ route('student.candidacy.index') }}" :active="request()->routeIs('student.candidacy.index')">
                         <i class="fas fa-file-alt mr-3 text-lg"></i>
@@ -119,9 +119,9 @@
             </div>
 
         @endif
-            
+
         @if(Auth::user()->hasRole('teacher') || Auth::user()->hasRole('staff') || Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
-            
+
             {{-- NEW: ROLE SEPARATOR FOR TEACHERS/STAFF --}}
             <div class="mt-6 pt-3 border-t border-gray-700">
                 <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
@@ -147,7 +147,7 @@
                 </div>
             </div>
 
-            
+
 
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -155,7 +155,7 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    
+
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-solid fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}
@@ -216,8 +216,8 @@
                         <i class="fas fa-solid fa-clipboard-user mr-3 text-lg"></i>
                         {{ __('Student Self-assessment') }}
                     </x-nav-link>
-                    
-                   
+
+
                 </div>
             </div>
 
@@ -243,7 +243,7 @@
                         <i class="fas fa-solid fa-chart-simple mr-3 text-lg"></i>
                         {{ __('PES Result') }}
                     </x-nav-link>
-                                    
+
                 </div>
             </div>
 
@@ -257,12 +257,12 @@
                         <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
                         {{ __('Grade Submission Tracking') }}
                     </x-nav-link>
-                    
-                    
-                    
-                    
 
-                    
+
+
+
+
+
                 </div>
             </div>
 
@@ -295,7 +295,7 @@
                 </div>
             </div>
 
-            
+
 
 
         @endif
@@ -340,9 +340,13 @@
                         <i class="fas fa-solid fa-user-plus mr-3 text-lg"></i>
                         {{ __('Students To Course (Individual)') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
+                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs(['students.index', 'students.create', 'students.edit'])">
                         <i class="fas fa-solid fa-users-gear mr-3 text-lg"></i>
                         {{ __('Manage Students') }}
+                    </x-nav-link>
+                     <x-nav-link href="{{ route('students.profile.bank') }}" :active="request()->routeIs(['students.profile.bank', 'students.show' ])">
+                        <i class="fas fa-solid fas fa-id-card mr-3 text-lg"></i>
+                        {{ __('Student Profile') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('courses.index') }}" :active="request()->routeIs('courses.*')">
                         <i class="fas fa-solid fa-book-journal-whills mr-3 text-lg"></i>
@@ -372,16 +376,16 @@
                         <i class="fas fa-solid fa-chart-line mr-3 text-lg"></i>
                         {{ __('Reports') }}
                     </x-nav-link>
-                    
+
                 </div>
             </div>
-            
+
         @endif
 
         @if(Auth::user()->hasRole('academic_head')|| Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
             {{-- NEW: ROLE SEPARATOR FOR HR/ADMIN --}}
             <div class="mt-6 pt-3 border-t border-gray-700">
-               
+
                 <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
                     HR & Administration
                 </h3>
@@ -462,7 +466,7 @@
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('Department Head Assignment') }}
                     </x-nav-link>
-                   
+
                 </div>
             </div>
         @endif
@@ -506,10 +510,10 @@
                 {{-- Main Content Area --}}
                 <main class="flex-1 p-6 sm:p-8">
 
-    
+
                     @yield('content')
 
-                    
+
                 </main>
             </div>
         </div>

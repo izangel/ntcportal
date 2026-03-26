@@ -10,6 +10,7 @@ class Student extends Model
     use HasFactory;
 
     protected $fillable = [
+        // Existing fields
         'user_id',
         'student_id',
         'first_name',
@@ -18,32 +19,89 @@ class Student extends Model
         'email',
         'date_of_birth',
         'section_id',
+
+        // New Student Personal Data
+        'gender',
+        'civil_status',
+        'card_number',
+        'place_birth',
+        'current_address',
+        'nationality',
+        'religion',
+        'mobile_number',
+        'profile_photo',
+
+        // Parents Data
+        'father_name',
+        'father_occupation',
+        'mother_name',
+        'mother_occupation',
+        'parent_address',
+        'parent_tel',
+
+        // Guardian & Admission Data
+        'guardian_name',
+        'guardian_address',
+        'guardian_tel',
+        'basis_of_admission',
+        'date_of_admission',
+        'encoded_by',
+        'last_updated_by',
     ];
 
-    // Define relationship with User
+    // --- Relationships ---
+
+    /**
+     * Relationship for Educational Attainment (Last graduated info).
+     * Fixes: RelationNotFoundException [education]
+     */
+    public function education()
+    {
+        return $this->hasMany(StudentEducation::class);
+    }
+
+    /**
+     * Relationship for many document photo uploads.
+     * Fixes: RelationNotFoundException [documents]
+     */
+    public function documents()
+    {
+        return $this->hasMany(StudentDocument::class);
+    }
+
+    /**
+     * Relationship to track who encoded the record.
+     */
+    public function encoder()
+    {
+        return $this->belongsTo(User::class, 'encoded_by');
+    }
+
+    /**
+     * Relationship to track who last updated the record.
+     */
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'last_updated_by');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Define many-to-many relationship with Course through Enrollment
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'enrollments')
-                    ->withPivot('grade', 'created_at') // Include grade and created_at from pivot table
-                    ->withTimestamps(); // If you want to automatically manage timestamps on the pivot
+                    ->withPivot('grade', 'created_at')
+                    ->withTimestamps();
     }
 
-    // Define hasMany relationship with Enrollment model
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
     }
 
-    /**
-     * Get the section that the student belongs to.
-     */
-    // App\Models\Student.php
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student')
@@ -51,51 +109,37 @@ class Student extends Model
                     ->withTimestamps();
     }
 
-    /**
-     * Get the program that the student belongs to (through section).
-     */
+    public function evaluations()
+    {
+        return $this->hasMany(CourseEvaluation::class, 'student_id');
+    }
+
+    public function candidacies()
+    {
+        return $this->hasMany(Candidacy::class);
+    }
+
+    // --- Accessors & Logic ---
+
     public function program()
     {
         $section = $this->sections()->latest('pivot_created_at')->first();
         return $section ? $section->program : null;
     }
 
-    /**
-     * Get the program attribute (accessor for blade templates).
-     */
     public function getProgramAttribute()
     {
         return $this->program();
     }
 
-    /**
-     * Determine if the student is 'new' for a given semester.
-     * A student is 'new' if they have no enrollments in semesters that ended before
-     * the start date of the given semester.
-     */
     public function isNewStudentForSemester(Semester $currentSemester)
     {
-        // Get enrollments that occurred in semesters that ended *before* the current semester's start date.
         $previousEnrollments = $this->enrollments()
                                     ->whereHas('semester', function ($query) use ($currentSemester) {
-                                        // Ensure the semester has an end_date before the current semester's start_date
                                         $query->where('end_date', '<', $currentSemester->start_date);
                                     })
                                     ->count();
 
-        return $previousEnrollments === 0; // If count is 0, they are new.
-    }
-
-    public function evaluations()
-    {
-        return $this->hasMany(CourseEvaluation::class, 'student_id');
-    }
-
-    /**
-     * Get the candidacies for the student.
-     */
-    public function candidacies()
-    {
-        return $this->hasMany(Candidacy::class);
+        return $previousEnrollments === 0;
     }
 }
