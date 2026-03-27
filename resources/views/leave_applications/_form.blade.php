@@ -69,12 +69,13 @@
                     const leaveTypeName = selectedOption.getAttribute('data-leave-type');
                     
                     if (leaveTypeSelect.value && balance !== null) {
-                        const balanceInt = parseInt(balance);
-                        creditBalanceText.innerHTML = `<strong>${leaveTypeName}</strong>: ${balanceInt} days available`;
+                        const balanceNum = parseFloat(balance);
+                        const balanceDisplay = Number.isInteger(balanceNum) ? balanceNum : balanceNum.toFixed(1);
+                        creditBalanceText.innerHTML = `<strong>${leaveTypeName}</strong>: ${balanceDisplay} days available`;
                         creditBalanceContainer.classList.remove('hidden');
                         
                         // Show warning if no credits
-                        if (balanceInt <= 0) {
+                        if (balanceNum <= 0) {
                             creditBalanceContainer.classList.remove('bg-blue-50', 'border-blue-200');
                             creditBalanceContainer.classList.add('bg-red-50', 'border-red-200');
                             creditBalanceText.classList.remove('text-blue-800');
@@ -128,6 +129,29 @@
         </div>
     </div>
 
+    {{-- Half-day leave options (per date) --}}
+    <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <x-label value="{{ __('Half Day Leave') }}" class="font-semibold text-gray-700" />
+        <p class="mt-1 text-xs text-gray-500">
+            Enable this to mark specific leave dates as half-day (0.5 credit per marked date).
+        </p>
+        <div class="mt-3 flex flex-wrap gap-6">
+            <label class="inline-flex items-center gap-2">
+                <input type="radio" name="half_day_enabled" value="0" {{ old('half_day_enabled', '0') !== '1' ? 'checked' : '' }}>
+                <span class="text-sm text-gray-700">No</span>
+            </label>
+            <label class="inline-flex items-center gap-2">
+                <input type="radio" name="half_day_enabled" value="1" {{ old('half_day_enabled') === '1' ? 'checked' : '' }}>
+                <span class="text-sm text-gray-700">Yes</span>
+            </label>
+        </div>
+
+        <div id="half_day_dates_container" class="mt-4 hidden">
+            <p class="text-sm font-medium text-gray-700 mb-2">Select Full Day or Half Day per date:</p>
+            <div id="half_day_dates_list" class="space-y-2"></div>
+        </div>
+    </div>
+
     {{-- Exceeds Leave Credits Notification --}}
     @if($remainingCredits)
         <div id="exceeds_credits_container" class="rounded-lg border border-red-200 bg-red-50 p-4 hidden">
@@ -145,7 +169,11 @@
             const leaveTypeSelect = document.getElementById('leave_type_id');
             const exceedsCreditsContainer = document.getElementById('exceeds_credits_container');
             const exceedsCreditsMessage = document.getElementById('exceeds_credits_message');
+            const halfDayEnabledInputs = document.querySelectorAll('input[name="half_day_enabled"]');
+            const halfDayDatesContainer = document.getElementById('half_day_dates_container');
+            const halfDayDatesList = document.getElementById('half_day_dates_list');
             const today = new Date("{{ date('Y-m-d') }}");
+            const oldHalfDayDates = @json(old('half_day_dates', []));
 
             // Hardcoded Holidays
             const holidays = [
@@ -178,26 +206,95 @@
                 return holidays.includes(formatDate(date));
             }
 
+            function parseLocalDate(dateStr) {
+                if (!dateStr) return null;
+                const parts = dateStr.split('-').map((v) => parseInt(v, 10));
+                if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+                return new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+            }
+
+            function formatDisplayDate(date) {
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const year = date.getFullYear();
+                return `${month}-${day}-${year}`;
+            }
+
+            function getChargeableDates(startStr, endStr) {
+                const startDate = parseLocalDate(startStr);
+                const endDate = parseLocalDate(endStr);
+                if (!startDate || !endDate || endDate < startDate) return [];
+
+                const dates = [];
+                const current = new Date(startDate);
+                while (current <= endDate) {
+                    if (!isHoliday(current)) {
+                        dates.push(formatDate(current));
+                    }
+                    current.setDate(current.getDate() + 1);
+                    current.setHours(12, 0, 0, 0);
+                }
+                return dates;
+            }
+
             function calculateWorkDays(startStr, endStr) {
-                if (!startStr || !endStr) return 0;
-                
-                const startDate = new Date(startStr);
-                const endDate = new Date(endStr);
-                
-                // Calculate total days inclusive (including weekends)
-                const timeDiff = endDate.getTime() - startDate.getTime();
-                const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-                
-                // Count holidays within the date range (inclusive)
-                let holidaysInRange = 0;
-                holidays.forEach(holiday => {
-                    const hDate = new Date(holiday);
-                    if (hDate >= startDate && hDate <= endDate) {
-                        holidaysInRange++;
+                return getChargeableDates(startStr, endStr).length;
+            }
+
+            function getRequestedDays(startStr, endStr) {
+                const chargeableDates = getChargeableDates(startStr, endStr);
+                if (!chargeableDates.length) return 0;
+
+                const halfEnabled = document.querySelector('input[name="half_day_enabled"]:checked')?.value === '1';
+                if (!halfEnabled) return chargeableDates.length;
+
+                let requested = chargeableDates.length;
+                chargeableDates.forEach((dateKey) => {
+                    const selected = document.querySelector(`input[name="half_day_dates[${dateKey}]"]:checked`);
+                    if (selected && selected.value === 'half') {
+                        requested -= 0.5;
                     }
                 });
-                
-                return totalDays - holidaysInRange;
+
+                return requested;
+            }
+
+            function renderHalfDayDates() {
+                if (!halfDayDatesList) return;
+
+                const chargeableDates = getChargeableDates(start?.value, end?.value);
+                const enabled = document.querySelector('input[name="half_day_enabled"]:checked')?.value === '1';
+
+                halfDayDatesList.innerHTML = '';
+                if (!halfDayDatesContainer) return;
+                if (!enabled || !chargeableDates.length) {
+                    halfDayDatesContainer.classList.add('hidden');
+                    return;
+                }
+
+                halfDayDatesContainer.classList.remove('hidden');
+
+                chargeableDates.forEach((dateKey) => {
+                    const displayDate = formatDisplayDate(parseLocalDate(dateKey));
+                    const oldValue = oldHalfDayDates && oldHalfDayDates[dateKey] ? oldHalfDayDates[dateKey] : 'full';
+
+                    const row = document.createElement('div');
+                    row.className = 'flex flex-col gap-2 rounded-md border border-gray-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between';
+                    row.innerHTML = `
+                        <span class="text-sm text-gray-800 font-medium">${displayDate}</span>
+                        <div class="flex items-center gap-6">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input type="radio" name="half_day_dates[${dateKey}]" value="full" ${oldValue === 'full' ? 'checked' : ''}>
+                                <span>Full Day</span>
+                            </label>
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+                                <input type="radio" name="half_day_dates[${dateKey}]" value="half" ${oldValue === 'half' ? 'checked' : ''}>
+                                <span>Half Day</span>
+                            </label>
+                        </div>
+                    `;
+                    halfDayDatesList.appendChild(row);
+                });
             }
 
             function checkCreditsExceeded() {
@@ -216,12 +313,12 @@
                     return;
                 }
                 
-                const workDays = calculateWorkDays(startVal, endVal);
-                const balanceInt = parseInt(balance);
+                const requestedDays = getRequestedDays(startVal, endVal);
+                const balanceValue = parseFloat(balance);
                 
-                if (workDays > balanceInt) {
+                if (requestedDays > balanceValue) {
                     if (exceedsCreditsContainer) {
-                        exceedsCreditsMessage.innerHTML = `<strong>You are requesting ${workDays} days of leave</strong>, but you only have <strong>${balanceInt} days</strong> available for <strong>${leaveTypeName}</strong>. Please adjust your dates or contact HR.`;
+                        exceedsCreditsMessage.innerHTML = `<strong>You are requesting ${requestedDays} days of leave</strong>, but you only have <strong>${balanceValue}</strong> days available for <strong>${leaveTypeName}</strong>. Please adjust your dates or contact HR.`;
                         exceedsCreditsContainer.classList.remove('hidden');
                     }
                 } else {
@@ -257,6 +354,7 @@
                 if (end) end.setAttribute('data-min-date', minDateStr);
                 
                 // Check credits after updating constraints
+                renderHalfDayDates();
                 checkCreditsExceeded();
             }
 
@@ -284,6 +382,7 @@
                             end.value = endMin;
                         }
                     }
+                    renderHalfDayDates();
                     checkCreditsExceeded();
                 });
             }
@@ -291,9 +390,27 @@
             // When end date changes, check credits
             if (end) {
                 end.addEventListener('change', function() {
+                    renderHalfDayDates();
                     checkCreditsExceeded();
                 });
             }
+
+            halfDayEnabledInputs.forEach((input) => {
+                input.addEventListener('change', function() {
+                    renderHalfDayDates();
+                    checkCreditsExceeded();
+                });
+            });
+
+            if (halfDayDatesList) {
+                halfDayDatesList.addEventListener('change', function(event) {
+                    if (event.target && event.target.matches('input[type="radio"]')) {
+                        checkCreditsExceeded();
+                    }
+                });
+            }
+
+            renderHalfDayDates();
         });
     </script>
 </div>
@@ -401,4 +518,5 @@
             </div>
         </div>
     </div>
+</div>
 </div>

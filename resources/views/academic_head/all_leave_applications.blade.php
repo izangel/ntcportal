@@ -52,7 +52,7 @@
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm text-gray-900">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</div>
-                                                <div class="text-sm text-gray-500">({{ $application->total_days }} days)</div>
+                                                <div class="text-sm text-gray-500">({{ fmod((float) $application->total_days, 1.0) == 0.0 ? number_format((float) $application->total_days, 0) : number_format((float) $application->total_days, 1) }} days)</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full

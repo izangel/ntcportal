@@ -52,6 +52,7 @@ class LeaveApplication extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'total_days' => 'float',
         'date_filed' => 'datetime',
         'academic_head_noted_at' => 'datetime',
         'hr_recommended_at' => 'datetime',

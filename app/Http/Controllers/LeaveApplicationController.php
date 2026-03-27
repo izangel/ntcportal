@@ -209,6 +209,82 @@ private function calculateWorkDays($startDate, $endDate)
     return $totalDays - count($holidaysInRange);
 }
 
+/**
+ * Get chargeable leave dates (inclusive) following the same holiday logic.
+ */
+private function getChargeableDates($startDate, $endDate)
+{
+    $start = Carbon::parse($startDate)->startOfDay();
+    $end = Carbon::parse($endDate)->startOfDay();
+
+    $holidays = [
+        '2025-12-30',
+        '2025-12-31',
+        '2026-01-01',
+        '2026-01-02',
+        '2026-02-25',
+        '2026-04-02',
+        '2026-04-03',
+        '2026-04-04',
+        '2026-04-09',
+        '2026-05-01',
+        '2026-06-12',
+        '2026-08-21',
+        '2026-08-31',
+        '2026-11-01',
+        '2026-11-02',
+        '2026-11-30',
+        '2026-12-08',
+        '2026-12-24',
+        '2026-12-25',
+        '2026-12-30',
+        '2026-12-31',
+    ];
+
+    $dates = [];
+    for ($cursor = $start->copy(); $cursor->lte($end); $cursor->addDay()) {
+        $key = $cursor->toDateString();
+        if (!in_array($key, $holidays, true)) {
+            $dates[] = $key;
+        }
+    }
+
+    return $dates;
+}
+
+/**
+ * Compute requested leave days with optional half-day selections.
+ * Each selected half-day reduces one full day to 0.5.
+ */
+private function calculateRequestedDays(Request $request, $startDate, $endDate)
+{
+    $chargeableDates = $this->getChargeableDates($startDate, $endDate);
+    $baseDays = count($chargeableDates);
+
+    if ($baseDays <= 0) {
+        return 0.0;
+    }
+
+    $halfDayEnabled = (string) $request->input('half_day_enabled', '0') === '1';
+    if (!$halfDayEnabled) {
+        return (float) $baseDays;
+    }
+
+    $halfDayDates = $request->input('half_day_dates', []);
+    if (!is_array($halfDayDates)) {
+        return (float) $baseDays;
+    }
+
+    $halfDayCount = 0;
+    foreach ($chargeableDates as $dateKey) {
+        if (($halfDayDates[$dateKey] ?? 'full') === 'half') {
+            $halfDayCount++;
+        }
+    }
+
+    return (float) ($baseDays - ($halfDayCount * 0.5));
+}
+
     public function store(Request $request)
 {
     $rules = [
@@ -217,10 +293,13 @@ private function calculateWorkDays($startDate, $endDate)
         'reason' => 'required|string|max:1000',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
+        'half_day_enabled' => 'nullable|in:0,1',
+        'half_day_dates' => 'nullable|array',
         'tasks_endorsed' => 'nullable|string|max:1000',
         'personnel_to_take_over_id' => 'nullable|exists:employees,id',
         'acknowledgement_personnel_take_over_signature' => 'nullable|string|max:255',
     ];
+    $rules['half_day_dates.*'] = 'nullable|in:full,half';
 
     $rules['classes_data'] = 'nullable|array';
     $rules['classes_data.*.course_code'] = 'nullable|string|max:255';
@@ -232,8 +311,7 @@ private function calculateWorkDays($startDate, $endDate)
 
     $validatedData = $request->validate($rules);
 
-    // Use the helper method
-    $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
+    $validatedData['total_days'] = $this->calculateRequestedDays($request, $validatedData['start_date'], $validatedData['end_date']);
     
     // Check leave credits availability
     $employee = Employee::find($validatedData['employee_id']);
@@ -253,9 +331,15 @@ private function calculateWorkDays($startDate, $endDate)
         
         // Block if requested days exceed available credits
         if ($availableCredits < $validatedData['total_days']) {
+            $availableDisplay = fmod((float) $availableCredits, 1.0) == 0.0
+                ? number_format((float) $availableCredits, 0)
+                : number_format((float) $availableCredits, 1);
+            $requestedDisplay = fmod((float) $validatedData['total_days'], 1.0) == 0.0
+                ? number_format((float) $validatedData['total_days'], 0)
+                : number_format((float) $validatedData['total_days'], 1);
             return redirect()->back()
                 ->withInput()
-                ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableCredits} days, Requested: {$validatedData['total_days']} days. Please adjust your dates.");
+                ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableDisplay} days, Requested: {$requestedDisplay} days. Please adjust your dates.");
         }
     } else {
         return redirect()->back()
@@ -275,6 +359,7 @@ private function calculateWorkDays($startDate, $endDate)
     $validatedData['admin_status'] = 'pending';  // Initialize Admin status as pending
 
     $classesToSave = $validatedData['classes_data'] ?? [];
+    unset($validatedData['half_day_enabled'], $validatedData['half_day_dates']);
     unset($validatedData['classes_data']);
 
     $leaveApplication = LeaveApplication::create($validatedData);
@@ -382,10 +467,13 @@ private function calculateWorkDays($startDate, $endDate)
         'reason' => 'required|string|max:1000',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
+        'half_day_enabled' => 'nullable|in:0,1',
+        'half_day_dates' => 'nullable|array',
         'tasks_endorsed' => 'nullable|string|max:1000',
         'personnel_to_take_over_id' => 'nullable|exists:employees,id',
         'acknowledgement_personnel_take_over_signature' => 'nullable|string|max:255',
     ];
+    $rules['half_day_dates.*'] = 'nullable|in:full,half';
 
     $rules['classes_data'] = 'nullable|array';
     $rules['classes_data.*.id'] = 'nullable|exists:leave_application_classes,id';
@@ -398,10 +486,10 @@ private function calculateWorkDays($startDate, $endDate)
 
     $validatedData = $request->validate($rules);
 
-    // Use the helper method
-    $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
+    $validatedData['total_days'] = $this->calculateRequestedDays($request, $validatedData['start_date'], $validatedData['end_date']);
 
     $classesToProcess = $validatedData['classes_data'] ?? [];
+    unset($validatedData['half_day_enabled'], $validatedData['half_day_dates']);
     unset($validatedData['classes_data']);
 
     $leaveApplication->update($validatedData);

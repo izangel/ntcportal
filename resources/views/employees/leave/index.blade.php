@@ -17,7 +17,7 @@
 
                 @if(!empty($remainingCredits))
                     @foreach ($remainingCredits as $type => $credits)
-                        <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ $credits }} remaining</p>
+                        <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ fmod((float) $credits, 1.0) == 0.0 ? number_format((float) $credits, 0) : number_format((float) $credits, 1) }} remaining</p>
                     @endforeach
                 @else
                     <p>No leave credits found for this employee.</p>
@@ -40,7 +40,7 @@
                                 <td>{{ $transaction->leaveType->name }}</td>
                                 <td>{{ $transaction->start_date }}</td>
                                 <td>{{ $transaction->end_date }}</td>
-                                <td>{{ $transaction->total_days }}</td>
+                                <td>{{ fmod((float) $transaction->total_days, 1.0) == 0.0 ? number_format((float) $transaction->total_days, 0) : number_format((float) $transaction->total_days, 1) }}</td>
                                 <td>{{ $transaction->approval_status }}</td>
                             </tr>
                         @endforeach

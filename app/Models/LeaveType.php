@@ -13,6 +13,10 @@ class LeaveType extends Model
     use HasFactory;
     protected $fillable = ['name', 'default_credits'];
 
+    protected $casts = [
+        'default_credits' => 'float',
+    ];
+
     public function leaveApplications()
     {
         return $this->hasMany(LeaveApplication::class);

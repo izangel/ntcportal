@@ -39,7 +39,7 @@
                     @if(is_array($remainingCredits) && !empty($remainingCredits))
                         {{-- Loop through the array only if it's an array and not empty --}}
                         @foreach ($remainingCredits as $type => $credits)
-                            <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ $credits }} remaining</p>
+                            <p>{{ Str::of($type)->replace('_', ' ')->title() }}: {{ fmod((float) $credits, 1.0) == 0.0 ? number_format((float) $credits, 0) : number_format((float) $credits, 1) }} remaining</p>
                         @endforeach
                     @else
                         {{-- Display the message directly if it's not a non-empty array --}}
@@ -110,7 +110,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->leaveType->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($application->reason, 30) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->total_days }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ fmod((float) $application->total_days, 1.0) == 0.0 ? number_format((float) $application->total_days, 0) : number_format((float) $application->total_days, 1) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             @if ($application->isRejected()) bg-red-100 text-red-800

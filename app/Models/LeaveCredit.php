@@ -17,6 +17,12 @@ class LeaveCredit extends Model
         'academic_year_id'
     ];
 
+    protected $casts = [
+        'sick_leave' => 'float',
+        'vacation_leave' => 'float',
+        'service_incentive_leave' => 'float',
+    ];
+
     public function employee()
     {
         return $this->belongsTo(Employee::class);
