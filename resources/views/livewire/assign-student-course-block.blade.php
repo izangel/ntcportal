@@ -87,10 +87,13 @@
                 
                 <div class="bg-white p-3 rounded shadow-sm border border-gray-200">
                     <h3 class="text-[10px] font-black text-gray-400 uppercase mb-2">1. Define Section Load</h3>
-                    <select wire:model.live="target_section_id" class="w-full text-xs border-gray-300 rounded mb-2 py-1 font-bold text-blue-800">
+                        <select wire:model.live="target_section_id" class="w-full text-xs border-gray-300 rounded mb-2 py-1 font-bold text-blue-800">
                         <option value="">-- Choose Target Section --</option>
                         @foreach($sections as $section)
-                            <option value="{{ $section->id }}">{{ $section->name }}</option>
+                        {{-- Access the related program name and concatenate it with the section name --}}
+                        <option value="{{ $section->id }}">
+                            {{ $section->program->name }} {{ $section->name }}
+                        </option>
                         @endforeach
                     </select>
 
@@ -223,7 +226,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
 
