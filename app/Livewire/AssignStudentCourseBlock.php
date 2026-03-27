@@ -19,19 +19,24 @@ class AssignStudentCourseBlock extends Component
     public function updatedAcademicYearId() { $this->resetSelection(); }
     public function updatedSemester() { $this->resetSelection(); }
     
-    public function updatedTargetSectionId($value)
-    {
+// Inside AssignStudentCourseBlock.php
+// app/Livewire/AssignStudentCourseBlock.php
+
+public function updatedTargetSectionId($value)
+{
+    if ($value) {
+        // Now that the table is migrated, this query will work
+        $this->selected_course_blocks = DB::table('course_block_section')
+            ->where('section_id', $value)
+            ->where('academic_year_id', $this->academic_year_id)
+            ->where('semester', $this->semester)
+            ->pluck('course_block_id')
+            ->map(fn($id) => (string)$id)
+            ->toArray();
+    } else {
         $this->selected_course_blocks = [];
-        if ($value) {
-            $this->selected_course_blocks = DB::table('course_block_section')
-                ->where('section_id', $value)
-                ->where('academic_year_id', $this->academic_year_id)
-                ->where('semester', $this->semester)
-                ->pluck('course_block_id')
-                ->map(fn($id) => (string)$id)
-                ->toArray();
-        }
     }
+}
 
     private function resetSelection()
     {

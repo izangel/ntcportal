@@ -30,9 +30,6 @@ class DashboardController extends Controller
         $todayStr = now()->toDateString(); 
         $notifications = $user->unreadNotifications;
 
-        $currentAY = \App\Models\AcademicYear::where('is_current', true)->first();
-        $currentAYName = $currentAY ? $currentAY->start_year . '-' . $currentAY->end_year : 'No Active Year';
-
         $recentDates = ImportantDate::with('categories')
             ->where(function($query) use ($todayStr) {
                 $query->where('end_date', '>=', $todayStr)
@@ -176,7 +173,7 @@ class DashboardController extends Controller
             $studentData
         );
 
-            return view('dashboard', compact('viewData', 'currentAYName'));
+        return view('dashboard', $viewData);
     }
 
     // Helper to map semester names

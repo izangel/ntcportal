@@ -14,10 +14,10 @@ class Section extends Model
     /**
      * Get the program that owns the section.
      */
-    public function program()
-    {
-        return $this->belongsTo(Program::class);
-    }
+public function program()
+{
+    return $this->belongsTo(Program::class);
+}
 
     /**
      * Get the students for the section.

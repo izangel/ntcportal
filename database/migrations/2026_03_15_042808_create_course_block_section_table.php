@@ -10,14 +10,11 @@ public function up(): void
 {
     Schema::create('course_block_section', function (Blueprint $table) {
         $table->id();
-        // The foreign keys
         $table->foreignId('course_block_id')->constrained()->onDelete('cascade');
         $table->foreignId('section_id')->constrained()->onDelete('cascade');
+        // These match the 'where' clauses in your current code
         $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
-        
-        // The semester string (e.g., "2nd Semester")
         $table->string('semester'); 
-        
         $table->timestamps();
     });
 }
