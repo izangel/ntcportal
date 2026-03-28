@@ -6,9 +6,9 @@
             <form action="{{ route('course_blocks.update', $courseBlock->id) }}" method="POST">
                 @csrf
                 @method('PUT')
- 
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Course</label>
                         <select name="course_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
@@ -36,7 +36,7 @@
                         <select name="faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                             @foreach($employees as $emp)
                                 <option value="{{ $emp->id }}" {{ $courseBlock->faculty_id == $emp->id ? 'selected' : '' }}>
-                                    {{ $emp->last_name }}, {{ $emp->first_name }}
+                                    {{ $emp->last_name }}, {{ $emp->first_name }} {{ $emp->middle_name }}
                                 </option>
                             @endforeach
                         </select>

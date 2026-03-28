@@ -36,7 +36,7 @@
         </td>
 
         <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-gray-900">{{ $block->faculty->last_name }}, {{ $block->faculty->first_name }} {{ $block->faculty->middle_name }}</div>
+        <div class="text-sm text-gray-900">{{ $block->faculty->last_name }}, {{ $block->faculty->first_name }} {{ $block->faculty->middle_name }}</div>
         </td>
 
         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

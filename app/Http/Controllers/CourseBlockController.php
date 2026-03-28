@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 use App\Models\CourseBlock;
 use App\Models\Section;
 use App\Models\Course;
-use App\Models\User; // or App\Models\Faculty
+use App\Models\Employee;
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
@@ -17,10 +17,10 @@ class CourseBlockController extends Controller
         // Fetch data for dropdowns
         $sections = Section::all();
         $courses = Course::all();
-        $faculties = User::all();
+        $employees = Employee::all();
         $academicYears = AcademicYear::all();
 
-        return view('course_blocks.create', compact('sections', 'courses', 'faculties', 'academicYears'));
+        return view('course_blocks.create', compact('sections', 'courses', 'employees', 'academicYears'));
     }
 
 public function store(Request $request)
@@ -55,7 +55,7 @@ public function edit(CourseBlock $courseBlock)
     // Fetch dropdown data
     $sections = \App\Models\Section::all();
     $courses = \App\Models\Course::all();
-    $employees = \App\Models\Employee::all(); 
+    $employees = \App\Models\Employee::with('user')->get();
     $academicYears = \App\Models\AcademicYear::all();
 
     return view('course_blocks.edit', compact('courseBlock', 'sections', 'courses', 'employees', 'academicYears'));
