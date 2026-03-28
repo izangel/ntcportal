@@ -33,14 +33,14 @@
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-        
+
         {{-- 1. Welcome & Notifications Section --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
                     <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
                     <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
-                    
+
                     @if(!Auth::user()->hasRole('student'))
                         <div class="mt-6 flex gap-4">
                             @php
@@ -49,7 +49,7 @@
                                 elseif(Auth::user()->hasRole('academic_head')) $route = 'ah.leave_applications.all';
                                 else $route = null;
                             @endphp
-                            
+
                             @if($route)
                                 <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
                                     Review Pending Leaves
@@ -135,7 +135,7 @@
                                 {{ $semesterName }} Semester
                             </span>
                         </div>
-                        
+
                         <div class="divide-y divide-gray-100">
                             @forelse($upcomingSchedule as $block)
                                 <div class="py-4 flex justify-between items-center hover:bg-gray-50 transition px-2 rounded-lg">
@@ -158,7 +158,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 {{-- GPA Sidebar --}}
                 <div class="space-y-6">
                     <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-white">
@@ -175,7 +175,7 @@
 
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}
-            
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {{-- 🔑 My Course Load Table (Half Width) --}}
                 @if(isset($myCourses) && count($myCourses) > 0)
@@ -185,7 +185,7 @@
                                 <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 My Course Load
                             </h4>
-                            
+
                         </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-100">
@@ -230,7 +230,7 @@
                     </a>
                 </div>
 
-                
+
             </div>
 
             {{-- Full-Width Work Week Leave Summary (Mon-Fri) --}}
@@ -253,13 +253,13 @@
                 {{-- 5-Column Grid --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     @foreach($daysOfWeek as $day)
-                        @php 
+                        @php
                             $dateStr = $day->toDateString();
                             $isToday = $day->isToday();
                             $dailyLeaves = $leavesByDay[$dateStr];
                         @endphp
                         <div class="flex flex-col min-h-[180px] rounded-xl border {{ $isToday ? 'bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50' : 'bg-gray-50/30 border-gray-100' }}">
-                            
+
                             <div class="p-3 text-center border-b {{ $isToday ? 'border-indigo-100 bg-indigo-100/30' : 'border-gray-100 bg-gray-50/50' }} rounded-t-xl">
                                 <p class="text-[10px] font-black uppercase tracking-tighter {{ $isToday ? 'text-indigo-600' : 'text-gray-400' }}">
                                     {{ $day->format('l') }}

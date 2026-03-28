@@ -18,7 +18,7 @@
                 <label class="block text-sm font-semibold text-gray-700 mb-1">Semester</label>
                 <select wire:model.live="semester" class="w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     @foreach ($semesters as $sem)
-                        <option value="{{ $sem }}">{{ $sem }} Semester</option>
+                        <option value="{{ $sem }}">{{ $sem }}</option>
                     @endforeach
                 </select>
             </div>
