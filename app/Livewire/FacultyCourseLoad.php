@@ -6,14 +6,15 @@ use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use App\Models\CourseBlock;
 use App\Models\AcademicYear;
+use App\Models\Semester;
 
 class FacultyCourseLoad extends Component
 {
     public $academicYearId;
-    public $semester = '1st';
+    public $semester = '1st Semester';
     public $facultyId;
     public $academicYears = [];
-    public $semesters = ['1st', '2nd', 'Summer'];
+    public $semesters = ['1st Semester', '2nd Semester', 'Summer'];
     public $assignedBlocks = [];
 
     public function mount()
@@ -23,8 +24,23 @@ class FacultyCourseLoad extends Component
         $this->facultyId = Auth::user()->employee->id;
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
-        if ($this->academicYears->isNotEmpty()) {
+        // Try to get active academic year
+        $activeAY = AcademicYear::getActiveAcademicYear();
+        if ($activeAY) {
+            $this->academicYearId = $activeAY->id;
+        } elseif ($this->academicYears->isNotEmpty()) {
             $this->academicYearId = $this->academicYears->first()->id;
+        }
+
+        // Try to get active semester
+        $activeSemester = Semester::getActiveSemester();
+        if ($activeSemester) {
+            $map = [
+                'First Semester' => '1st Semester',
+                'Second Semester' => '2nd Semester',
+                'Summer' => 'Summer',
+            ];
+            $this->semester = $map[$activeSemester->name] ?? $activeSemester->name;
         }
 
         $this->loadAssignedBlocks();

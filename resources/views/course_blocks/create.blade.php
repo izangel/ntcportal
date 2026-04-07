@@ -1,7 +1,7 @@
 <x-app-layout>
     <div class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-            
+
             <h2 class="text-2xl font-bold mb-6 text-gray-800">Add New Course Block</h2>
 
             @if(session('success'))
@@ -14,7 +14,7 @@
                 @csrf
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
+
                     <div>
                         <label for="section_id" class="block text-sm font-medium text-gray-700">Section</label>
                         <select name="section_id" id="section_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
@@ -41,8 +41,8 @@
                         <label for="faculty_id" class="block text-sm font-medium text-gray-700">Faculty</label>
                         <select name="faculty_id" id="faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Select Faculty</option>
-                            @foreach($faculties as $faculty)
-                                <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                            @foreach($employees as $emp)
+                                <option value="{{ $emp->id }}">{{ $emp->last_name }}, {{ $emp->first_name }} {{ $emp->middle_name }}</option>
                             @endforeach
                         </select>
                         @error('faculty_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
