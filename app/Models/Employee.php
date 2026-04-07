@@ -12,8 +12,7 @@ class Employee extends Model
     protected $fillable = [
         'last_name',
         'first_name',
-        'mid_name',
-        'name',
+        'middle_name',
         'email',
         'phone',
         'address',
@@ -70,13 +69,12 @@ class Employee extends Model
     $leaveTypes = LeaveType::all();
 
     foreach ($leaveTypes as $leaveType) {
+        $key = strtolower(str_replace(' ', '_', $leaveType->name));
+        // Calculate remaining by subtracting approved leaves from set credits
         $taken = $this->leaveApplications()
             ->where('leave_type_id', $leaveType->id)
             ->where('approval_status', 'approved_with_pay')
             ->sum('total_days');
-
-        $key = strtolower(str_replace(' ', '_', $leaveType->name));
-
         $remainingCredits[$key] = $leavecredit->{$key} - $taken;
     }
 
@@ -105,5 +103,24 @@ class Employee extends Model
         // This links the faculty user to all their loading records
         return $this->hasMany(FacultyLoading::class, 'faculty_id');
     }
+
+
+    public function courseBlocks()
+    {
+        return $this->hasMany(CourseBlock::class, 'faculty_id');
+    }
+
+    public function receivedEvaluations()
+{
+    return $this->hasMany(Evaluation::class, 'teacher_id');
+}
+
+/**
+ * Evaluations this user has performed on others (as a Peer or Supervisor)
+ */
+public function performedEvaluations()
+{
+    return $this->hasMany(Evaluation::class, 'evaluator_id');
+}
 
 }

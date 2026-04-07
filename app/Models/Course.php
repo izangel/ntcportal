@@ -29,6 +29,11 @@ class Course extends Model
         return $this->hasMany(Enrollment::class);
     }
 
+    public function courseBlocks()
+    {
+        return $this->hasMany(CourseBlock::class);
+    }
+
     // Define hasMany relationship with Enrollment model
     public function coursetosections()
     {

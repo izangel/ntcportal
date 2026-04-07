@@ -55,7 +55,7 @@ class DatabaseSeeder extends Seeder
             EnrollmentSeeder::class,
             EmployeeSeeder::class,
             LeaveTypesSeeder::class,
-            DatabaseSeeder::class,
+            CategorySeeder::class,
              
         ]);
     }

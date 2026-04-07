@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('employees', function (Blueprint $table) {
              // Add new columns
-            $table->string('first_name')->after('id');
-            $table->string('last_name')->after('first_name');
-            $table->string('mid_name')->nullable()->after('last_name');
+            // $table->string('first_name')->after('id');
+            // $table->string('last_name')->after('first_name');
+            // $table->string('mid_name')->nullable()->after('last_name');
         });
     }
 

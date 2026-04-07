@@ -5,6 +5,8 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\AcademicYear;
 use App\Models\Section;
+use App\Models\Enrollment;
+use App\Models\Semester; 
 use App\Models\Course;
 use App\Models\Student;
 use Illuminate\Support\Facades\DB;
@@ -12,139 +14,208 @@ use Illuminate\Support\Carbon;
 
 class AssignCourses extends Component
 {
-    // State Properties
+    // --- Data Properties ---
     public $academicYears = [];
     public $sections = [];
     public $courses = [];
+    public $semesters = []; 
+    public $students = []; 
     
+    // --- Selection Properties (Bound to Dropdowns) ---
     public $selectedAcademicYearId = null;
-    public $selectedSemester = null;
+    public $selectedSemesterId = null; 
     public $selectedSectionId = null;
     
-    // Lifecycle Method: Initial Load
+    // --- Lifecycle Method: Initial Load ---
     public function mount()
     {
-        // Load academic years for the first dropdown
+        // Load academic years on initial page load
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
     }
     
-    // Listener for when a selection is updated
+    // --- Listener for when a selection is updated ---
     public function updated($property)
     {
-        // Clear dependent data when parent selector changes
-        if (in_array($property, ['selectedAcademicYearId', 'selectedSemester'])) {
-            $this->sections = [];
+        // 1. Academic Year Changed (Top of the chain)
+        if ($property === 'selectedAcademicYearId') {
+            // Clear all dependent fields and data
+            $this->selectedSemesterId = null;
+            $this->semesters = []; 
             $this->selectedSectionId = null;
+            $this->sections = [];
             $this->courses = [];
+            $this->students = [];
+            
+            // Load Semesters (enables Semester dropdown in Blade)
+            if ($this->selectedAcademicYearId) {
+                $this->loadSemesters();
+            }
         }
         
-        // Auto-load sections if Academic Year and Semester are selected
-        if ($this->selectedAcademicYearId && $this->selectedSemester) {
-            $this->loadSections();
+        // 2. Semester Changed (Middle of the chain)
+        if ($property === 'selectedSemesterId') {
+            // Clear dependent fields below it
+            $this->selectedSectionId = null;
+            $this->sections = []; 
+            $this->courses = [];
+            $this->students = [];
+            
+            // Load Sections and Students (if all set)
+            if ($this->selectedAcademicYearId && $this->selectedSemesterId) {
+                // loadSections enables the Section dropdown in Blade
+                $this->loadSections(); 
+                $this->loadStudents(); 
+            }
+        }
+        
+        // 3. Section Changed (End of the chain: only re-load students if context is complete)
+        if ($property === 'selectedSectionId' && $this->selectedAcademicYearId && $this->selectedSemesterId) {
+            $this->loadStudents();
+        }
+    }
+
+    // --- Method to load available semesters (Filtered by Academic Year) ---
+    public function loadSemesters()
+    {
+        $this->semesters = Semester::where('academic_year_id', $this->selectedAcademicYearId)
+                                 ->get();
+        if ($this->semesters->isEmpty()) {
+             $this->selectedSemesterId = null;
         }
     }
     
-    // Method to load available sections
+    // --- Method to load available sections (Filtered by Academic Year) ---
     public function loadSections()
     {
-        // Filter sections based on year/semester
-        // NOTE: Ensure your Section model has 'academic_year_id' and 'semester' columns, 
-        // or adjust the WHERE clause to match your actual database schema.
         $this->sections = Section::where('academic_year_id', $this->selectedAcademicYearId)
                                  ->get();
-        $this->courses = [];
+        $this->courses = []; 
+    }
+    
+    // --------------------------------------------------------------------
+    // METHOD: LOADS STUDENTS FOR DISPLAY TABLE 
+    // --------------------------------------------------------------------
+    public function loadStudents()
+    {
+        // Require all three selections to be present
+        if (!$this->selectedSectionId || !$this->selectedAcademicYearId || !$this->selectedSemesterId) {
+            $this->students = collect();
+            return;
+        }
+        
+        // 1. Fetch student IDs from the enrollments table using ALL three filters
+        $studentIds = Enrollment::where('section_id', $this->selectedSectionId)
+            // Enrollment table uses the numeric Semester ID
+            ->where('semester_id', $this->selectedSemesterId) 
+            // Enrollment table uses the numeric Academic Year ID
+           // ->where('academic_year_id', $this->selectedAcademicYearId) 
+            ->pluck('student_id')
+            ->unique();
+        
+        if ($studentIds->isEmpty()) {
+            $this->students = collect();
+            session()->flash('warning', 'No students found for this selection.');
+            return;
+        }
+
+        // 2. Fetch the actual Student models
+        $this->students = Student::whereIn('id', $studentIds)
+            
+            ->get();
     }
 
-    // Method to load courses for the selected section (Phase 2)
+    // --- Method to load courses (Pre-assignment step) ---
     public function viewCourses()
     {
-        // 1. Validation remains correct
         $this->validate([
-            'selectedAcademicYearId' => 'required|exists:academic_years,id', // Added exists rule
-            'selectedSemester' => 'required|in:1st,2nd,Sum', // Assuming semesters are numbered
+            'selectedAcademicYearId' => 'required|exists:academic_years,id',
+            'selectedSemesterId' => 'required|exists:semesters,id', 
             'selectedSectionId' => 'required|exists:sections,id',
         ]);
 
-        // 2. Find the Section
+        // Get the text ('1st') needed for the course_to_sections pivot table
+        $selectedSemesterText = $this->getSemesterTextFromId($this->selectedSemesterId); 
         $section = Section::findOrFail($this->selectedSectionId);
 
-        // 3. Use the defined 'courses' relationship and apply filters
+        // Filter courses by pivot table fields (uses TEXT for semester)
         $this->courses = $section->courses()
-            // Filter courses by academic year ID on the pivot table
-            // Assumes the pivot table (course_to_sections) has the column 'academic_year_id'
             ->wherePivot('academic_year_id', $this->selectedAcademicYearId)
-
-            // Filter courses by semester on the pivot table
-            // Assumes the pivot table (course_to_sections) has the column 'semester'
-            ->wherePivot('semester', $this->selectedSemester)
-            
-            // Retrieve the results
+            ->wherePivot('semester', $selectedSemesterText) 
             ->get();
+            
+        if ($this->courses->isEmpty()) {
+            session()->flash('warning', 'No courses found assigned to this section/term.');
+        }
     }
-    
-    // THE CORE LOGIC: Bulk Insert (Phase 3)
+   
+    // --- Method to perform the final assignment ---
     public function assignStudentsToCourses()
     {
-        // 1. Re-validate inputs and fetch courses one last time
+        $this->loadStudents();
         $this->viewCourses();
 
-        if (empty($this->courses)) {
-            session()->flash('error', 'No courses found to assign.');
+        if (empty($this->courses) || $this->students->isEmpty()) {
+            session()->flash('error', 'Assignment failed: Check if courses or students are loaded.');
             return;
         }
-
-        // 2. Fetch all student IDs in the selected section
-        $students = Student::where('section_id', $this->selectedSectionId)->pluck('id');
         
-        if ($students->isEmpty()) {
-            session()->flash('error', 'No students found in the selected section.');
-            return;
-        }
-
+        $selectedSemesterText = $this->getSemesterTextFromId($this->selectedSemesterId);
         $recordsToInsert = [];
         $now = Carbon::now();
 
-        // 3. Prepare the bulk insert data array
-        foreach ($students as $studentId) {
+        // Prepare the bulk insert data array
+        foreach ($this->students as $student) {
             foreach ($this->courses as $course) {
                 $recordsToInsert[] = [
-                    'student_id' => $studentId,
+                    'student_id' => $student->id,
                     'course_id' => $course->id,
-                    'section_id' => $this->selectedSectionId,
-                    'academic_year_id' => $this->selectedAcademicYearId,
-                    'semester' => $this->selectedSemester,
+                  //  'section_id' => $this->selectedSectionId,
+                    'academic_year_id' => $this->selectedAcademicYearId, 
+                    'semester' => $selectedSemesterText, // Insert the TEXT value
                     'validated' => false,
-                    'validated_by' => null, // Blank by default when assigned
+                    'validated_by' => null,
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
             }
         }
-
-        // 4. Bulk Insert
+        
+        // Perform the bulk insert 
         try {
-            DB::beginTransaction();
-            // insertOrIgnore prevents hitting the unique constraint on duplicate assignments
-            $assignedCount = DB::table('student_course')->insertOrIgnore($recordsToInsert); 
-            DB::commit();
-            
-            session()->flash('success', 
-                "Successfully assigned $assignedCount records. Students in the section are now enrolled in the selected courses.");
-
+            DB::table('student_course')->insert($recordsToInsert);
+            session()->flash('success', 'Successfully assigned ' . $this->students->count() . ' students to ' . count($this->courses) . ' courses.');
         } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Bulk Assignment Error: ' . $e->getMessage());
-            session()->flash('error', 'An error occurred during assignment. Check logs for details.');
+            \Log::error('Course assignment failed: ' . $e->getMessage());
+            session()->flash('error', 'Failed to assign courses due to a database error.');
         }
     }
 
-    // RENDER Method (Handles Layout Integration)
+    // --- RENDER Method ---
     public function render()
     {
         return view('livewire.assign-courses')
-            // This renders the component into the 'layouts.admin' file
             ->extends('layouts.admin')
-            // This instructs Livewire to place the component's HTML into @yield('content')
-           ->section('content');
+            ->section('content');
+    }
+
+    // --- HELPER FUNCTION: Maps Semester ID (e.g., 4) to Pivot Text ('1st') ---
+    protected function getSemesterTextFromId(int $semesterId): string
+    {
+        // Fetches the semester record using the unique ID
+        $semester = DB::table('semesters')->where('id', $semesterId)->first();
+
+        if ($semester && $semester->name) {
+            // Converts the full name ('First Semester') to the pivot text ('1st')
+            $name = strtolower($semester->name);
+
+            if (str_contains($name, 'first')) {
+                return '1st';
+            } elseif (str_contains($name, 'second')) {
+                return '2nd';
+            } elseif (str_contains($name, 'summer')) {
+                return 'Summer'; 
+            }
+        }
+        throw new \Exception("Could not map unique Semester ID $semesterId to pivot table text.");
     }
 }

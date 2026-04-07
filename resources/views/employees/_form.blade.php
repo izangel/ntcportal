@@ -17,9 +17,9 @@
 </div>
 
 <div class="mb-4">
-    <x-label for="mid_name" value="{{ __('Employee Middle Name') }}" />
-    <x-input id="mid_name" class="block mt-1 w-full" type="text" name="mid_name" :value="old('mid_name', $employee->mid_name ?? '')" required autocomplete="mid_name" />
-    @error('mid_name')
+    <x-label for="middle_name" value="{{ __('Employee Middle Name') }}" />
+    <x-input id="middle_name" class="block mt-1 w-full" type="text" name="middle_name" :value="old('middle_name', $employee->middle_name ?? '')" autocomplete="middle_name" />
+    @error('middle_name')
         <span class="text-red-500 text-sm">{{ $message }}</span>
     @enderror
 </div>

@@ -14,7 +14,8 @@ class EmployeeSeeder extends Seeder
     public function run(): void
     {
         Employee::create([
-            'name' => 'John Doe',
+            'last_name' => 'Doe',
+            'first_name' => 'John',
             'email' => 'john.doe@example.com',
             'phone' => '09123456789',
             'address' => '123 Main St, Anytown',
@@ -22,7 +23,8 @@ class EmployeeSeeder extends Seeder
         ]);
 
         Employee::create([
-            'name' => 'Jane Smith',
+            'last_name' => 'Smith',
+            'first_name' => 'Jane',
             'email' => 'jane.smith@example.com',
             'phone' => '09987654321',
             'address' => '456 Oak Ave, Anytown',
@@ -30,7 +32,8 @@ class EmployeeSeeder extends Seeder
         ]);
 
         Employee::create([
-            'name' => 'Dr. Alice Brown',
+            'last_name' => 'Brown',
+            'first_name' => 'Alice',
             'email' => 'alice.brown@example.com',
             'phone' => '09001112222',
             'address' => '789 Pine Rd, Anytown',
@@ -38,7 +41,8 @@ class EmployeeSeeder extends Seeder
         ]);
 
         Employee::create([
-            'name' => 'Mr. Robert Davis',
+            'last_name' => 'Davis',
+            'first_name' => 'Robert',
             'email' => 'robert.davis@example.com',
             'phone' => '09334445555',
             'address' => '101 Cedar Ln, Anytown',
@@ -46,7 +50,8 @@ class EmployeeSeeder extends Seeder
         ]);
 
         Employee::create([
-            'name' => 'Ms. Emily White',
+            'last_name' => 'White',
+            'first_name' => 'Emily',
             'email' => 'emily.white@example.com',
             'phone' => '09667778888',
             'address' => '202 Birch Blvd, Anytown',

@@ -28,8 +28,9 @@ class AdminLeaveApplicationController extends Controller
     {
         $pendingApplications = LeaveApplication::where('admin_status', 'pending')
                                                 ->where('hr_status', 'approved')
+                                                ->where('ah_status', 'approved')
                                                 ->with(['employee', 'classesToMiss'])
-                                                ->orderBy('created_at', 'asc')
+                                                ->orderBy('created_at', 'desc')
                                                 ->get();
 
         return view('admin.leave_applications.index', compact('pendingApplications'));
@@ -47,7 +48,7 @@ class AdminLeaveApplicationController extends Controller
 
         // Load related data
         /** @var \App\Models\Employee $employee */
-       $employee = Auth::user()->employee;
+       $employee = $leaveApplication->employee;
 
       $remainingCredits = $employee->getRemainingLeaveCredits();
       $message = empty($remainingCredits)
@@ -67,9 +68,14 @@ return view('admin.leave_applications.review', compact('leaveApplication', 'rema
             'remarks' => ['nullable', 'string', 'max:500'],
         ]);
 
+        // HIERARCHY CHECK: Admin can only review if HR has already approved
+        if ($leaveApplication->hr_status !== 'approved') {
+            return redirect()->back()->with('error', 'This leave application cannot be reviewed by Admin yet. HR approval is required first.');
+        }
+
         $decision = $request->input('decision');
         $remarks = $request->input('remarks');
-        $approvedBy = Auth::user()->employee->name;
+        $approverRole = Auth::user()->employee->role; // Get the approver's role
 
         // Prevent re-deciding already processed applications
         if ($leaveApplication->admin_status !== 'pending') {
@@ -83,6 +89,12 @@ return view('admin.leave_applications.review', compact('leaveApplication', 'rema
         $leaveApplication->admin_remarks = $remarks;
         $leaveApplication->approval_status = $decision;
         $leaveApplication->save();
+
+        // DEDUCT LEAVE CREDITS IF APPROVED
+        if ($decision === 'approved_with_pay' || $decision === 'approved_without_pay') {
+            // No longer deducting from LeaveCredit table
+            // Remaining credits will be calculated dynamically in getRemainingLeaveCredits()
+        }
 
        
        
@@ -106,7 +118,7 @@ return view('admin.leave_applications.review', compact('leaveApplication', 'rema
         }
 
         // --- Notify the original employee about the HR decision ---
-        $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, $decision, $approvedBy, $remarks));
+        $leaveApplication->employee->user->notify(new LeaveApplicationDecision($leaveApplication, $decision, $approverRole, $remarks));
 
         return redirect()->route('admin.leave_applications.index')->with('success', "Leave application {$decision} successfully.");
     }

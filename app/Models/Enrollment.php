@@ -12,9 +12,16 @@ class Enrollment extends Model
     protected $fillable = [
         'student_id',
         'section_id',
+        'course_id',
         'grade',
-        'semester_id',
+        'academic_year_id',
+        'semester',
         'is_new_student',
+
+        // New audit fields
+        'original_grade', 
+        'resolution_date',
+        'resolved_by_user_id',
     ];
 
     protected $casts = [
@@ -30,7 +37,13 @@ class Enrollment extends Model
     // Define relationship with Course
     public function section()
     {
-        return $this->belongsTo(Section::class);
+        return $this->belongsTo(Section::class, 'section_id', 'id');
+    }
+
+      // Define relationship with Course
+    public function course()
+    {
+        return $this->belongsTo(Course::class, 'course_id', 'id');
     }
 
     /**
@@ -39,5 +52,10 @@ class Enrollment extends Model
     public function semester()
     {
         return $this->belongsTo(Semester::class);
+    }
+
+     public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 }

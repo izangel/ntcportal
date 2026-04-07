@@ -12,6 +12,8 @@
         </div>
     @endif
 
+    
+
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 items-end">
         <div>
             <label for="academic_year" class="block text-sm font-medium text-gray-700">Academic Year</label>
@@ -24,22 +26,36 @@
             @error('selectedAcademicYearId') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
+        
         <div>
             <label for="semester" class="block text-sm font-medium text-gray-700">Semester</label>
-            <select wire:model.live="selectedSemester" id="semester" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+            <select 
+                wire:model.live="selectedSemesterId" 
+                id="semesterId" 
+                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                {{-- 🚨 FIX 1: Disabled if Academic Year ID is not set 🚨 --}}
+                {{ $selectedAcademicYearId ? '' : 'disabled' }}
+            >
                 <option value="">Select Semester</option>
-                <option value="1st">1st Semester</option>
-                <option value="2nd">2nd Semester</option>
+                @foreach ($semesters as $semester)
+                    <option value="{{ $semester->id }}">{{ $semester->name }}</option>
+                @endforeach
             </select>
-            @error('selectedSemester') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+            @error('selectedSemesterId') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div>
             <label for="section" class="block text-sm font-medium text-gray-700">Section</label>
-            <select wire:model.live="selectedSectionId" id="section" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md @if(empty($sections)) bg-gray-100 cursor-not-allowed @endif" {{ empty($sections) ? 'disabled' : '' }}>
+            <select 
+                wire:model.live="selectedSectionId" 
+                id="sectionId" 
+                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                {{-- 🚨 FIX 2: Disabled if Semester ID is not set 🚨 --}}
+                {{ $selectedSemesterId ? '' : 'disabled' }}
+            >
                 <option value="">Select Section</option>
-                @foreach($sections as $section)
-                    <option value="{{ $section->id }}">{{ $section->program->name }}-{{ $section->name }}</option>
+                @foreach ($sections as $section)
+                    <option value="{{ $section->id }}">{{ $section->name }}</option>
                 @endforeach
             </select>
             @error('selectedSectionId') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
@@ -48,13 +64,46 @@
         <div>
             <button wire:click="viewCourses" 
                     wire:loading.attr="disabled"
-                    @if(!$selectedAcademicYearId || !$selectedSemester || !$selectedSectionId) disabled @endif
+                    @if(!$selectedAcademicYearId || !$selectedSemesterId || !$selectedSectionId) disabled @endif
                     class="w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 <span wire:loading.remove>View Courses</span>
                 <span wire:loading>Loading Courses...</span>
             </button>
         </div>
     </div>
+
+    @if (!empty($students))
+    <div class="mt-8">
+        <h3 class="text-lg font-semibold text-gray-700 mb-4">
+            📚 Students in Selected Section ({{ $students->count() }})
+        </h3>
+        
+        <div class="overflow-x-auto border rounded-lg">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                        
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @foreach ($students as $student)
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $student->id }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $student->last_name }}, {{ $student->first_name }} {{ $student->mid_name }}</td>
+                            
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @else
+        <div class="mt-8 p-4 text-center text-gray-500 bg-gray-50 border rounded-lg">
+            Select a valid Academic Year, Semester, and Section to view students.
+        </div>
+    @endif
 
     @if(!empty($courses))
         <hr class="my-6">

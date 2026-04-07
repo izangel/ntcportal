@@ -18,11 +18,25 @@
                     @csrf
 
                     <div class="mb-4 p-4 border rounded-md bg-blue-50 border-blue-200 text-blue-800">
-                        <p class="font-semibold">Enrolling for Current Active Semester:</p>
-                        <p>{{ $activeSemester->name }} ({{ $activeSemester->academicYear->start_year }} - {{ $activeSemester->academicYear->end_year }})</p>
-                        <p class="text-sm">({{ $activeSemester->start_date->format('M d, Y') }} to {{ $activeSemester->end_date->format('M d, Y') }})</p>
-                        <p class="text-sm mt-2 text-blue-600">To change the active semester, go to "Manage Academic Years" and "Manage Semesters".</p>
+                        <p class="font-semibold">Enrolling for Current Active AY:</p>
+                        <p>{{ $activeAY->start_year }} - {{ $activeAY->end_year }})</p>
+                        
+                        <p class="text-sm mt-2 text-blue-600">To change the active school year, go to "Manage Academic Years".</p>
                     </div>
+
+                  
+
+                     <div class="mt-4">
+                        <x-label for="semester" value="{{ __('Semester') }}" />
+                        <select id="semester" name="semester" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <option value="1st">First Semester</option>
+                            <option value="2nd">Second Semester</option>
+                            <option value="Summer">Summer</option>
+                        </select>
+                        <x-input-error for="semester" class="mt-2" />
+                    </div>
+
+                    
 
 
                     <div class="mt-4">
