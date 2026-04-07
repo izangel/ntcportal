@@ -6,20 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
+
     public function up(): void
     {
-        Schema::create('election_votes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('candidacy_id')->constrained('candidacies')->onDelete('cascade');
-            $table->timestamp('voted_at')->nullable();
-            $table->timestamps();
+        // Schema::create('election_votes', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->foreignId('student_id')->constrained()->onDelete('cascade');
+        //     $table->foreignId('candidacy_id')->constrained('candidacies')->onDelete('cascade');
+        //     $table->timestamp('voted_at')->nullable();
+        //     $table->timestamps();
 
-            $table->unique(['student_id', 'candidacy_id'], 'election_votes_unique_student_candidate');
-        });
+        //     $table->unique(['student_id', 'candidacy_id'], 'election_votes_unique_student_candidate');
+        //});
     }
 
     /**
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('election_votes');
+        //Schema::dropIfExists('election_votes');
     }
 };
