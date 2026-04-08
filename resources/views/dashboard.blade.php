@@ -37,6 +37,25 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
 
         {{-- 1. Welcome & Notifications Section --}}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-800">Welcome back, {{ $user->name }}!</h1>
+    
+    <div class="flex flex-wrap items-center gap-4 mt-2">
+        <div class="flex items-center gap-2 bg-cyan-50 px-3 py-1 rounded-full border border-cyan-100">
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500 text-[10px] font-bold text-white">
+                {{ $activeAYCount }}
+            </span>
+            <span class="text-sm font-semibold text-cyan-700">Active A.Y.: {{ $currentAYName }}</span>
+        </div>
+
+        <div class="flex items-center gap-2 bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+            <span class="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+                {{ $activeSemesterCount }}
+            </span>
+            <span class="text-sm font-semibold text-rose-700">Active Sem: {{ $currentSemName }}</span>
+        </div>
+    </div>
+</div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
@@ -517,6 +536,23 @@
                         </div>
                     @endif
 
+            {{-- General Statistics --}}
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+                @php
+            $stats = [
+                ['label' => 'Students', 'val' => $totalStudents ?? 0, 'color' => 'bg-blue-500'],
+                ['label' => 'Teachers', 'val' => $totalTeachers ?? 0, 'color' => 'bg-green-500'],
+                ['label' => 'Courses', 'val' => $totalCourses ?? 0, 'color' => 'bg-purple-500'],
+                ['label' => 'Programs', 'val' => $totalPrograms ?? 0, 'color' => 'bg-yellow-500'],
+                ['label' => 'Enrollments', 'val' => $totalEnrollments ?? 0, 'color' => 'bg-indigo-500'],
+                ['label' => 'Users', 'val' => $totalUsers ?? 0, 'color' => 'bg-gray-800'],
+            ];
+                @endphp
+                @foreach($stats as $stat)
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $stat['label'] }}</p>
+                        <p class="text-2xl font-black text-gray-900 mt-1">{{ $stat['val'] }}</p>
+                        <div class="h-1 w-8 {{ $stat['color'] }} mx-auto mt-2 rounded-full"></div>
 
                             </div>
                             <div class="overflow-x-auto">
