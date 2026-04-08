@@ -11,8 +11,9 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'student_id',
+        'student_id',     // The School ID (e.g., 2024-0001)
         'first_name',
+        'middle_name',    // ADDED: To ensure middle names can be saved/displayed
         'last_name',
         'middle_name',
         'email',
@@ -20,7 +21,9 @@ class Student extends Model
         'section_id',
     ];
 
-    // Define relationship with User
+    /**
+     * Relationship with the User account
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -49,15 +52,23 @@ class Student extends Model
     }
 
     /**
-     * Get the section that the student belongs to.
+     * Relationship with Section (Many-to-Many)
+     * This links to your new section_student pivot table
      */
-    // App\Models\Student.php
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student')
                     ->withPivot('academic_year_id', 'semester')
                     ->withTimestamps();
     }
+
+
+   
+public function courseBlocks() {
+    return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'course_block_id');
+}
+
+
 
     /**
      * Get the program that the student belongs to (through section).
@@ -105,5 +116,13 @@ class Student extends Model
     public function candidacies()
     {
         return $this->hasMany(Candidacy::class);
+    }
+
+    /**
+     * Get the election votes submitted by the student.
+     */
+    public function electionVotes()
+    {
+        return $this->hasMany(ElectionVote::class);
     }
 }

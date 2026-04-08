@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::table('users', function (Blueprint $role) {
-            // This makes the column nullable
-            $role->string('name')->nullable()->change();
-        });
-    }
+    // public function up(): void
+    // {
+    //     Schema::table('users', function (Blueprint $role) {
+    //         // This makes the column nullable
+    //         $role->string('name')->nullable()->change();
+    //     });
+    // }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            // This reverts it to NOT NULL (ensure existing data has names first!)
-            $table->string('name')->nullable(false)->change();
-        });
-    }
+    // /**
+    //  * Reverse the migrations.
+    //  */
+    // public function down(): void
+    // {
+    //     Schema::table('users', function (Blueprint $table) {
+    //         // This reverts it to NOT NULL (ensure existing data has names first!)
+    //         $table->string('name')->nullable(false)->change();
+    //     });
+    // }
 };

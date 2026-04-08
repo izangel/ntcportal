@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Candidacy;
 use App\Models\Setting;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,7 +16,11 @@ class CandidacyManagementController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Candidacy::with('student.user')->latest();
+        $query = Candidacy::with('student.user');
+
+        $this->applyPositionOrdering($query)
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('created_at');
 
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
@@ -25,9 +30,10 @@ class CandidacyManagementController extends Controller
         // Search by name
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%");
+            $query->whereHas('student', function ($studentQuery) use ($search) {
+                $studentQuery->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('middle_name', 'like', "%{$search}%");
             });
         }
 
@@ -36,6 +42,24 @@ class CandidacyManagementController extends Controller
         $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
 
         return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen'));
+        $applications = $query->paginate(10);
+        $positionOrder = [
+            'president' => 'President',
+            'vice_president' => 'Vice President',
+            'secretary' => 'Secretary',
+            'treasurer' => 'Treasurer',
+            'auditor' => 'Auditor',
+            'pio' => 'PIO',
+            'business_manager' => 'Business Manager',
+        ];
+        $positionCounts = Candidacy::query()
+            ->selectRaw('position_applied, COUNT(*) as total')
+            ->groupBy('position_applied')
+            ->pluck('total', 'position_applied');
+        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
+        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
+
+        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen', 'positionOrder', 'positionCounts'));
     }
 
     /**
@@ -45,13 +69,44 @@ class CandidacyManagementController extends Controller
     {
         $candidacy->load('student.user');
         return view('admin.candidacy.show', compact('candidacy'));
+    } 
+
+    /**
+     * Show the form for editing the specified candidacy application.
+     */
+    public function edit(Candidacy $candidacy)
+    {
+        $candidacy->load('student.user');
+        $positions = [
+            'president' => 'President',
+            'vice_president' => 'Vice President',
+            'secretary' => 'Secretary',
+            'treasurer' => 'Treasurer',
+            'auditor' => 'Auditor',
+            'pio' => 'PIO',
+            'business_manager' => 'Business Manager',
+        ];
+        return view('admin.candidacy.edit', compact('candidacy', 'positions'));
     }
 
     /**
-     * Approve a candidacy application.
+     * Update the specified candidacy application.
      */
-    public function approve(Request $request, Candidacy $candidacy)
+    public function update(Request $request, Candidacy $candidacy)
     {
+        $request->validate([
+            'position_applied' => 'required|string|in:president,vice_president,secretary,treasurer,auditor,pio,business_manager',
+            'is_independent' => 'required|boolean',
+            'partylist' => 'nullable|string|max:255',
+        ]);
+
+        $data = $request->only(['position_applied', 'is_independent']);
+        $data['partylist'] = $request->is_independent ? null : $request->partylist;
+
+        $candidacy->update($data);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Candidacy application updated successfully.');
         $candidacy->update([
             'status' => 'approved',
             'remarks' => $request->remarks,
@@ -90,10 +145,37 @@ class CandidacyManagementController extends Controller
     {
         $candidates = Candidacy::with('student.user')
             ->where('status', 'approved')
-            ->latest()
-            ->paginate(15);
+            ->orderByRaw($this->positionOrderCaseStatement())
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('created_at')
+            ->paginate(10);
 
         return view('admin.candidacy.candidates', compact('candidates'));
+    }
+
+    /**
+     * Apply fixed position ordering for candidacy records.
+     */
+    private function applyPositionOrdering(Builder $query): Builder
+    {
+        return $query->orderByRaw($this->positionOrderCaseStatement());
+    }
+
+    /**
+     * SQL CASE statement for ordering positions consistently.
+     */
+    private function positionOrderCaseStatement(): string
+    {
+        return "CASE position_applied
+            WHEN 'president' THEN 1
+            WHEN 'vice_president' THEN 2
+            WHEN 'secretary' THEN 3
+            WHEN 'treasurer' THEN 4
+            WHEN 'auditor' THEN 5
+            WHEN 'pio' THEN 6
+            WHEN 'business_manager' THEN 7
+            ELSE 99
+        END";
     }
 
     /**
@@ -127,5 +209,21 @@ class CandidacyManagementController extends Controller
 
         return redirect()->route('admin.candidacy.index')
             ->with('success', $message);
+    }
+
+    /**
+     * Approve a candidacy application.
+     */
+    public function approve(Request $request, Candidacy $candidacy)
+    {
+        $candidacy->update([
+            'status' => 'approved',
+            'remarks' => $request->remarks,
+            'reviewed_at' => now(),
+            'reviewed_by' => Auth::id(),
+        ]);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Candidacy application has been approved.');
     }
 }

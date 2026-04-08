@@ -129,6 +129,19 @@
                 </div>
             </div>
 
+            {{-- Records Per Position --}}
+            <div class="p-6 bg-white border-b border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-700 mb-4">Records Per Position</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+                    @foreach($positionOrder as $positionKey => $positionLabel)
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">{{ $positionLabel }}</p>
+                            <p class="text-2xl font-bold text-gray-900 mt-1">{{ $positionCounts[$positionKey] ?? 0 }}</p>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
             {{-- Table --}}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -190,11 +203,20 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center gap-3">
-                                        <a href="{{ route('admin.candidacy.show', $application) }}" 
+                                        {{-- View Link --}}
+                                        <a href="{{ route('admin.candidacy.show', $application) }}"
                                             class="text-blue-600 hover:text-blue-900 hover:underline">
                                             View
                                         </a>
+
+                                        {{-- Edit Link --}}
+                                        <a href="{{ route('admin.candidacy.edit', $application) }}"
+                                            class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                                            Edit
+                                        </a>
+
                                         @if($application->status == 'pending')
+                                            {{-- Approve Form --}}
                                             <form action="{{ route('admin.candidacy.approve', $application) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('PATCH')
@@ -203,11 +225,24 @@
                                                     Approve
                                                 </button>
                                             </form>
+
+                                            {{-- Reject Button --}}
                                             <button type="button" class="text-red-600 hover:text-red-900 hover:underline"
                                                 onclick="openRejectModal({{ $application->id }})">
                                                 Reject
                                             </button>
                                         @endif
+
+                                        {{-- Delete Button --}}
+                                        <form action="{{ route('admin.candidacy.destroy', $application) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                class="text-red-600 hover:text-red-900 hover:underline"
+                                                onclick="return confirm('WARNING: This will permanently delete the application. This action cannot be undone. Proceed?')">
+                                                Delete
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
