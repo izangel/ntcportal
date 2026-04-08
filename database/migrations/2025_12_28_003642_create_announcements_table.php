@@ -9,23 +9,23 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
-{
-    Schema::create('announcements', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->onDelete('cascade'); // The author
-        $table->string('title');
-        $table->text('body');
-        $table->boolean('is_pinned')->default(false);
-        $table->timestamps();
-    });
-}
+//     public function up()
+// {
+//     Schema::create('announcements', function (Blueprint $table) {
+//         $table->id();
+//         $table->foreignId('user_id')->constrained()->onDelete('cascade'); // The author
+//         $table->string('title');
+//         $table->text('body');
+//         $table->boolean('is_pinned')->default(false);
+//         $table->timestamps();
+//     });
+// }
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('announcements');
-    }
+//     /**
+//      * Reverse the migrations.
+//      */
+//     public function down(): void
+//     {
+//         Schema::dropIfExists('announcements');
+//     }
 };
