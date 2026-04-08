@@ -58,7 +58,14 @@ class HrController extends Controller
             'academic_year_id' => 'required|exists:academic_years,id',
         ]);
 
-     
+        // Check if leave credits already exist for this employee and academic year
+        $existingLeaveCredit = LeaveCredit::where('employee_id', $validatedData['employee_id'])
+            ->where('academic_year_id', $validatedData['academic_year_id'])
+            ->first();
+
+        if ($existingLeaveCredit) {
+            return redirect()->back()->with('error', 'Leave credits for this employee and academic year already exist.');
+        }
 
        LeaveCredit::create($validatedData);
 
@@ -106,7 +113,7 @@ class HrController extends Controller
     public function showAllEmployeeLeaveCredits()
     {
         $employees = Employee::with('leaveCredits', 'leaveApplications')->get();
-        $allRemainingCredits = [];
+        $allCredits = [];
 
         foreach ($employees as $employee) {
             $leavecredit = $employee->leaveCredits()->first();
@@ -118,25 +125,20 @@ class HrController extends Controller
             ];
 
             if ($leavecredit) {
-                $remainingCredits = [];
+                $credits = [];
                 $leaveTypes = LeaveType::all();
                 
                 foreach ($leaveTypes as $leaveType) {
-                    $taken = $employee->leaveApplications()
-                        ->where('leave_type_id', $leaveType->id)
-                        ->where('approval_status', 'approved_with_pay')
-                        ->sum('total_days');
-
                     $key = strtolower(str_replace(' ', '_', $leaveType->name));
-                    $remainingCredits[$key] = $leavecredit->{$key} - $taken;
+                    $credits[$key] = $leavecredit->{$key};
                 }
-                $employeeData['credits'] = $remainingCredits;
+                $employeeData['credits'] = $credits;
             }
-            $allRemainingCredits[] = $employeeData;
+            $allCredits[] = $employeeData;
         }
 
         return view('hr.leave_credits.all', [
-            'employeesData' => $allRemainingCredits
+            'employeesData' => $allCredits
         ]);
     }
 

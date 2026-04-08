@@ -45,7 +45,7 @@ class MyEvaluationController extends Controller
             return redirect()->route('teacher.evaluations.index')->with('error', 'No data found.');
         }
 
-        $types = ['student', 'peer', 'self', 'supervisor'];
+       $types = ['student', 'peer', 'self', 'supervisor'];
         $breakdown = [];
         $categoryAverages = [];
 
@@ -53,17 +53,45 @@ class MyEvaluationController extends Controller
             $typeEvals = $evaluations->where('evaluator_type', $type);
             
             if ($typeEvals->isNotEmpty()) {
-                $keys = array_keys($typeEvals->first()->ratings);
+                $ratingKeys = array_keys($typeEvals->first()->ratings);
 
-               
-               
-                foreach ($keys as $key) {
-                    $breakdown[$type]['questions'][$key] = $typeEvals->avg("ratings.$key");
+                // Fetch the question mapping from the config
+                $questionMap = [];
+                $orderedConfigKeys = [];
+
+                if ($type === 'student') {
+                    foreach (config('evaluation_questions.student') as $group) {
+                        foreach ($group['questions'] as $q) {
+                            $questionMap[$q['k']] = $q['t'];
+                            $orderedConfigKeys[] = $q['k'];
+                        }
+                    }
+                } else {
+                    $questionMap = config("evaluation_questions.{$type}");
+                    if (is_array($questionMap)) {
+                        $orderedConfigKeys = array_keys($questionMap);
+                    }
                 }
 
+                $breakdown[$type]['questions'] = [];
+                foreach ($ratingKeys as $rKey) {
+                    $text = $questionMap[$rKey] ?? null;
+                    $displayKey = $rKey;
 
-                
-               
+                    // Fallback for indexed arrays (0, 1, 2...)
+                    if (!$text && is_numeric($rKey) && isset($orderedConfigKeys[$rKey])) {
+                        $configKey = $orderedConfigKeys[$rKey];
+                        $text = $questionMap[$configKey] ?? null;
+                        $displayKey = $configKey;
+                    }
+
+                    $breakdown[$type]['questions'][] = [
+                        'key' => $displayKey,
+                        'text' => $text ?? 'Question ' . $displayKey,
+                        'score' => $typeEvals->avg("ratings.$rKey")
+                    ];
+                }
+
                 $breakdown[$type]['meta'] = [
                     'count' => $typeEvals->count(),
                     'average' => $typeEvals->avg('mean_score'),

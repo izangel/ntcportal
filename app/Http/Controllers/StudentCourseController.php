@@ -139,6 +139,23 @@ class StudentCourseController extends Controller
         $ratings = $request->input('ratings');
         $averageRating = collect($ratings)->avg();
 
+        // Identify the Teacher for the PES Report
+        $teacherId = null;
+        $enrollment = Enrollment::where('student_id', $user->student->id)
+            ->where('course_id', $request->course_id)
+            ->where('academic_year_id', $activeSem->academic_year_id)
+            ->where('semester', $semesterName)
+            ->first();
+
+        if ($enrollment) {
+            $block = CourseBlock::where('section_id', $enrollment->section_id)
+                ->where('course_id', $request->course_id)
+                ->where('academic_year_id', $activeSem->academic_year_id)
+                ->where('semester', $semesterName)
+                ->first();
+            $teacherId = $block ? $block->faculty_id : null;
+        }
+
         // 5. Database Persistence
         try {
             DB::beginTransaction();
@@ -154,6 +171,22 @@ class StudentCourseController extends Controller
                 'aspects_improved' => $request->aspects_improved,
                 'comments'         => $request->comments,
             ]);
+
+            // Also save to the main Evaluation table for the Teacher's PES Report
+            if ($teacherId) {
+                \App\Models\Evaluation::create([
+                    'teacher_id'       => $teacherId,
+                    'evaluator_id'     => $user->student->id,
+                    'evaluator_type'   => 'student',
+                    'academic_year_id' => $activeSem->academic_year_id,
+                    'semester'         => $semesterName,
+                    'ratings'          => $ratings,
+                    'mean_score'       => $averageRating,
+                    'aspects_helped'   => $request->aspects_helped,
+                    'aspects_improved' => $request->aspects_improved,
+                    'comments'         => $request->comments,
+                ]);
+            }
 
             DB::commit();
             return back()->with('success', 'Evaluation submitted! Thank you for your feedback.');

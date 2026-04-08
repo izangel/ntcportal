@@ -43,7 +43,7 @@
                         @endforeach
                     @else
                         {{-- Display the message directly if it's not a non-empty array --}}
-                        <p>No remaining leave credits to display. {{ $remainingCredits }}</p>
+                        <p>No remaining leave credits to display.</p>
                     @endif
 
                 </div>
@@ -51,25 +51,14 @@
 
                 {{-- Basic Filter Form (optional) --}}
                 <form action="{{ route('leave_applications.index') }}" method="GET" class="mb-4 bg-gray-50 p-4 rounded-md shadow-sm">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <x-label for="employee_id_filter" value="{{ __('Filter by Employee') }}" />
-                            <select id="employee_id_filter" name="employee_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                                <option value="">All Employees</option>
-                                @foreach($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
-                                        {{ $employee->last_name . ', ' . $employee->first_name . ' ' . $employee->mid_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label for="type_filter" value="{{ __('Filter by Leave Type') }}" />
-                            <select id="type_filter" name="type" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select id="type_filter" name="leave_type_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">All Types</option>
                                 @foreach($leaveTypes as $type)
-                                    <option value="{{ $type }}" {{ request('type') == $type ? 'selected' : '' }}>
-                                        {{ ucwords(str_replace('_', ' ', $type)) }}
+                                    <option value="{{ $type->id }}" {{ request('leave_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }}
                                     </option>
                                 @endforeach
                             </select>
@@ -108,6 +97,7 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dates</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Days</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Filed</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -121,7 +111,7 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->leaveType->name }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($application->reason, 30) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->total_days }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ max(0, (int) $application->total_days) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
@@ -130,6 +120,15 @@
                                             @else bg-gray-100 text-gray-800 @endif">
                                             {{ ucwords(str_replace('_', ' ', $application->approval_status)) }}
                                         </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        @if(!empty($application->hr_remarks))
+                                            {{ Str::limit($application->hr_remarks, 60) }}
+                                        @elseif($application->hr_approved_by && $application->ah_status === 'approved' && $application->hr_status === 'approved' && $application->admin_status === 'pending')
+                                            Filed by HR
+                                        @else
+                                            N/A
+                                        @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->date_filed->format('M d, Y') }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -146,7 +145,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
+                                    <td colspan="9" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">No leave applications found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

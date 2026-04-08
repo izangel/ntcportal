@@ -18,6 +18,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => RoleMiddleware::class, // <--- Add this line
         ]);
+
+        // Exclude logout and login routes from CSRF verification
+        $middleware->validateCsrfTokens(except: [
+            'logout',
+            'login',
+            'register',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
