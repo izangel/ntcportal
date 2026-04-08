@@ -32,10 +32,9 @@ class DashboardController extends Controller
         $activeAYCount = \App\Models\AcademicYear::where('is_active', 1)->count();
         $activeSemesterCount = \App\Models\Semester::where('is_active', 1)->count();
 
-    // 2. Fetch the specific names (optional, but looks better in a sub-header)
         $activeAY = \App\Models\AcademicYear::where('is_active', 1)->first();
         $activeSem = \App\Models\Semester::where('is_active', 1)->first();
-    
+
         $currentAYName = $activeAY ? "{$activeAY->start_year}-{$activeAY->end_year}" : 'N/A';
         $currentSemName = $activeSem ? $this->getSemesterName($activeSem->name) : 'N/A';
 
@@ -51,10 +50,9 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // LOGIC FOR WORK WEEK (MONDAY - FRIDAY)
-        $startOfWeek = now()->startOfWeek(); // Carbon default is Monday
+        $startOfWeek = now()->startOfWeek();
         $daysOfWeek = [];
-        for ($i = 0; $i < 5; $i++) { // Changed from 7 to 5
+        for ($i = 0; $i < 5; $i++) {
             $daysOfWeek[] = $startOfWeek->copy()->addDays($i);
         }
 
@@ -90,7 +88,6 @@ class DashboardController extends Controller
         if ($user->hasRole('student') && $user->student) {
             $student = $user->student;
 
-            // 1. GET ACTIVE SEMESTER LOGIC (From Monitoring Controller)
             $activeSemester = Semester::where('is_active', 1)->first();
             $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
 
@@ -98,20 +95,17 @@ class DashboardController extends Controller
             $upcomingSchedule = collect([]);
 
             if ($activeSemester) {
-                // 2. FIND STUDENT'S SECTION FOR THE ACTIVE SEMESTER
                 $studentSection = SectionStudent::where('student_id', $student->id)
                     ->where('academic_year_id', $activeSemester->academic_year_id)
                     ->where('semester', $semesterName)
                     ->first();
 
                 if ($studentSection) {
-                    // 3. GET SPECIFIC ENROLLMENTS FOR THIS SEMESTER
                     $enrolledCourseIds = Enrollment::where('student_id', $student->id)
                         ->where('academic_year_id', $activeSemester->academic_year_id)
                         ->where('semester', $semesterName)
                         ->pluck('course_id');
 
-                    // 4. GET COURSE BLOCKS (SCHEDULE)
                     $upcomingSchedule = CourseBlock::with(['course', 'faculty'])
                         ->where('section_id', $studentSection->section_id)
                         ->where('academic_year_id', $activeSemester->academic_year_id)
@@ -122,15 +116,14 @@ class DashboardController extends Controller
             }
 
             $studentData = [
-                'enrolledCourses' => $student->enrollments, // Keep all for GPA
+                'enrolledCourses' => $student->enrollments,
                 'currentGPA' => $this->calculateGPA($student->enrollments),
                 'totalCredits' => $student->enrollments->sum('course.credits'),
                 'upcomingSchedule' => $upcomingSchedule,
                 'activeSemester' => $activeSemester,
                 'semesterName' => $semesterName,
             ];
-        }
-        else {
+        } else {
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
             $staffData['totalEnrollments'] = Enrollment::count();
@@ -142,7 +135,6 @@ class DashboardController extends Controller
             $staffData['totalUsers'] = User::count();
             $staffData['recentStudents'] = Student::latest()->take(5)->get();
             $staffData['recentCourses'] = Course::latest()->take(5)->get();
-
             $staffData['recentUpdates'] = SystemUpdate::latest()->take(5)->get();
 
             $staffData['myCourses'] = collect();
@@ -179,15 +171,8 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 
-            'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
-        $staffData, 
-        $studentData
-    );
-
-    return view('dashboard', $viewData);
-}
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek',
+            'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'),
             $staffData,
             $studentData
         );
@@ -195,7 +180,6 @@ class DashboardController extends Controller
         return view('dashboard', $viewData);
     }
 
-    // Helper to map semester names
     private function getSemesterName($name) {
         return match (true) {
             str_contains($name, 'First')  => '1st',
