@@ -1237,6 +1237,18 @@
                 "issues": "https://github.com/laravel/fortify/issues",
                 "source": "https://github.com/laravel/fortify"
             },
+            "time": "2026-03-10T19:59:49+00:00"
+        },
+        {
+            "name": "laravel/framework",
+            "version": "v12.54.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/framework.git",
+                "reference": "325497463e7599cd14224c422c6e5dd2fe832868"
+            },
+            "dist": {
+                "type": "zip",
             "time": "2026-02-24T14:00:44+00:00"
         },
         {
@@ -1615,6 +1627,8 @@
             "description": "Add beautiful and user-friendly forms to your command-line applications.",
             "support": {
                 "issues": "https://github.com/laravel/prompts/issues",
+                "source": "https://github.com/laravel/prompts/tree/v0.3.14"
+            },
                 "source": "https://github.com/laravel/prompts/tree/v0.3.13"
             },
             "time": "2026-02-06T12:17:10+00:00"
@@ -7084,6 +7098,7 @@
                 "illuminate/view": "^12.54.1",
                 "larastan/larastan": "^3.9.3",
                 "laravel-zero/framework": "^12.0.5",
+                "mockery/mockery": "^1.6.12",
                 "mockery/mockery": "^1.6.12",
                 "friendsofphp/php-cs-fixer": "^3.93.1",
                 "illuminate/view": "^12.51.0",

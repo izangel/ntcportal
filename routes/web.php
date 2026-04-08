@@ -55,6 +55,15 @@ use App\Livewire\Admin\FacultyCourseListView;
 use App\Livewire\CourseBlockBulkUploader;
 use App\Livewire\FacultyCourseLoad;
 
+// Livewire Components
+use App\Livewire\AssignCourses;
+use App\Livewire\AssignCoursesIndividual;
+use App\Livewire\CourseBlockManager;
+use App\Livewire\FacultyCourseBlockView;
+use App\Livewire\Admin\FacultyCourseListView;
+use App\Livewire\CourseBlockBulkUploader;
+use App\Livewire\FacultyCourseLoad;
+
 use App\Http\Controllers\Admin\CandidacyManagementController;
 
 use App\Http\Controllers\CandidacyController;
@@ -87,6 +96,7 @@ Route::middleware([
     
     // Primary Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/portal-updates', \App\Livewire\User\SystemUpdateList::class)->name('portal-updates.list');
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
@@ -134,6 +144,8 @@ Route::middleware([
         Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
 
         Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
+        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
+        Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
        //Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
        Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
         Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
@@ -161,6 +173,7 @@ Route::middleware([
     Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
         ->name('faculty.reports.student_compliance');
 
+        Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
     });
 
     });
@@ -295,8 +308,7 @@ Route::middleware([
         Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
     });
 
-
-    // Global Notifications routes (can be accessed by any authenticated user)
+    // -- Global Notifications routes --
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/test/markall', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 });
@@ -369,6 +381,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
 
     // Faculty Peer evaluations
+
+    // Faculty Peer evaluations
     // Results page (The 360 Consolidated View)
    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
     Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
@@ -432,6 +446,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])->name('evaluations.create');
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
+    });
+});
+
+Route::view('profile', 'profile')
+    ->middleware(['auth'])
+    ->name('profile');
+
     });
 });
 
