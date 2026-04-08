@@ -115,6 +115,26 @@
                             <i class="fas fa-key mr-3 text-lg"></i>
                             {{ __('Change Password') }}
                         </x-nav-link>
+
+                    </div>
+
+                {{-- My Profile (COLLAPSIBLE) --}}
+                <div class="mt-4 space-y-1" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                        <h3 class="text-left">My Profile</h3>
+                        <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                            :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                    </button>
+                    <div x-show="open" x-collapse.duration.300ms>
+                        <x-nav-link href="{{ route('profile') }}" :active="request()->routeIs('profile')">
+                            <i class="fas fa-solid fa-pen-to-square mr-3 text-lg"></i>
+                            {{ __('Personal Information') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('password.edit') }}" :active="request()->routeIs('password.*')">
+                            <i class="fas fa-key mr-3 text-lg"></i>
+                            {{ __('Change Password') }}
+                        </x-nav-link>
             </div>
         </div>
 
@@ -159,8 +179,26 @@
                         {{ __('Requirements') }}
                     </x-nav-link>
                 </div>
-            </div>
 
+                {{-- Library Resources (COLLAPSIBLE) --}}
+                <div class="mt-4 space-y-1" x-data="{ open: false }">
+                    <button @click="open = !open"
+                        class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                        <h3 class="text-left">Library Resources</h3>
+                        <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                            :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                    </button>
+
+                    <div x-show="open" x-collapse.duration.300ms>
+                        <x-nav-link href="#">
+                            <i class="fas fa-solid fa-book-open mr-3 text-lg"></i>
+                            {{ __('Search Library Catalog') }}
+                        </x-nav-link>
+                        <x-nav-link href="#">
+                            <i class="fas fa-book mr-3 text-lg"></i>
+                            {{ __('Request Books') }}
+                        </x-nav-link>
+                    </div>
             {{-- SSG Voting (COLLAPSIBLE) - Student Only --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -178,7 +216,6 @@
                         {{ __('View Results') }}
                     </x-nav-link>
                 </div>
-            </div>
 
         @endif
 
@@ -287,6 +324,39 @@
                         </div>
                     </div>
 
+
+                @if (Auth::user()->hasRole('teacher') ||
+                        Auth::user()->hasRole('staff') ||
+                        Auth::user()->hasRole('academic_head') ||
+                        Auth::user()->hasRole('hr') ||
+                        Auth::user()->hasRole('admin'))
+                    {{-- NEW: ROLE SEPARATOR FOR TEACHERS/STAFF --}}
+                    <div class="mt-6 pt-3 border-t border-gray-700">
+                        <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
+                            Faculty/Staff Tools
+                        </h3>
+                    </div>
+
+                    {{-- Communication and Resources (COLLAPSIBLE) --}}
+                    <div class="mt-4 space-y-1" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                            <h3 class="text-left">Communication and Resources</h3>
+                            <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                                :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                        </button>
+                        <div x-show="open" x-collapse.duration.300ms>
+                            <x-nav-link href="#">
+                                <i class="fas fa-bell mr-3 text-lg"></i>
+                                {{ __('Notifications') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-file-invoice mr-3 text-lg"></i>
+                                {{ __('Memos and Advisories') }}
+                            </x-nav-link>
+                        </div>
+                    </div>
+
             {{-- Evaluation and Grading (COLLAPSIBLE) --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -350,9 +420,110 @@
 
 
 
+                    <div class="mt-4 space-y-1" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                            <h3 class="text-left">HR Concerns</h3>
+                            <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                                :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                        </button>
+                        <div x-show="open" x-collapse.duration.300ms>
+
+                            <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
+                                <i class="fas fa-solid fa-calendar-minus mr-3 text-lg"></i>
+                                {{ __('My Leave Applications') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-money-check-dollar mr-3 text-lg"></i>
+                                {{ __('My Salary / Payslip') }}
+                            </x-nav-link>
+                        </div>
+                    </div>
+
+                    {{-- Class & Student Management (COLLAPSIBLE) --}}
+                    <div class="mt-4 space-y-1" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                            <h3 class="text-left">Class & Student Management</h3>
+                            <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                                :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                        </button>
+                        <div x-show="open" x-collapse.duration.300ms>
+                            <x-nav-link href="{{ route('faculty.course-load') }}" :active="request()->routeIs('faculty.course-load')">
+                                <i class="fas fa-solid fa-layer-group mr-3 text-lg"></i>
+                                {{ __('My Course Load') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-clock mr-3 text-lg"></i>
+                                {{ __('My Class Schedule') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-users mr-3 text-lg"></i>
+                                {{ __('My Students / Class Details') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-folder-open mr-3 text-lg"></i>
+                                {{ __('Course Materials') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-list-check mr-3 text-lg"></i>
+                                {{ __('Exams / Question Bank') }}
+                            </x-nav-link>
+                        </div>
+                    </div>
+
+                    {{-- Evaluation and Grading (COLLAPSIBLE) --}}
+                    <div class="mt-4 space-y-1" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                            <h3 class="text-left">Grading</h3>
+                            <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                                :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                        </button>
+                        <div x-show="open" x-collapse.duration.300ms>
+                            <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
+                                <i class="fas fa-solid fa-file-import mr-3 text-lg"></i>
+                                {{ __('Grade Submission') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-comment-dots mr-3 text-lg"></i>
+                                {{ __('Course Evaluation') }}
+                            </x-nav-link>
+                            <x-nav-link href="#">
+                                <i class="fas fa-solid fa-clipboard-user mr-3 text-lg"></i>
+                                {{ __('Student Self-assessment') }}
+                            </x-nav-link>
 
 
+                        </div>
+                    </div>
 
+                    <div class="mt-4 space-y-1" x-data="{ open: false }">
+                        <button @click="open = !open"
+                            class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                            <h3 class="text-left">Performance Evaluation</h3>
+                            <i class="fas fa-chevron-down text-xs transform transition duration-200"
+                                :class="{ 'rotate-180': open, 'rotate-0': !open }"></i>
+                        </button>
+                        <div x-show="open" x-collapse.duration.300ms>
+                            <x-nav-link href="{{ route('faculty.peer-evaluations.index') }}" :active="request()->routeIs('faculty.peer-evaluations.index')">
+                                <i class="fas fa-solid fa-users-viewfinder mr-3 text-lg"></i>
+                                {{ __('Peer Evaluation') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('faculty.self-evaluations.index') }}" :active="request()->routeIs('faculty.self-evaluations.index')">
+                                <i class="fas fa-solid fa-user-check mr-3 text-lg"></i>
+                                {{ __('Self Evaluation') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('supervisor.evaluations.index') }}" :active="request()->routeIs('supervisor.evaluations.index')">
+                                <i class="fas fa-solid fa-user-tie mr-3 text-lg"></i>
+                                {{ __('Department Head Evaluation') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('teacher.evaluations.index') }}" :active="request()->routeIs('teacher.evaluations.index')">
+                                <i class="fas fa-solid fa-chart-simple mr-3 text-lg"></i>
+                                {{ __('PES Result') }}
+                            </x-nav-link>
+
+                        </div>
                 </div>
             </div>
 
@@ -709,6 +880,17 @@
                     </div>
                 @endif
 
+
+                @if (Auth::user()->hasRole('academic_head') ||
+                        Auth::user()->hasRole('registrar') ||
+                        Auth::user()->hasRole('hr') ||
+                        Auth::user()->hasRole('admin'))
+                    {{-- NEW: ROLE SEPARATOR FOR ACADEMIC/REGISTRAR --}}
+                    <div class="mt-6 pt-3 border-t border-gray-700">
+                        <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
+                            Academic/Registrar Tools
+                        </h3>
+                    </div>
 
                 @if (Auth::user()->hasRole('academic_head') ||
                         Auth::user()->hasRole('registrar') ||

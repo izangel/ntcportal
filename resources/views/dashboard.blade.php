@@ -97,6 +97,24 @@
                         @endif
                     </div>
                 </div>
+
+                                @if ($route)
+                                    <a href="{{ route($route) }}"
+                                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
+                                        Review Pending Leaves
+                                    </a>
+                                @endif
+
+                                @if (Auth::user()->employee && Auth::user()->employee->role === 'teacher')
+                                    <a href="{{ route('faculty.course-load') }}"
+                                        class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
+                                        View Detailed Load
+                                    </a>
+                                @endif
+                            </div>
+                        @endif
+                    </div>
+                </div>
         {{-- 2. Important Dates Widget (UPDATED HEADER DESIGN) --}}
         @php
             // Setup calendar variables based on selected or current month
@@ -341,6 +359,21 @@
                                     <span
                                         class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full animate-pulse">ONGOING</span>
                                 @endif
+                        @endphp
+                        <div
+                            class="relative p-4 rounded-xl border {{ $isOngoing ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-white border-gray-100' }} transition-all duration-300 hover:shadow-md">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="text-center">
+                                    <p
+                                        class="text-[10px] font-bold uppercase {{ $isOngoing ? 'text-indigo-600' : 'text-gray-400' }}">
+                                        {{ $date->start_date->format('M') }}</p>
+                                    <p class="text-xl font-black {{ $isOngoing ? 'text-indigo-700' : 'text-gray-800' }}">
+                                        {{ $date->start_date->format('d') }}</p>
+                                </div>
+                                @if ($isOngoing)
+                                    <span
+                                        class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full animate-pulse">ONGOING</span>
+                                @endif
                 {{-- 5-Column Grid --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     @foreach($daysOfWeek as $day)
@@ -440,6 +473,50 @@
                                     </svg>
                                     My Course Load
                                 </h4>
+
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-100">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">
+                                                Course</th>
+                                            <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">
+                                                Schedule</th>
+                                            <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">
+                                                Grade Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-50">
+                                        @foreach ($myCourses as $course)
+                                            <tr class="hover:bg-gray-50 transition">
+                                                <td class="px-4 py-3">
+                                                    <div class="text-xs font-bold text-gray-900">{{ $course['code'] }}
+                                                    </div>
+                                                    <div class="text-[10px] text-gray-500 truncate w-32">
+                                                        {{ $course['name'] }}</div>
+                                                </td>
+                                                <td class="px-4 py-3 text-[10px] text-gray-600 italic">
+                                                    {{ $course['schedule'] }}
+                                                </td>
+                                                <td class="px-4 py-3 text-center">
+                                                    @if ($course['finalized'])
+                                                        <span
+                                                            class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-green-100 text-green-700">Submitted</span>
+                                                    @else
+                                                        <span
+                                                            class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">In
+                                                            Progress</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @endif
+
 
                             </div>
                             <div class="overflow-x-auto">

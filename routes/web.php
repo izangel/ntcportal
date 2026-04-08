@@ -146,6 +146,12 @@ Route::middleware([
         Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+
+        Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
+    });
+
+        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
+        Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
        //Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
        Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
         Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
@@ -224,6 +230,8 @@ Route::middleware([
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
 
     Route::resource('leave_applications', LeaveApplicationController::class);
+
+    // -- Reports Routes --
 
     // -- Reports Routes --
         Route::get('/admin/assign-courses', CourseAssignment::class)
@@ -382,6 +390,12 @@ Route::middleware('auth')->group(function () {
 
     // Faculty Peer evaluations
 
+    // Faculty Reports
+    Route::get('/faculty/reports', [EvaluationReportController::class, 'index'])->name('faculty.reports.index');
+    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
+
+    // Faculty Peer evaluations
+
     // Faculty Peer evaluations
     // Results page (The 360 Consolidated View)
    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
@@ -446,6 +460,13 @@ Route::middleware('auth')->group(function () {
             Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])->name('evaluations.create');
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
+    });
+});
+
+Route::view('profile', 'profile')
+    ->middleware(['auth'])
+    ->name('profile');
+
     });
 });
 

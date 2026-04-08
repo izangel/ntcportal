@@ -1564,6 +1564,13 @@
             },
             "dist": {
                 "type": "zip",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/prompts.git",
+                "reference": "9f0e371244eedfe2ebeaa72c79c54bb5df6e0176"
+            },
+            "dist": {
+                "type": "zip",
             "version": "v0.3.13",
             "source": {
                 "type": "git",
@@ -1628,6 +1635,7 @@
             "support": {
                 "issues": "https://github.com/laravel/prompts/issues",
                 "source": "https://github.com/laravel/prompts/tree/v0.3.14"
+            },
             },
                 "source": "https://github.com/laravel/prompts/tree/v0.3.13"
             },
@@ -7064,6 +7072,13 @@
             },
             "dist": {
                 "type": "zip",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/pint.git",
+                "reference": "1feae84bf9c1649d99ba8f7b8193bf0f09f04cc9"
+            },
+            "dist": {
+                "type": "zip",
             "version": "v1.27.1",
             "source": {
                 "type": "git",
@@ -7098,6 +7113,7 @@
                 "illuminate/view": "^12.54.1",
                 "larastan/larastan": "^3.9.3",
                 "laravel-zero/framework": "^12.0.5",
+                "mockery/mockery": "^1.6.12",
                 "mockery/mockery": "^1.6.12",
                 "mockery/mockery": "^1.6.12",
                 "friendsofphp/php-cs-fixer": "^3.93.1",
