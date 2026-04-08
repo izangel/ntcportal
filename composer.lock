@@ -1160,6 +1160,16 @@
         },
         {
             "name": "laravel/fortify",
+            "version": "v1.35.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/fortify.git",
+                "reference": "24c5bb81ea4787e0865c4a62f054ed7d1cb7a093"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/fortify/zipball/24c5bb81ea4787e0865c4a62f054ed7d1cb7a093",
+                "reference": "24c5bb81ea4787e0865c4a62f054ed7d1cb7a093",
             "version": "v1.36.1",
             "source": {
                 "type": "git",
@@ -1219,6 +1229,20 @@
                 "issues": "https://github.com/laravel/fortify/issues",
                 "source": "https://github.com/laravel/fortify"
             },
+            "time": "2026-02-24T14:00:44+00:00"
+        },
+        {
+            "name": "laravel/framework",
+            "version": "v12.53.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/framework.git",
+                "reference": "f57f035c0d34503d9ff30be76159bb35a003cd1f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/f57f035c0d34503d9ff30be76159bb35a003cd1f",
+                "reference": "f57f035c0d34503d9ff30be76159bb35a003cd1f",
             "time": "2026-03-10T19:59:49+00:00"
         },
         {
@@ -1441,6 +1465,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
+            "time": "2026-02-24T14:35:15+00:00"
             "time": "2026-03-10T20:25:56+00:00"
         },
         {
@@ -1511,6 +1536,16 @@
         },
         {
             "name": "laravel/prompts",
+            "version": "v0.3.13",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/prompts.git",
+                "reference": "ed8c466571b37e977532fb2fd3c272c784d7050d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/prompts/zipball/ed8c466571b37e977532fb2fd3c272c784d7050d",
+                "reference": "ed8c466571b37e977532fb2fd3c272c784d7050d",
             "version": "v0.3.14",
             "source": {
                 "type": "git",
@@ -1564,6 +1599,9 @@
             "description": "Add beautiful and user-friendly forms to your command-line applications.",
             "support": {
                 "issues": "https://github.com/laravel/prompts/issues",
+                "source": "https://github.com/laravel/prompts/tree/v0.3.13"
+            },
+            "time": "2026-02-06T12:17:10+00:00"
                 "source": "https://github.com/laravel/prompts/tree/v0.3.14"
             },
             "time": "2026-03-01T09:02:38+00:00"
@@ -6988,6 +7026,16 @@
         },
         {
             "name": "laravel/pint",
+            "version": "v1.27.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/pint.git",
+                "reference": "54cca2de13790570c7b6f0f94f37896bee4abcb5"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/pint/zipball/54cca2de13790570c7b6f0f94f37896bee4abcb5",
+                "reference": "54cca2de13790570c7b6f0f94f37896bee4abcb5",
             "version": "v1.28.0",
             "source": {
                 "type": "git",
@@ -7008,6 +7056,13 @@
                 "php": "^8.2.0"
             },
             "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.93.1",
+                "illuminate/view": "^12.51.0",
+                "larastan/larastan": "^3.9.2",
+                "laravel-zero/framework": "^12.0.5",
+                "mockery/mockery": "^1.6.12",
+                "nunomaduro/termwind": "^2.3.3",
+                "pestphp/pest": "^3.8.5"
                 "friendsofphp/php-cs-fixer": "^3.94.2",
                 "illuminate/view": "^12.54.1",
                 "larastan/larastan": "^3.9.3",
@@ -7052,6 +7107,7 @@
                 "issues": "https://github.com/laravel/pint/issues",
                 "source": "https://github.com/laravel/pint"
             },
+            "time": "2026-02-10T20:00:20+00:00"
             "time": "2026-03-10T20:37:18+00:00"
         },
         {

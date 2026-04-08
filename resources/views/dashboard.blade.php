@@ -33,14 +33,14 @@
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-        
+
         {{-- 1. Welcome & Notifications Section --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
                     <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
                     <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
-                    
+
                     @if(!Auth::user()->hasRole('student'))
                         <div class="mt-6 flex gap-4">
                             @php
@@ -49,7 +49,7 @@
                                 elseif(Auth::user()->hasRole('academic_head')) $route = 'ah.leave_applications.all';
                                 else $route = null;
                             @endphp
-                            
+
                             @if($route)
                                 <a href="{{ route($route) }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-700 transition">
                                     Review Pending Leaves
@@ -88,39 +88,98 @@
             </div>
         </div>
 
-        {{-- 2. Important Dates Widget --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h4 class="text-lg font-bold text-gray-800 flex items-center">
-                    <span class="p-2 bg-indigo-100 rounded-lg mr-3">
-                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    </span>
-                    School Calendar & Events
-                </h4>
-                <a href="{{ route('important_dates.index') }}" class="text-xs font-bold text-indigo-600 hover:underline uppercase">View Full Schedule</a>
+        {{-- 2. Important Dates Widget (UPDATED HEADER DESIGN) --}}
+        @php
+            // Setup calendar variables based on selected or current month
+            $selectedMonthStr = request('calendar_month', now()->format('Y-m'));
+            try {
+                $selectedDate = \Carbon\Carbon::createFromFormat('Y-m', $selectedMonthStr)->startOfMonth();
+            } catch (\Exception $e) {
+                $selectedDate = now()->startOfMonth();
+            }
+
+            $firstDay = $selectedDate->copy()->firstOfMonth();
+            $startOfWeek = $firstDay->dayOfWeek;
+            $daysInMonth = $selectedDate->daysInMonth;
+        @endphp
+
+        <div class="mb-8">
+            {{-- Bagong Header Layout (Kagaya ng nasa Leave Summary) --}}
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800 tracking-tight">{{ $selectedDate->format('F Y') }}</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                        <p class="text-sm text-gray-500">School Calendar & Events</p>
+                        <span class="text-gray-300">|</span>
+                        <a href="{{ route('important_dates.index') }}" class="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">
+                            View Full Schedule
+                        </a>
+                    </div>
+                </div>
+
+                <form action="{{ route('dashboard') }}" method="GET" class="flex items-center gap-2">
+                    <label for="calendar_month" class="text-sm font-medium text-gray-700">Select Month:</label>
+                    <input type="month" name="calendar_month" id="calendar_month"
+                           value="{{ $selectedDate->format('Y-m') }}"
+                           onchange="this.form.submit()"
+                           class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                </form>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                @forelse($recentDates as $date)
-                    @php
-                        $today = now()->startOfDay();
-                        $isOngoing = $today->between($date->start_date->startOfDay(), ($date->end_date ?? $date->start_date)->endOfDay());
-                    @endphp
-                    <div class="relative p-4 rounded-xl border {{ $isOngoing ? 'bg-indigo-50 border-indigo-200 ring-1 ring-indigo-200' : 'bg-white border-gray-100' }} transition-all duration-300 hover:shadow-md">
-                        <div class="flex justify-between items-start mb-3">
-                            <div class="text-center">
-                                <p class="text-[10px] font-bold uppercase {{ $isOngoing ? 'text-indigo-600' : 'text-gray-400' }}">{{ $date->start_date->format('M') }}</p>
-                                <p class="text-xl font-black {{ $isOngoing ? 'text-indigo-700' : 'text-gray-800' }}">{{ $date->start_date->format('d') }}</p>
-                            </div>
-                            @if($isOngoing)
-                                <span class="px-2 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded-full animate-pulse">ONGOING</span>
-                            @endif
+            {{-- Kalendaryo Mismo --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+                    @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
+                        <div class="py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            {{ $day }}
                         </div>
-                        <h5 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 mb-2">{{ $date->title }}</h5>
-                    </div>
-                @empty
-                    <div class="col-span-full text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400 italic">No scheduled events found.</div>
-                @endforelse
+                    @endforeach
+                </div>
+
+                <div class="grid grid-cols-7">
+                    {{-- Empty days before the 1st of the month --}}
+                    @for($i = 0; $i < $startOfWeek; $i++)
+                        <div class="min-h-[120px] border-b border-r border-gray-100 bg-gray-50/50"></div>
+                    @endfor
+
+                    {{-- Days of the month --}}
+                    @for($day = 1; $day <= $daysInMonth; $day++)
+                        @php
+                            $currentDate = $selectedDate->copy()->day($day)->startOfDay();
+                            $isToday = $currentDate->isToday();
+
+                            // Get events falling on this day
+                            $dayEvents = isset($recentDates) ? $recentDates->filter(function($event) use ($currentDate) {
+                                $start = $event->start_date->startOfDay();
+                                $end = ($event->end_date ?? $event->start_date)->endOfDay();
+                                return $currentDate->between($start, $end);
+                            }) : collect();
+                        @endphp
+
+                        <div class="min-h-[120px] border-b border-r border-gray-100 p-2 transition-colors hover:bg-gray-50 relative {{ $isToday ? 'bg-indigo-50/30' : '' }}">
+                            <span class="text-sm font-semibold {{ $isToday ? 'text-indigo-600 bg-indigo-100 rounded-full w-6 h-6 flex items-center justify-center' : 'text-gray-400' }}">
+                                {{ $day }}
+                            </span>
+
+                            <div class="mt-2 space-y-2">
+                                @foreach($dayEvents as $event)
+                                    <div class="px-2 py-1.5 text-[10px] leading-tight rounded-md border bg-indigo-50 border-indigo-200 text-indigo-700 text-center flex items-center justify-center w-full" style="word-break: break-word; white-space: normal;" title="{{ $event->title }}">
+                                        <span class="font-bold">{{ $event->title }}</span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endfor
+
+                    {{-- Fill remaining grid cells to make it a perfect rectangle --}}
+                    @php
+                        $totalCells = $startOfWeek + $daysInMonth;
+                        $remainingCells = ceil($totalCells / 7) * 7 - $totalCells;
+                    @endphp
+                    @for($i = 0; $i < $remainingCells; $i++)
+                         <div class="min-h-[120px] border-b border-r border-gray-100 bg-gray-50/50"></div>
+                    @endfor
+                </div>
             </div>
         </div>
 
@@ -135,7 +194,7 @@
                                 {{ $semesterName }} Semester
                             </span>
                         </div>
-                        
+
                         <div class="divide-y divide-gray-100">
                             @forelse($upcomingSchedule as $block)
                                 <div class="py-4 flex justify-between items-center hover:bg-gray-50 transition px-2 rounded-lg">
@@ -158,7 +217,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 {{-- GPA Sidebar --}}
                 <div class="space-y-6">
                     <div class="bg-blue-600 rounded-xl shadow-lg p-6 text-white">
@@ -172,10 +231,9 @@
                 </div>
             </div>
 
-
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}
-            
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {{-- 🔑 My Course Load Table (Half Width) --}}
                 @if(isset($myCourses) && count($myCourses) > 0)
@@ -185,7 +243,7 @@
                                 <svg class="w-4 h-4 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 My Course Load
                             </h4>
-                            
+
                         </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full divide-y divide-gray-100">
@@ -230,7 +288,7 @@
                     </a>
                 </div>
 
-                
+
             </div>
 
             {{-- Full-Width Work Week Leave Summary (Mon-Fri) --}}
@@ -253,13 +311,13 @@
                 {{-- 5-Column Grid --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     @foreach($daysOfWeek as $day)
-                        @php 
+                        @php
                             $dateStr = $day->toDateString();
                             $isToday = $day->isToday();
                             $dailyLeaves = $leavesByDay[$dateStr];
                         @endphp
                         <div class="flex flex-col min-h-[180px] rounded-xl border {{ $isToday ? 'bg-indigo-50/50 border-indigo-200 ring-2 ring-indigo-50' : 'bg-gray-50/30 border-gray-100' }}">
-                            
+
                             <div class="p-3 text-center border-b {{ $isToday ? 'border-indigo-100 bg-indigo-100/30' : 'border-gray-100 bg-gray-50/50' }} rounded-t-xl">
                                 <p class="text-[10px] font-black uppercase tracking-tighter {{ $isToday ? 'text-indigo-600' : 'text-gray-400' }}">
                                     {{ $day->format('l') }}
