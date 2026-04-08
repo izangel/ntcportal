@@ -12,6 +12,78 @@ use Illuminate\View\View;
 class ProfileController extends Controller
 {
     /**
+     * Display the user's personal information.
+     */
+    public function personalInformation(Request $request): View
+    {
+        $user = $request->user();
+        $student = $user->student;
+        $employee = $user->employee;
+        
+        return view('profile.personal-information', compact('user', 'student', 'employee'));
+    }
+
+    /**
+     * Show the form for editing personal information.
+     */
+    public function editPersonalInformation(Request $request): View
+    {
+        $user = $request->user();
+        $student = $user->student;
+        $employee = $user->employee;
+        
+        return view('profile.edit-personal-information', compact('user', 'student', 'employee'));
+    }
+
+    /**
+     * Update the user's personal information.
+     */
+    public function updatePersonalInformation(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        
+        // Validate user fields
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'first_name' => 'nullable|string|max:255',
+            'last_name' => 'nullable|string|max:255',
+            'middle_name' => 'nullable|string|max:255',
+            'date_of_birth' => 'nullable|date',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+        ]);
+
+        // Update user
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->save();
+
+        // Update student if exists
+        if ($user->student) {
+            $user->student->update([
+                'first_name' => $validated['first_name'] ?? $user->student->first_name,
+                'last_name' => $validated['last_name'] ?? $user->student->last_name,
+                'middle_name' => $validated['middle_name'] ?? $user->student->middle_name,
+                'date_of_birth' => $validated['date_of_birth'] ?? $user->student->date_of_birth,
+            ]);
+        }
+
+        // Update employee if exists
+        if ($user->employee) {
+            $user->employee->update([
+                'first_name' => $validated['first_name'] ?? $user->employee->first_name,
+                'last_name' => $validated['last_name'] ?? $user->employee->last_name,
+                'middle_name' => $validated['middle_name'] ?? $user->employee->middle_name,
+                'phone' => $validated['phone'] ?? $user->employee->phone,
+                'address' => $validated['address'] ?? $user->employee->address,
+            ]);
+        }
+
+        return Redirect::route('profile.personal-information')->with('success', 'Personal information updated successfully!');
+    }
+
+    /**
      * Display the user's profile form.
      */
     public function edit(Request $request): View

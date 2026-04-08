@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Enrollment;
+use App\Models\Section;
+use App\Models\Student;
 use App\Models\AcademicYear;
 use App\Models\Semester;
 use Illuminate\Http\Request;
@@ -129,5 +131,20 @@ class ReportController extends Controller
 
 
         return view('reports.student_types', compact('reportData', 'academicYears', 'semestersList', 'selectedAcademicYearId', 'selectedSemesterId'));
+    }
+
+    public function classList($section_id, $ay_id, $semester)
+    {
+        $section = Section::findOrFail($section_id);
+        $ay = AcademicYear::findOrFail($ay_id);
+
+        // Fetch students specifically linked to this section for this term
+        $students = Student::whereHas('sections', function ($query) use ($section_id, $ay_id, $semester) {
+            $query->where('section_student.section_id', $section_id)
+                  ->where('section_student.academic_year_id', $ay_id)
+                  ->where('section_student.semester', $semester);
+        })->orderBy('last_name', 'asc')->get();
+
+        return view('reports.class_list', compact('section', 'students', 'ay', 'semester'));
     }
 }

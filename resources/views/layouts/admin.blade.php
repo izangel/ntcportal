@@ -47,8 +47,8 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="#">
-                        <i class="fas fa-solid fa-pen-to-square mr-3 text-lg"></i>
+                    <x-nav-link href="{{ route('profile.personal-information') }}" :active="request()->routeIs('profile.personal-information')">
+                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Personal Information') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('password.edit') }}" :active="request()->routeIs('password.*')">
@@ -92,6 +92,48 @@
                     </x-nav-link>
 
                    
+                </div>
+            </div>
+
+            {{-- Apply for Candidacy (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Apply for Candidacy</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.candidacy.index') }}" :active="request()->routeIs('student.candidacy.index')">
+                        <i class="fas fa-file-alt mr-3 text-lg"></i>
+                        {{ __('Application Form') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.candidacy.status') }}" :active="request()->routeIs('student.candidacy.status')">
+                        <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                        {{ __('Application Status') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.candidacy.requirements') }}" :active="request()->routeIs('student.candidacy.requirements')">
+                        <i class="fas fa-info-circle mr-3 text-lg"></i>
+                        {{ __('Requirements') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
+            {{-- SSG Voting (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">SSG Voting</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.voting.index') }}" :active="request()->routeIs('student.voting.index')">
+                        <i class="fas fa-vote-yea mr-3 text-lg"></i>
+                        {{ __('Cast Vote') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.voting.results') }}" :active="request()->routeIs('student.voting.results')">
+                        <i class="fas fa-poll mr-3 text-lg"></i>
+                        {{ __('View Results') }}
+                    </x-nav-link>
                 </div>
             </div>
 
@@ -243,6 +285,35 @@
                 </div>
             </div>
 
+            {{-- OSA SECTION --}}
+            <div class="mt-6 pt-3 border-t border-gray-700">
+                <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
+                    OSA
+                </h3>
+            </div>
+
+            {{-- SSG Election (COLLAPSIBLE) --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">SSG Election</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('admin.candidacy.index') }}" :active="request()->routeIs('admin.candidacy.index')">
+                        <i class="fas fa-vote-yea mr-3 text-lg"></i>
+                        {{ __('Candidacy Applications') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('admin.candidacy.candidates') }}" :active="request()->routeIs('admin.candidacy.candidates')">
+                        <i class="fas fa-users mr-3 text-lg"></i>
+                        {{ __('Manage Candidates') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.election.results') }}" :active="request()->routeIs('faculty.election.results')">
+                        <i class="fas fa-poll mr-3 text-lg"></i>
+                        {{ __('Election Results') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
             
 
 
@@ -264,9 +335,13 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('course-blocks') }}" :active="request()->routeIs('course-blocks')">
+                    <x-nav-link href="{{ route('course_blocks.index') }}" :active="request()->routeIs('course_blocks.index')">
                         <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
                         {{ __('Course Blocks') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('assign.courseblocks') }}" :active="request()->routeIs('assign.courseblocks')">
+                        <i class="fas fa-solid fa-cubes mr-3 text-lg"></i>
+                        {{ __('Section Load Manager') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
                         <i class="fas fa-solid fa-chalkboard-user mr-3 text-lg"></i>
@@ -288,9 +363,13 @@
                         <i class="fas fa-solid fa-user-plus mr-3 text-lg"></i>
                         {{ __('Students To Course (Individual)') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.*')">
+                    <x-nav-link href="{{ route('students.index') }}" :active="request()->routeIs('students.index')">
                         <i class="fas fa-solid fa-users-gear mr-3 text-lg"></i>
                         {{ __('Manage Students') }}
+                    </x-nav-link>
+                     <x-nav-link href="{{ route('students.studentportal') }}" :active="request()->routeIs('students.studentportal')">
+                        <i class="fas fa-solid fa-users-gear mr-3 text-lg"></i>
+                        {{ __('Manage Student Sections') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('courses.index') }}" :active="request()->routeIs('courses.*')">
                         <i class="fas fa-solid fa-book-journal-whills mr-3 text-lg"></i>
@@ -410,6 +489,10 @@
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('Department Head Assignment') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.reports.summary') }}" :active="request()->routeIs('faculty.reports.summary')">
+                        <i class="fas fa-calendar-minus mr-3 text-lg"></i>
+                        {{ __('PES Result') }}
+                    </x-nav-link>
                    
                 </div>
             </div>
@@ -451,9 +534,10 @@
                     </header>
                 @endif
 
-                {{-- Main Content Area --}}
-                <main class="flex-1 p-6 sm:p-8">
+{{-- Main Content Area --}}
+<main class="flex-1 p-6 sm:p-8">
 
+   
     
                     @yield('content')
 
