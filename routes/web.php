@@ -14,6 +14,9 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\SemesterController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LeaveApplicationController;
+use App\Livewire\SectionAssignment;
+use App\Livewire\AssignStudentCourseBlock;
+use App\Http\Controllers\LeaveApplicationController; // For employee-side leave application management
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AcademicHeadLeaveApplicationController;
 use App\Http\Controllers\HrLeaveApplicationController;
@@ -23,6 +26,7 @@ use App\Http\Controllers\LeaveApplicationStatusController;
 use App\Http\Controllers\EmployeeLeaveController;
 use App\Http\Controllers\HrController;
 use App\Http\Controllers\ChangePasswordController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\FacultyLoadingController;
 use App\Http\Controllers\FacultyCourseController;
 use App\Http\Controllers\CourseToSectionController;
@@ -51,6 +55,27 @@ use App\Livewire\Admin\FacultyCourseListView;
 use App\Livewire\CourseBlockBulkUploader;
 use App\Livewire\FacultyCourseLoad;
 
+// Livewire Components
+use App\Livewire\AssignCourses;
+use App\Livewire\AssignCoursesIndividual;
+use App\Livewire\CourseBlockManager;
+use App\Livewire\FacultyCourseBlockView;
+use App\Livewire\Admin\FacultyCourseListView;
+use App\Livewire\CourseBlockBulkUploader;
+use App\Livewire\FacultyCourseLoad;
+
+use App\Http\Controllers\Admin\CandidacyManagementController;
+
+use App\Http\Controllers\CandidacyController;
+use App\Http\Controllers\StudentVotingController;
+
+use App\Http\Controllers\CourseBlockController;
+
+use App\Http\Controllers\StudentPortalController;
+
+use App\Livewire\CourseAssignment;
+
+use App\Livewire\ViewCourseBlockStudents;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -121,8 +146,36 @@ Route::middleware([
         Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+       //Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
+       Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
+        Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
+                ->name('assign.courseblocks');
+        
+       Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
+        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
+        Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+
+// List View
+    Route::get('/course-blocks', [CourseBlockController::class, 'index'])->name('course_blocks.index');
+    
+    // Create & Store (Existing)
+    Route::get('/course-blocks/create', [CourseBlockController::class, 'create'])->name('course_blocks.create');
+    Route::post('/course-blocks', [CourseBlockController::class, 'store'])->name('course_blocks.store');
+
+
+
+    Route::get('/studentsportal', [StudentPortalController::class, 'index'])->name('students.studentportal');
+    Route::put('/students/{student}/update-section', [StudentPortalController::class, 'updateSection'])->name('students.updateSection');
+    
+    Route::get('/course-blocks/{id}/students', ViewCourseBlockStudents::class)->name('view-block-students');
+
+    // Student Evaluation Compliance Tracker
+    Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
+        ->name('faculty.reports.student_compliance');
 
         Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
+    });
+
     });
 
     // -- HR specific routes --
@@ -130,6 +183,10 @@ Route::middleware([
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);
         
+         Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
+         Route::post('/leave_applications/{leaveApplication}/cancel', [LeaveApplicationController::class, 'cancel'])
+    ->name('leave_applications.cancel');
+       // This route will handle the HR view of pending applications
         Route::get('/hr/pending-applications', [LeaveApplicationController::class, 'pending'])->name('hr.leave_applications.pending');
         Route::get('/hr/all-applications', [LeaveApplicationController::class, 'all'])->name('hr.leave_applications.all');
 
@@ -140,6 +197,11 @@ Route::middleware([
 
         Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)->name('course-blocks.bulk-uploader');
         Route::get('/admin/leave-summary', [LeaveApplicationController::class, 'leaveSummary'])->name('admin.leave.summary');
+        // New Admin Faculty Course View
+        Route::get('/assign-students-to-blocks', AssignStudentCourseBlock::class)
+        ->name('student.assign.courseblocks');
+        Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)
+        ->name('course-blocks.bulk-uploader');
 
         // HR Peer assignment
         Route::get('/peer-assignments', [PeerAssignmentController::class, 'index'])->name('hr.peer-assignments.index');
@@ -160,16 +222,28 @@ Route::middleware([
 
         // View student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
-    });
 
     Route::resource('leave_applications', LeaveApplicationController::class);
 
     // -- Reports Routes --
+        Route::get('/admin/assign-courses', CourseAssignment::class)
+        ->name('courses.assign');
+    });
+
+    
+   
+    
+    
+    // Reports Routes
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
     Route::get('/reports/student-types', [ReportController::class, 'studentTypes'])->name('reports.studentTypes');
 
     // API route for dynamic semester loading
+    Route::get('/reports/class-list/{section_id}/{academic_year_id}/{semester}', [ReportController::class, 'classList'])
+    ->name('admin.reports.class-list');
+
+    // API route for dynamic semester loading (for reports filter)
     Route::get('/api/semesters-by-academic-year', function (Request $request) {
         $academicYearId = $request->input('academic_year_id');
         if ($academicYearId) {
@@ -219,6 +293,22 @@ Route::middleware([
     });
 
     // -- Global Notifications routes --
+    // OSA - Candidacy Management Routes (for teachers/staff/admin)
+    Route::delete('/admin/candidacy/{application}', [CandidacyController::class, 'destroy'])
+    ->name('admin.candidacy.destroy');
+    Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
+        Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
+        Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+        Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
+        Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
+        Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+        Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
+        Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
+        Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
+        Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
+    });
+
+    // -- Global Notifications routes --
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/test/markall', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 });
@@ -226,6 +316,31 @@ Route::middleware([
 Route::middleware('auth')->group(function () {
     Route::get('/profile/password', [ChangePasswordController::class, 'edit'])->name('password.edit');
     Route::put('/profile/password', [ChangePasswordController::class, 'update'])->name('profile.password.update');
+    Route::middleware('auth')->group(function () {
+    Route::get('/course-blocks/{courseBlock}/edit', [CourseBlockController::class, 'edit'])
+        ->name('course_blocks.edit');
+    Route::put('/course-blocks/{courseBlock}', [CourseBlockController::class, 'update'])
+        ->name('course_blocks.update');
+    Route::delete('/course-blocks/{courseBlock}', [CourseBlockController::class, 'destroy'])
+        ->name('course_blocks.destroy');
+
+    Route::get('/profile/personal-information', [ProfileController::class, 'personalInformation'])
+        ->name('profile.personal-information');
+
+    Route::get('/profile/personal-information/edit', [ProfileController::class, 'editPersonalInformation'])
+        ->name('profile.personal-information.edit');
+
+    Route::put('/profile/personal-information', [ProfileController::class, 'updatePersonalInformation'])
+        ->name('profile.personal-information.update');
+
+    Route::get('/profile/password', [ChangePasswordController::class, 'edit'])
+        ->name('password.edit');
+
+    Route::put('/profile/password', [ChangePasswordController::class, 'update'])
+        ->name('profile.password.update');
+
+    Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])
+    ->name('faculty-loadings.delete');
 
     Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])->name('faculty-loadings.delete');
     Route::resource('faculty-loadings', FacultyLoadingController::class);
@@ -235,6 +350,27 @@ Route::middleware('auth')->group(function () {
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])->name('faculty.course_load.show');
     Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
+    // 1. Route to show the initial page with filters (No results yet)
+    Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])
+        ->name('faculty.course_load');
+        
+    // 2. Route to show the filtered results
+    Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
+        ->name('faculty.course_load.show');
+
+      Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
+
+      // NEW My Course Load Page
+    Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
+
+// Student Dashboard/Courses Route
+    Route::get('/my-courses', [StudentCourseController::class, 'index'])
+        ->name('student.courses');
+    
+    Route::post('/my-courses/evaluate', [StudentCourseController::class, 'storeEvaluation'])
+    ->name('student.courses.evaluate');
+
+    //Faculty
 
     // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])->name('student.courses');
@@ -245,6 +381,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
 
     // Faculty Peer evaluations
+
+    // Faculty Peer evaluations
+    // Results page (The 360 Consolidated View)
+   Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
+    Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
+
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
+    // SSG Election Results for Faculty/Staff/Admin
+    Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {
+        Route::get('/faculty/election-results', [StudentVotingController::class, 'facultyResults'])
+            ->name('faculty.election.results');
+    });
+
+    Route::get('/assign-students', App\Livewire\SectionAssignment::class)
+    ->name('sections.assign.index');
+
+    //Faculty Peer evaluations
     Route::get('/peer-evaluations', [PeerEvaluationController::class, 'index'])->name('faculty.peer-evaluations.index');
     Route::get('/peer-evaluations/{assignment}/create', [PeerEvaluationController::class, 'create'])->name('faculty.peer-evaluations.create');
     Route::post('/peer-evaluations/{assignment}', [PeerEvaluationController::class, 'store'])->name('faculty.peer-evaluations.store');
@@ -253,6 +417,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-evaluations', [MyEvaluationController::class, 'index'])->name('teacher.evaluations.index');
     Route::get('/my-evaluations/{academic_year_id}/{semester}', [MyEvaluationController::class, 'show'])->name('teacher.evaluations.report');
 
+    //teacher evaluation report---
+
+    // 1. The Landing Page: Shows a list of semesters where the teacher has reports
+    Route::get('/my-evaluations', [MyEvaluationController::class, 'index'])
+        ->name('teacher.evaluations.index');
+    
+    // 2. The Detailed Report: Displays the 360-degree aggregated data for a specific period
+    // Example URL: /teacher/my-evaluations/1/1st
+    Route::get('/my-evaluations/{academic_year_id}/{semester}', [MyEvaluationController::class, 'show'])
+        ->name('teacher.evaluations.report');
     // Self-Evaluation
     Route::get('/self-evaluation', [SelfEvaluationController::class, 'index'])->name('faculty.self-evaluations.index');
     Route::get('/self-evaluation/form', [SelfEvaluationController::class, 'create'])->name('faculty.self-evaluations.create');
@@ -279,4 +453,40 @@ Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
 
+    });
+});
+
+Route::view('profile', 'profile')
+    ->middleware(['auth'])
+    ->name('profile');
+
+            
+            Route::get('/evaluations', [StudentEvaluationController::class, 'index'])
+                ->name('evaluations.index'); // Actual name: student.evaluations.index
+
+            Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])
+                ->name('evaluations.create');
+
+            Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
+                ->name('evaluations.store');
+           
+
+            // Candidacy Routes
+            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
+            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
+            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
+            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
+
+            // Voting Routes
+            Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
+            Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
+            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
+    });
+});
+
+Livewire::setUpdateRoute(function ($handle) {
+    return Route::post('/ntcportal/livewire/update', $handle);
+});
+
+// Standard Jetstream authentication routes
 require __DIR__.'/auth.php';

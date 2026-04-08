@@ -11,18 +11,30 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'student_id',
+        'student_id',     // The School ID (e.g., 2024-0001)
         'first_name',
+        'middle_name',    // ADDED: To ensure middle names can be saved/displayed
         'last_name',
+        'middle_name',
         'email',
         'date_of_birth',
         'section_id',
     ];
 
-    // Define relationship with User
+    /**
+     * Relationship with the User account
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the section that the student directly belongs to.
+     */
+    public function section()
+    {
+        return $this->belongsTo(Section::class);
     }
 
     // Define many-to-many relationship with Course through Enrollment
@@ -40,9 +52,9 @@ class Student extends Model
     }
 
     /**
-     * Get the section that the student belongs to.
+     * Relationship with Section (Many-to-Many)
+     * This links to your new section_student pivot table
      */
-    // App\Models\Student.php
     public function sections()
     {
         return $this->belongsToMany(Section::class, 'section_student')
@@ -50,12 +62,29 @@ class Student extends Model
                     ->withTimestamps();
     }
 
+
+   
+public function courseBlocks() {
+    return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'course_block_id');
+}
+
+
+
     /**
      * Get the program that the student belongs to (through section).
      */
     public function program()
     {
-        return $this->hasOneThrough(Program::class, Section::class);
+        $section = $this->sections()->latest('pivot_created_at')->first();
+        return $section ? $section->program : null;
+    }
+
+    /**
+     * Get the program attribute (accessor for blade templates).
+     */
+    public function getProgramAttribute()
+    {
+        return $this->program();
     }
 
     /**
@@ -79,5 +108,21 @@ class Student extends Model
     public function evaluations()
     {
         return $this->hasMany(CourseEvaluation::class, 'student_id');
+    }
+
+    /**
+     * Get the candidacies for the student.
+     */
+    public function candidacies()
+    {
+        return $this->hasMany(Candidacy::class);
+    }
+
+    /**
+     * Get the election votes submitted by the student.
+     */
+    public function electionVotes()
+    {
+        return $this->hasMany(ElectionVote::class);
     }
 }
