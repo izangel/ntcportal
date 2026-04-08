@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Evaluation, Semester, AcademicYear, Employee};
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\Employee;
+use App\Models\AcademicYear;
+use App\Models\Student;
+use App\Models\Semester;
+use App\Models\Evaluation; 
+use App\Models\FacultyEvaluation; 
+use Illuminate\Support\Facades\Auth;
 
 class EvaluationReportController extends Controller
 {
     /**
-     * Show the selection page (AY and Semester only).
+     * Show the 360 Degree Report Selection Index
      */
     public function index()
     {
@@ -18,105 +23,183 @@ class EvaluationReportController extends Controller
     }
 
     /**
-     * Generate the consolidated 360 report.
+     * Compile and Show the Detailed 360 Report
      */
-    public function show360Report(Request $request)
-    {
-        // 1. Validation & Setup
-        $request->validate([
-            'academic_year_id' => 'required|exists:academic_years,id',
-            'semester' => 'required|string'
-        ]);
+   public function show360Report(Request $request)
+{
+    // 1. Validation
+    $request->validate([
+        'academic_year_id' => 'required|exists:academic_years,id',
+        'semester' => 'required|string',
+        'faculty_id' => 'nullable|exists:employees,id' 
+    ]);
 
-        $user = Auth::user();
-        $employee = Auth::user()->employee;
-        
-        if (!$employee) {
-            return back()->with('error', 'Faculty profile not found.');
-        }
+    $user = Auth::user();
+    $userEmployee = $user->employee; 
 
-        $ayId = $request->academic_year_id;
-        $semester = $request->semester;
+    // 2. Authorization
+    $privilegedRoles = ['admin', 'hr', 'academic_head'];
+    $isPrivileged = $userEmployee && in_array($userEmployee->role, $privilegedRoles);
 
-        // 2. Get the Active Semester
+    if ($isPrivileged && $request->filled('faculty_id')) {
+        $employee = Employee::find($request->faculty_id);
+    } else {
+        $employee = $userEmployee;
+    }
     
-        $activeSem = Semester::where('academic_year_id', $ayId)->first(); // For display purposes
-
-
-        // 2. Fetch all evaluations for this faculty in the selected term
-        $evals = Evaluation::where([
-            'teacher_id' => $employee->id, // Assuming teacher_id matches User ID or Employee ID
-            'academic_year_id' => $ayId,
-            'semester' => $semester
-        ])->get();
-
-        if ($evals->isEmpty()) {
-            return back()->with('error', 'No evaluation data found for the selected period.');
-        }
-
-      
-
-        // 3. Group Averages for the 25% weights
-        // We calculate the mean for each group independently
-        $groupScores = [
-            'student'    => $evals->where('evaluator_type', 'student')->avg('mean_score') ?: 0,
-            'peer'       => $evals->where('evaluator_type', 'peer')->avg('mean_score') ?: 0,
-            'self'       => $evals->where('evaluator_type', 'self')->avg('mean_score') ?: 0,
-            'supervisor' => $evals->where('evaluator_type', 'supervisor')->avg('mean_score') ?: 0,
-        ];
-
-        // 4. Calculate Final Weighted Score (Standard 360 Logic)
-        $finalScore = (
-            ($groupScores['student'] * 0.25) + 
-            ($groupScores['peer'] * 0.25) + 
-            ($groupScores['self'] * 0.25) + 
-            ($groupScores['supervisor'] * 0.25)
-        );
-
-        // 5. Fetch all Qualitative Feedback (Comments) across all types
-        $comments = Evaluation::where([
-                'teacher_id' => $user->id,
-                'academic_year_id' => $ayId,
-                'semester' => $semester
-            ])
-            ->whereNotNull('comments')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        // 6. Get Questions from Config for the Tabbed View
-        $allQuestions = config('evaluation_questions');
-
-        return view('faculty.reports.detailed_360', compact(
-            'groupScores', 
-            'finalScore', 
-            'allQuestions', 
-            'evals', 
-            'semester', 
-            'employee', 
-            'activeSem',
-            'comments'
-        ));
+    if (!$employee) {
+        return back()->with('error', 'Faculty profile not found.');
     }
 
-    /**
-     * Admin view remains focused on global ranking, but can link to individual 360s.
-     */
-    public function adminView()
-    {
-        $activeSem = Semester::where('is_active', 1)->first();
-        if (!$activeSem) return back()->with('error', 'No active semester.');
+    $ayId = $request->academic_year_id;
+    $semesterInput = $request->semester; // e.g., "First Semester"
+    $activeSem = Semester::where('academic_year_id', $ayId)->first();
 
-        // Simple aggregation for Admin to see who has evaluations
-        $reports = Evaluation::select(
-                'teacher_id',
-                \DB::raw('AVG(mean_score) as average_rating'),
-                \DB::raw('COUNT(*) as total_responses')
-            )
-            ->where('academic_year_id', $activeSem->academic_year_id)
-            ->groupBy('teacher_id')
-            ->with('teacher') // Ensure the User/Employee relationship is loaded
+    // 3. THE BRIDGE: Normalize "First Semester" to "1st" for legacy queries
+    $shortSemester = str_contains($semesterInput, 'First') ? '1st' : (str_contains($semesterInput, 'Second') ? '2nd' : $semesterInput);
+
+    // 4. Data Collection
+    // Legacy Evals: Use the short version (1st/2nd)
+    $legacyEvals = Evaluation::where([
+        'teacher_id' => $employee->id, 
+        'academic_year_id' => $ayId, 
+        'semester' => $shortSemester 
+    ])->get();
+
+    // Student Evals: Use LIKE with the short version to catch "2nd" or "2nd semester"
+    $studentEvals = FacultyEvaluation::whereHas('courseBlock', function($q) use ($employee, $ayId, $shortSemester) {
+        $q->where('faculty_id', $employee->id)
+          ->where('academic_year_id', $ayId)
+          ->where('semester', 'LIKE', $shortSemester . '%');
+    })->get()->map(function($e) {
+        $e->evaluator_type = 'student';
+        return $e;
+    });
+
+    $allEvals = $legacyEvals->concat($studentEvals);
+
+    if ($allEvals->isEmpty()) {
+        return back()->with('warning', 'No evaluation data found for ' . $semesterInput);
+    }
+
+    // 5. Calculations (Identical logic)
+    $groupScores = [
+        'student'    => (float) ($allEvals->where('evaluator_type', 'student')->avg('mean_score') ?? 0),
+        'peer'       => (float) ($allEvals->where('evaluator_type', 'peer')->avg('mean_score') ?? 0),
+        'self'       => (float) ($allEvals->where('evaluator_type', 'self')->avg('mean_score') ?? 0),
+        'supervisor' => (float) ($allEvals->where('evaluator_type', 'supervisor')->avg('mean_score') ?? 0),
+    ];
+
+    $finalScore = (float) (array_sum($groupScores) * 0.25);
+    $allQuestions = config('evaluation_questions');
+
+    return view('faculty.reports.detailed_360', compact(
+        'groupScores', 
+        'finalScore', 
+        'allQuestions', 
+        'allEvals', 
+        'semesterInput', 
+        'employee', 
+        'activeSem'
+    ));
+}
+
+    public function summary(Request $request)
+{
+    // 1. Fetch the Active Semester from the DB
+    $activeSemester = Semester::where('is_active', 1)->first();
+    
+    // 2. Set AY and Semester (Prioritize Request > Database Active > Default)
+    $ayId = $request->academic_year_id ?? ($activeSemester->academic_year_id ?? null);
+    $semesterInput = $request->semester ?? ($activeSemester->name ?? 'First Semester');
+    
+    $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+
+    // 3. Helper: Convert "First Semester" to "1st" for the legacy evaluations table
+    $shortSemester = str_contains($semesterInput, 'First') ? '1st' : (str_contains($semesterInput, 'Second') ? '2nd' : $semesterInput);
+
+    $faculties = Employee::with('department')
+        ->orderBy('last_name', 'asc')
+        ->get()
+        ->map(function($employee) use ($ayId, $semesterInput, $shortSemester) {
+            
+            // Query Legacy Evals (using "1st" or "2nd")
+            $legacyEvals = Evaluation::where([
+                'teacher_id' => $employee->id, 
+                'academic_year_id' => $ayId, 
+                'semester' => $shortSemester 
+            ])->get();
+
+            // Query Student Evals (using LIKE to catch "2nd" or "2nd semester")
+            $studentEvals = FacultyEvaluation::whereHas('courseBlock', function($q) use ($employee, $ayId, $shortSemester) {
+                $q->where('faculty_id', $employee->id)
+                  ->where('academic_year_id', $ayId)
+                  ->where('semester', 'LIKE', $shortSemester . '%');
+            })->get()->map(function($e) {
+                $e->evaluator_type = 'student'; 
+                return $e;
+            });
+
+            $allEvals = $legacyEvals->concat($studentEvals);
+
+            // 4. Calculations
+            $scores = [
+                'student'    => (float) ($allEvals->where('evaluator_type', 'student')->avg('mean_score') ?? 0),
+                'peer'       => (float) ($allEvals->where('evaluator_type', 'peer')->avg('mean_score') ?? 0),
+                'self'       => (float) ($allEvals->where('evaluator_type', 'self')->avg('mean_score') ?? 0),
+                'supervisor' => (float) ($allEvals->where('evaluator_type', 'supervisor')->avg('mean_score') ?? 0),
+            ];
+
+            $employee->group_scores = $scores;
+            $employee->final_mean = (float) (array_sum($scores) * 0.25);
+
+            return $employee;
+        });
+
+    return view('faculty.reports.summary', compact('faculties', 'academicYears', 'ayId', 'semesterInput'));
+}
+
+public function studentCompliance(Request $request)
+{
+    // 1. Get Active Period (or filtered)
+    $activeSemester = Semester::where('is_active', 1)->first();
+    $ayId = $request->academic_year_id ?? ($activeSemester->academic_year_id ?? null);
+    $semesterInput = $request->semester ?? ($activeSemester->name ?? 'First Semester');
+
+    // 2. Resolve short name for CourseBlock matching (1st, 2nd, etc.)
+    $shortSemester = str_contains($semesterInput, 'First') ? '1st' : (str_contains($semesterInput, 'Second') ? '2nd' : 'Summer');
+
+    $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+
+    // 3. Fetch all students and map their progress
+    $students = Student::orderBy('last_name', 'asc')->get()->map(function($student) use ($ayId, $shortSemester) {
+        
+        // Find enrolled course blocks for this specific period
+        // Logic matches your StudentEvaluationController@index
+        $courseLoad = \App\Models\CourseBlock::join('student_courseblock', 'course_blocks.id', '=', 'student_courseblock.course_block_id')
+            ->where('student_courseblock.student_id', $student->id)
+            ->where('course_blocks.academic_year_id', $ayId)
+            ->where('course_blocks.semester', 'LIKE', $shortSemester . '%')
+            ->select('course_blocks.id')
             ->get();
 
-        return view('reports.admin-global', compact('reports', 'activeSem'));
-    }
+        $totalSubjects = $courseLoad->count();
+        $courseBlockIds = $courseLoad->pluck('id');
+
+        // Check how many of those IDs exist in the FacultyEvaluation table for this student
+        $completedCount = \App\Models\FacultyEvaluation::where('student_id', $student->id)
+            ->whereIn('course_block_id', $courseBlockIds)
+            ->count();
+
+        $student->total_subjects = $totalSubjects;
+        $student->completed_count = $completedCount;
+        $student->is_complete = ($totalSubjects > 0 && $totalSubjects === $completedCount);
+        
+        return $student;
+    });
+
+    return view('faculty.reports.student_compliance', compact('students', 'academicYears', 'ayId', 'semesterInput'));
+}
+
+
 }
