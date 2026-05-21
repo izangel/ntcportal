@@ -19,6 +19,7 @@ use App\Http\Controllers\AcademicHeadLeaveApplicationController; // Your AH Cont
 use App\Http\Controllers\HrLeaveApplicationController; // Assuming you have this for HR
 use App\Http\Controllers\NotificationController; // For global notification actions
 use Illuminate\Http\Request; // Needed for the API route closure
+use Livewire\Livewire;
 
 use App\Http\Controllers\AdminLeaveApplicationController; // Your AH Controller!
 use App\Http\Controllers\LeaveApplicationStatusController;
@@ -72,6 +73,7 @@ use App\Http\Controllers\Admin\CandidacyManagementController;
 
 use App\Http\Controllers\CandidacyController;
 use App\Http\Controllers\StudentVotingController;
+use App\Http\Controllers\StudentClearanceController;
 
 use App\Http\Controllers\CourseBlockController;
 
@@ -490,7 +492,21 @@ Route::middleware([
             Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
             Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
             Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
+
+            // Clearance Routes
+            Route::get('/clearance', [StudentClearanceController::class, 'index'])->name('clearance.index');
+            Route::get('/clearance/requirements', [StudentClearanceController::class, 'requirements'])->name('clearance.requirements');
+            Route::post('/clearance/{department}/sign', [StudentClearanceController::class, 'signForClearance'])->name('clearance.sign');
+        });
     });
+
+Route::middleware(['auth', 'role:teacher|staff|academic_head|hr|admin'])->group(function () {
+    Route::get('/employee/clearance', [StudentClearanceController::class, 'index'])->name('employee.clearance.index');
+    Route::get('/employee/clearance/requirements', [StudentClearanceController::class, 'requirements'])->name('employee.clearance.requirements');
+    Route::get('/employee/clearance/classify-graduating', [StudentClearanceController::class, 'classifyGraduating'])->name('employee.clearance.classify');
+    Route::post('/employee/clearance/{student}/classify', [StudentClearanceController::class, 'submitGraduationClassification'])->name('employee.clearance.classify.submit');
+    Route::get('/employee/clearance/{student}/review', [StudentClearanceController::class, 'review'])->name('employee.clearance.review');
+    Route::post('/employee/clearance/{student}/review', [StudentClearanceController::class, 'submitReview'])->name('employee.clearance.review.submit');
 });
 
 Livewire::setUpdateRoute(function ($handle) {

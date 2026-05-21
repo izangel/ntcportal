@@ -71,25 +71,22 @@ class User extends Authenticatable
      * @return bool
      */
     public function hasRole(string $role): bool
-{
-    // 1. Check for Employee Roles (Staff/Admin)
-    // If the user has an 'employee' record, check the role stored there.
-    if ($this->employee) {
-        return $this->employee->role === $role;
+    {
+        // 1. Check for Employee Roles (Staff/Admin)
+        if ($this->employee && $this->employee->role !== null) {
+            return $this->employee->role === $role;
+        }
+
+        // 2. Check for Student Role
+        if ($role === 'student') {
+            return (bool) $this->student;
+        }
+
+        // 3. Fallback to legacy user role field if present
+        return $this->role === $role;
     }
 
-    // 2. Check for Student Role
-    // If the requested role is 'student', check if the user has a linked 'student' record.
-    // Assuming you have a 'student' relationship defined in the User model.
-    if ($role === 'student') {
-        return (bool) $this->student; 
-    }
-
-    // 3. Fallback
-    return false;
-}
-
-     /**
+    /**
      * Get the student record associated with the user.
      * This assumes a user can have one student profile.
      */
@@ -115,9 +112,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(ImportantDate::class);
     }
-    public function hasAnyRole(array $roles)
-{
-    // Adjust this logic to match how your roles are stored (e.g., a 'role' string or a relationship)
-    return in_array($this->role, $roles);
-}
+
+    public function hasAnyRole(array $roles): bool
+    {
+        foreach ($roles as $role) {
+            if ($this->hasRole($role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

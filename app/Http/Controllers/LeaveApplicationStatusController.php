@@ -60,7 +60,9 @@ class LeaveApplicationStatusController extends Controller
         $totalSections = Section::count();
         // This query for teachers might also need to use employees.role for consistency
         $totalTeachers = User::whereHas('employee', function($query) {
-                            $query->where('role', 'teacher');
+                            $query->whereHas('roleRelation', function ($query) {
+                                $query->where('type', 'teacher');
+                            });
                         })->count();
         $totalUsers = User::count();
 

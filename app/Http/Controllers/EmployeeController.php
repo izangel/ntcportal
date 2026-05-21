@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Role;
 use App\Models\User; // Import the User model
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule; // Import Rule for unique validation
@@ -34,7 +35,8 @@ class EmployeeController extends Controller
     {
         // Get users who are not yet linked to an employee
         $unlinkedUsers = User::doesntHave('employee')->get();
-        return view('employees.create', compact('unlinkedUsers'));
+        $roles = Role::orderBy('type')->get();
+        return view('employees.create', compact('unlinkedUsers', 'roles'));
     }
 
     /**
@@ -49,8 +51,8 @@ class EmployeeController extends Controller
             'email' => 'nullable|email|unique:employees,email|max:255',
             'phone' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
-            'role' => 'required|string|in:teacher,staff,admin,hr,academic_head', // Adjust roles as per your app
-            'user_id' => 'nullable|exists:users,id|unique:users,employee_id', // Must be an existing user, and that user shouldn't already have an employee_id
+            'roles' => 'required|exists:roles,id',
+            'user_id' => 'nullable|exists:users,id|unique:users,employee_id',
         ]);
 
        
@@ -112,7 +114,9 @@ class EmployeeController extends Controller
                              ->orWhere('id', $employee->user_id)
                              ->get();
 
-        return view('employees.edit', compact('employee', 'unlinkedUsers'));
+        $roles = Role::orderBy('type')->get();
+
+        return view('employees.edit', compact('employee', 'unlinkedUsers', 'roles'));
     }
 
     /**
@@ -131,7 +135,7 @@ class EmployeeController extends Controller
                 'max:255',
             ],
            
-            'role' => 'required|string|in:teacher,staff,admin,hr,academic_head',
+            'roles' => 'required|exists:roles,id',
             // 'user_id' => [
             //     'nullable',
             //     'exists:users,id',

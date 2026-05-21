@@ -111,7 +111,9 @@ class HrLeaveApplicationController extends Controller
            
             // Notify Admin that the application is now approved by HR and ready for their review
             $adminUsers = User::whereHas('employee', function ($query) {
-                $query->where('role', 'admin');
+                $query->whereHas('roleRelation', function ($query) {
+                    $query->where('type', 'admin');
+                });
             })->get();
             
          

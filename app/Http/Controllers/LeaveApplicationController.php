@@ -141,13 +141,18 @@ class LeaveApplicationController extends Controller
 
         
 
-        // Fetch employees with 'teacher' role for the substitute dropdown
-        $teachers = Employee::where('role', '!=', 'staff')
-                     ->where('user_id', '!=', Auth::id())
-                     ->orderBy('last_name')->get();
+        // Fetch employees with roles other than staff for the substitute dropdown
+        $teachers = Employee::whereHas('roleRelation', function ($query) {
+                        $query->where('type', '!=', 'staff');
+                    })
+                    ->where('user_id', '!=', Auth::id())
+                    ->orderBy('last_name')
+                    ->get();
 
-        // Fetch employees with 'staff' role for the personnel to take over dropdown
-        $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('last_name')->get();
+        // Fetch all eligible personnel to take over
+        $staffPersonnel = Employee::where('user_id', '!=', Auth::id())
+                        ->orderBy('last_name')
+                        ->get();
 
         $loggedInEmployee = null;
         $remainingCredits = null;
@@ -292,10 +297,18 @@ private function calculateWorkDays($startDate, $endDate)
 
     $user = Auth::user();
     if ($user->hasRole('staff')){
-        $hrHeads = User::whereHas('employee', function ($query) { $query->where('role', 'hr'); })->get();
+        $hrHeads = User::whereHas('employee', function ($query) {
+                        $query->whereHas('roleRelation', function ($query) {
+                            $query->where('type', 'hr');
+                        });
+                    })->get();
         foreach ($hrHeads as $hrUser) { $hrUser->notify(new LeaveApplicationSubmittedForHR($leaveApplication)); }
     } else {
-        $academicHeads = User::whereHas('employee', function ($query) { $query->where('role', 'academic_head'); })->get();
+        $academicHeads = User::whereHas('employee', function ($query) {
+                            $query->whereHas('roleRelation', function ($query) {
+                                $query->where('type', 'academic_head');
+                            });
+                        })->get();
         foreach ($academicHeads as $ahUser) { $ahUser->notify(new LeaveApplicationSubmittedForAH($leaveApplication)); }
     }
 
@@ -347,12 +360,19 @@ private function calculateWorkDays($startDate, $endDate)
 
         $employees = Employee::orderBy('last_name')->get();
 
-         // Fetch employees with 'teacher' role for the substitute dropdown
-        $teachers = Employee::where('role', '!=', 'staff')
-                     ->where('user_id', '!=', Auth::id())
-                     ->orderBy('last_name')->get();
+         // Fetch employees with roles other than staff for the substitute dropdown
+        $teachers = Employee::whereHas('roleRelation', function ($query) {
+                        $query->where('type', '!=', 'staff');
+                    })
+                    ->where('user_id', '!=', Auth::id())
+                    ->orderBy('last_name')
+                    ->get();
 
-        $staffPersonnel = Employee::where('role', 'staff')->orderBy('last_name')->get();
+        $staffPersonnel = Employee::whereHas('roleRelation', function ($query) {
+                            $query->where('type', 'staff');
+                        })
+                        ->orderBy('last_name')
+                        ->get();
 
         $loggedInEmployee = null;
         if (Auth::check() && Auth::user()->employee) {

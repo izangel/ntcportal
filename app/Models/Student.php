@@ -15,7 +15,6 @@ class Student extends Model
         'first_name',
         'middle_name',    // ADDED: To ensure middle names can be saved/displayed
         'last_name',
-        'middle_name',
         'email',
         'date_of_birth',
         'section_id',
@@ -68,7 +67,28 @@ public function courseBlocks() {
     return $this->belongsToMany(CourseBlock::class, 'student_courseblock', 'student_id', 'course_block_id');
 }
 
+    public function clearanceShs()
+    {
+        return $this->hasOne(ClearanceShs::class, 'student_id');
+    }
 
+    public function clearanceCollege()
+    {
+        return $this->hasOne(ClearanceCollege::class, 'student_id');
+    }
+
+    public function getGraduationTypeAttribute()
+    {
+        if ($this->clearanceShs) {
+            return 'senior_high_school';
+        }
+
+        if ($this->clearanceCollege) {
+            return 'college_graduating';
+        }
+
+        return null;
+    }
 
     /**
      * Get the program that the student belongs to (through section).

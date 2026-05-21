@@ -92,7 +92,9 @@ class AcademicHeadLeaveApplicationController extends Controller
         if ($request->ah_status === 'approved') {
             // Notify HR that the application is now approved by AH and ready for their review
             $hrUsers = User::whereHas('employee', function ($query) {
-                $query->where('role', 'hr');
+                $query->whereHas('roleRelation', function ($query) {
+                    $query->where('type', 'hr');
+                });
             })->get();
 
             foreach ($hrUsers as $hrUser) {

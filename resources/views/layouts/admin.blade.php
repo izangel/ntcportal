@@ -68,7 +68,7 @@
             
             <div x-show="open" x-collapse.duration.300ms>
                 <x-nav-link href="#">
-                    <i class="fas fa-solid fa-book-open /> mr-3 text-lg"></i>
+                    <i class="fas fa-solid fa-book-open mr-3 text-lg"></i>
                     {{ __('Search Library Catalog') }}
                 </x-nav-link>
                 <x-nav-link href="#">
@@ -137,6 +137,25 @@
                 </div>
             </div>
 
+            {{-- CLEARANCE (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">CLEARANCE</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.clearance.index') }}" :active="request()->routeIs('student.clearance.index')">
+                        <i class="fas fa-check-circle mr-3 text-lg"></i>
+                        {{ __('Clearance') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.clearance.requirements') }}" :active="request()->routeIs('student.clearance.requirements')">
+                        <i class="fas fa-list mr-3 text-lg"></i>
+                        {{ __('Requirements') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
         @endif
             
         @if(Auth::user()->hasRole('teacher') || Auth::user()->hasRole('staff') || Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin'))
@@ -185,6 +204,32 @@
                     </x-nav-link>
                 </div>
             </div>
+
+            {{-- Clearance (COLLAPSIBLE) --}}
+            @if(Auth::user()->employee?->deptOffice)
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Clearance</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('employee.clearance.index') }}" :active="request()->routeIs('employee.clearance.index')">
+                        <i class="fas fa-check-circle mr-3 text-lg"></i>
+                        {{ __('Student Clearance') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('employee.clearance.requirements') }}" :active="request()->routeIs('employee.clearance.requirements')">
+                        <i class="fas fa-list mr-3 text-lg"></i>
+                        {{ __('Set Clearance Requirements') }}
+                    </x-nav-link>
+                    @if(Auth::user()->employee?->deptOffice?->name === "Registrar's Office")
+                        <x-nav-link href="{{ route('employee.clearance.classify') }}" :active="request()->routeIs('employee.clearance.classify')">
+                            <i class="fas fa-graduation-cap mr-3 text-lg"></i>
+                            {{ __('Classify Graduating Students') }}
+                        </x-nav-link>
+                    @endif
+                </div>
+            </div>
+            @endif
 
             {{-- Class & Student Management (COLLAPSIBLE) --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">

@@ -4,7 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Employee; // Import the Employee model
+use App\Models\Employee;
+use App\Models\Role;
 
 class EmployeeSeeder extends Seeder
 {
@@ -13,13 +14,19 @@ class EmployeeSeeder extends Seeder
      */
     public function run(): void
     {
+        $teacherRoleId = Role::where('type', 'teacher')->value('id');
+        $staffRoleId = Role::where('type', 'staff')->value('id');
+        $academicHeadRoleId = Role::where('type', 'academic_head')->value('id');
+        $hrRoleId = Role::where('type', 'hr')->value('id');
+        $adminRoleId = Role::where('type', 'admin')->value('id');
+
         Employee::create([
             'last_name' => 'Doe',
             'first_name' => 'John',
             'email' => 'john.doe@example.com',
             'phone' => '09123456789',
             'address' => '123 Main St, Anytown',
-            'role' => 'teacher',
+            'roles' => $teacherRoleId,
         ]);
 
         Employee::create([
@@ -28,7 +35,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'jane.smith@example.com',
             'phone' => '09987654321',
             'address' => '456 Oak Ave, Anytown',
-            'role' => 'staff',
+            'roles' => $staffRoleId,
         ]);
 
         Employee::create([
@@ -37,7 +44,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'alice.brown@example.com',
             'phone' => '09001112222',
             'address' => '789 Pine Rd, Anytown',
-            'role' => 'academic_head',
+            'roles' => $academicHeadRoleId,
         ]);
 
         Employee::create([
@@ -46,7 +53,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'robert.davis@example.com',
             'phone' => '09334445555',
             'address' => '101 Cedar Ln, Anytown',
-            'role' => 'hr',
+            'roles' => $hrRoleId,
         ]);
 
         Employee::create([
@@ -55,7 +62,7 @@ class EmployeeSeeder extends Seeder
             'email' => 'emily.white@example.com',
             'phone' => '09667778888',
             'address' => '202 Birch Blvd, Anytown',
-            'role' => 'admin',
+            'roles' => $adminRoleId,
         ]);
     }
 }

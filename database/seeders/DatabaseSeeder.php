@@ -10,6 +10,7 @@ use Database\Seeders\SemesterSeeder;     // <-- ADD THIS LINE
 use Database\Seeders\StudentSeeder;
 use Database\Seeders\CourseSeeder;
 use Database\Seeders\EnrollmentSeeder;
+use Database\Seeders\RoleSeeder;
 
 
 class DatabaseSeeder extends Seeder
@@ -53,10 +54,10 @@ class DatabaseSeeder extends Seeder
             StudentSeeder::class,
             CourseSeeder::class,
             EnrollmentSeeder::class,
+            RoleSeeder::class,
             EmployeeSeeder::class,
             LeaveTypesSeeder::class,
             CategorySeeder::class,
-             
         ]);
     }
 }

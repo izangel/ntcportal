@@ -11,15 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('election_votes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('student_id')->constrained()->onDelete('cascade');
-            $table->foreignId('candidacy_id')->constrained('candidacies')->onDelete('cascade');
-            $table->timestamp('voted_at')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('election_votes')) {
+            Schema::create('election_votes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('student_id')->constrained()->onDelete('cascade');
+                $table->foreignId('candidacy_id')->constrained('candidacies')->onDelete('cascade');
+                $table->timestamp('voted_at')->nullable();
+                $table->timestamps();
 
-            $table->unique(['student_id', 'candidacy_id'], 'election_votes_unique_student_candidate');
-        });
+                $table->unique(['student_id', 'candidacy_id'], 'election_votes_unique_student_candidate');
+            });
+        }
     }
 
     /**

@@ -49,16 +49,17 @@
 </div>
 
 <div class="mb-4">
-    <x-label for="role" value="{{ __('Role') }}" />
-    <select id="role" name="role" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
+    <x-label for="roles" value="{{ __('Role') }}" />
+    <select id="roles" name="roles" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" required>
         <option value="">-- Select Role --</option>
-        <option value="teacher" {{ old('role', $employee->role ?? '') == 'teacher' ? 'selected' : '' }}>Teacher</option>
-        <option value="staff" {{ old('role', $employee->role ?? '') == 'staff' ? 'selected' : '' }}>Staff</option>
-        <option value="admin" {{ old('role', $employee->role ?? '') == 'admin' ? 'selected' : '' }}>Admin</option>
-        <option value="hr" {{ old('role', $employee->role ?? '') == 'hr' ? 'selected' : '' }}>HR</option>
-        <option value="academic_head" {{ old('role', $employee->role ?? '') == 'academic_head' ? 'selected' : '' }}>Academic Head</option>
+        @foreach($roles as $roleOption)
+            <option value="{{ $roleOption->id }}"
+                {{ old('roles', $employee->roleRelation?->id ?? '') == $roleOption->id ? 'selected' : '' }}>
+                {{ ucwords(str_replace('_', ' ', $roleOption->type)) }}
+            </option>
+        @endforeach
     </select>
-    @error('role')
+    @error('roles')
         <span class="text-red-500 text-sm">{{ $message }}</span>
     @enderror
 </div>

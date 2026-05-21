@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Employee extends Model
 {
@@ -16,8 +18,9 @@ class Employee extends Model
         'email',
         'phone',
         'address',
-        'role',
-        'department_id', 
+        'roles',
+        'dept_office',
+        'department_id',
         'user_id',
     ];
 
@@ -52,11 +55,34 @@ class Employee extends Model
      */
     public function department()
     {
-        return $this->belongsTo(Department::class); // <-- ADD THIS METHOD
+        return $this->belongsTo(Department::class);
     }
 
+    /**
+     * Get the role model associated with the employee.
+     */
+    public function roleRelation(): BelongsTo
+    {
+        return $this->belongsTo(Role::class, 'roles');
+    }
 
-   public function getRemainingLeaveCredits()
+    /**
+     * Return the active role type for compatibility with previous string-based usage.
+     */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->getRelationValue('roleRelation')?->type;
+    }
+
+    /**
+     * Get the department/office assigned to the employee.
+     */
+    public function deptOffice(): BelongsTo
+    {
+        return $this->belongsTo(DeptOffice::class, 'dept_office');
+    }
+
+    public function getRemainingLeaveCredits()
 {
     $leavecredit = $this->leaveCredits()->first(); 
 
