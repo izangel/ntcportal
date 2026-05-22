@@ -176,7 +176,6 @@ class DashboardController extends Controller
         return view('dashboard', $viewData);
     }
 
-    // Helper to map semester names
     private function getSemesterName($name) {
         return match (true) {
             str_contains($name, 'First')  => '1st',

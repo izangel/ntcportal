@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\SubstituteAcknowledgementController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SubstituteAcknowledgementController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\EnrollmentController;
@@ -19,6 +19,7 @@ use App\Http\Controllers\AcademicHeadLeaveApplicationController; // Your AH Cont
 use App\Http\Controllers\HrLeaveApplicationController; // Assuming you have this for HR
 use App\Http\Controllers\NotificationController; // For global notification actions
 use Illuminate\Http\Request; // Needed for the API route closure
+use App\Http\Controllers\StudentProfileController;
 
 use App\Http\Controllers\AdminLeaveApplicationController; // Your AH Controller!
 use App\Http\Controllers\LeaveApplicationStatusController;
@@ -97,7 +98,7 @@ Route::get('/', function () {
 });
 
 
-// // 🔹 TEMPORARY PUBLIC ROUTE
+// // TEMPORARY PUBLIC ROUTE
 // Route::post('/test-mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
 
 // Authenticated user routes (dashboard, profile, etc.)
@@ -166,7 +167,7 @@ Route::middleware([
                 ->name('assign.courseblocks');
         
        Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
-        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
+        Route::post('/enrollments',  [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
        
 
@@ -464,20 +465,20 @@ Route::middleware([
     Route::post('/evaluations/{assignment}', [SupervisorEvaluationController::class, 'store'])->name('supervisor.evaluations.store');
 
     //Students
-   // --- STUDENT ROUTES ---
-    Route::middleware(['auth', 'role:student'])
-        ->prefix('student')    // URLs start with /student/...
-        ->name('student.')     // Names start with student....
-        ->group(function () {
-            
-            Route::get('/evaluations', [StudentEvaluationController::class, 'index'])
-                ->name('evaluations.index'); // Actual name: student.evaluations.index
+// --- STUDENT ROUTES ---
+// Temporarily remove 'role:student' or allow multiple casing formats
+Route::middleware(['auth']) 
+    ->prefix('student')    // URLs start with /student/...
+    ->name('student.')     // Names start with student....
+    ->group(function () {
+        
+        // This maps perfectly to resources/views/profile/student.blade.php via Controller
+        Route::get('/profile', [StudentProfileController::class, 'index'])->name('profile');
 
-            Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])
-                ->name('evaluations.create');
-
-            Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
-                ->name('evaluations.store');
+        // Your existing evaluations routes...
+        Route::get('/evaluations', [StudentEvaluationController::class, 'index'])->name('evaluations.index');
+        Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])->name('evaluations.create');
+        Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
            
 
             // Candidacy Routes

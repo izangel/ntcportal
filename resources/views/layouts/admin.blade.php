@@ -43,19 +43,24 @@
         {{-- My Profile (COLLAPSIBLE) --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
-                    <h3 class="text-left">My Profile</h3>
+                    <h3 class="text-left">Profile</h3>
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.profile') }}" :active="request()->routeIs('student.profile')">
+                    <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                        {{ __('My Profile') }}
+                    </x-nav-link>
+
                     <x-nav-link href="{{ route('profile.personal-information') }}" :active="request()->routeIs('profile.personal-information')">
-                        <i class="fas fa-user-graduate mr-3 text-lg"></i>
+                     <i class="fas fa-user-graduate mr-3 text-lg"></i>
                         {{ __('Personal Information') }}
                     </x-nav-link>
+
                     <x-nav-link href="{{ route('password.edit') }}" :active="request()->routeIs('password.*')">
-                        <i class="fas fa-key mr-3 text-lg"></i>
+                    <i class="fas fa-key mr-3 text-lg"></i>
                         {{ __('Change Password') }}
                     </x-nav-link>
-                    
                 </div>
             </div>
 

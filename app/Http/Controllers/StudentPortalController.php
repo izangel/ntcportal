@@ -21,7 +21,7 @@ class StudentPortalController extends Controller
     $selectedSemester = $request->input('semester');
     $selectedSection = $request->input('section_id');
     $searchTerm = $request->input('search'); // Capture the search string
-
+    
     $students = Student::query()
         ->when($selectedYear && $selectedSemester, function ($query) use ($selectedYear, $selectedSemester, $selectedSection, $searchTerm) {
             $query->whereHas('sections', function ($q) use ($selectedYear, $selectedSemester, $selectedSection) {
