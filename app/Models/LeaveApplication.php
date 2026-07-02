@@ -46,6 +46,7 @@ class LeaveApplication extends Model
         'admin_approved_at',   // NEW: Admin approval timestamp
         'admin_approved_by',   // NEW: Admin approver employee ID
         'admin_remarks',       // NEW: Admin remarks
+        'school_year_id',
 
     ];
 
@@ -132,6 +133,10 @@ class LeaveApplication extends Model
     public function leaveType()
     {
         return $this->belongsTo(LeaveType::class);
+    }
+
+    public function academicYear() {
+        return $this->belongsTo(AcademicYear::class, 'school_year_id');
     }
 
 }

@@ -71,70 +71,108 @@
                         <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-lg">Mean: {{ number_format($groupScores[$type], 2) }}</span>
                     </div>
 
-                    @php $categories = $allQuestions[$type] ?? []; @endphp
-                    @foreach($categories as $category)
-                        <div class="mb-8 last:mb-0">
-                            @if(is_array($category) && isset($category['title']))
+                    @php 
+                        $data = $allQuestions[$type] ?? [];
+                        // Check if the first element is an array (Nested like Student) or a string (Flat like Peer)
+                        $isNested = isset($data[0]) && is_array($data[0]);
+                    @endphp
+
+                    @if($isNested)
+                        {{-- NESTED LAYOUT (For Student) --}}
+                        @foreach($data as $category)
+                            <div class="mb-8 last:mb-0">
                                 <div class="flex items-center gap-3 mb-3">
                                     <span class="text-[10px] font-bold bg-slate-800 text-white px-2 py-0.5 rounded">{{ $category['id'] ?? '?' }}</span>
                                     <h4 class="text-[11px] font-bold uppercase text-slate-500 tracking-wider">{{ $category['title'] }}</h4>
                                 </div>
-                            @endif
-
-                            <div class="border border-slate-100 rounded-xl overflow-hidden">
-                                <table class="w-full text-left border-collapse">
-                                    <tbody class="divide-y divide-slate-50">
-                                        @php 
-                                            $questionsToLoop = (is_array($category) && isset($category['questions'])) ? $category['questions'] : [$category]; 
-                                        @endphp
-                                        @foreach($questionsToLoop as $index => $q)
-                                            @php
-                                                $key = is_array($q) ? ($q['k'] ?? $index) : $index;
-                                                $text = is_array($q) ? ($q['t'] ?? 'Missing Text') : $q;
-                                                $qAvg = $allEvals->where('evaluator_type', $type)
-                                                    ->map(fn($e) => (is_array($e->ratings) ? $e->ratings : json_decode($e->ratings, true))[$key] ?? null)
-                                                    ->filter(fn($v) => !is_null($v))->average() ?? 0;
-                                            @endphp
-                                            <tr class="hover:bg-slate-50/50 transition-colors">
-                                                <td class="py-2.5 px-4 text-xs text-slate-600 leading-snug">{{ $text }}</td>
-                                                <td class="py-2.5 px-4 text-right w-20 text-xs font-bold text-slate-900">{{ number_format($qAvg, 2) }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                @include('faculty.reports.partials.360-table', ['questions' => $category['questions'], 'type' => $type])
                             </div>
+                        @endforeach
+                    @else
+                        {{-- FLAT LAYOUT (For Peer, Self, Supervisor) --}}
+                        <div class="border border-slate-100 rounded-xl overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <tbody class="divide-y divide-slate-50">
+                                    @foreach($data as $key => $text)
+                                        @php
+                                            $qAvg = $allEvals->where('evaluator_type', $type)
+                                                ->map(function($e) use ($key) {
+                                                    $ratings = is_array($e->ratings) ? $e->ratings : json_decode($e->ratings, true);
+                                                    // Student evaluations use 'q1', legacy uses 'p1', 's1', 'v1'
+                                                    return $ratings[$key] ?? null;
+                                                })
+                                                ->filter(fn($v) => !is_null($v))
+                                                ->average() ?? 0;
+                                        @endphp
+                                        <tr class="hover:bg-slate-50/50 transition-colors">
+                                            <td class="py-2.5 px-4 text-[11px] font-bold text-slate-400 w-12 uppercase tracking-tighter">{{ $key }}</td>
+                                            <td class="py-2.5 px-4 text-xs text-slate-600 leading-snug">{{ $text }}</td>
+                                            <td class="py-2.5 px-4 text-right w-20 text-xs font-bold text-slate-900">{{ number_format($qAvg, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
-                    @endforeach
+                    @endif
 
                     {{-- Feedback Section --}}
+
                     <div class="mt-10 pt-6 border-t border-slate-100">
-                        <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Qualitative Feedback</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @php
-                                $typeComments = $allEvals->where('evaluator_type', $type)
-                                    ->filter(fn($e) => !empty($e->comments) || !empty($e->aspects_helped) || !empty($e->aspects_improved));
-                            @endphp
-                            @forelse($typeComments as $eval)
-                                <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/30">
-                                    <p class="text-xs text-slate-700 italic leading-relaxed mb-2">"<span class="font-bold uppercase">Overall:</span> {{ $eval->comments }}"</p>
-                                    @if($type === 'student' && ($eval->aspects_helped || $eval->aspects_improved))
-                                        <div class="flex flex-col gap-1.5 mt-2 border-t border-slate-100 pt-2">
-                                            @if($eval->aspects_helped)
-                                                <p class="text-[10px] text-blue-600"><span class="font-bold uppercase">Impact:</span> {{ $eval->aspects_helped }}</p>
-                                            @endif
-                                            @if($eval->aspects_improved)
-                                                <p class="text-[10px] text-amber-600"><span class="font-bold uppercase">Growth Opportunity:</span> {{ $eval->aspects_improved }}</p>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </div>
-                            @empty
-                                <p class="text-xs text-slate-400 italic">No feedback entries.</p>
-                            @endforelse
-                        </div>
+
+                    <h4 class="text-[10px] font-bold text-slate-400 uppercase mb-4 tracking-widest">Qualitative Feedback</h4>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    @php
+
+                    $typeComments = $allEvals->where('evaluator_type', $type)
+
+                    ->filter(fn($e) => !empty($e->comments) || !empty($e->aspects_helped) || !empty($e->aspects_improved));
+
+                    @endphp
+
+                    @forelse($typeComments as $eval)
+
+                    <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/30">
+
+                    <p class="text-xs text-slate-700 italic leading-relaxed mb-2">"<span class="font-bold uppercase">Overall:</span> {{ $eval->comments }}"</p>
+
+                    @if($type === 'student' && ($eval->aspects_helped || $eval->aspects_improved))
+
+                    <div class="flex flex-col gap-1.5 mt-2 border-t border-slate-100 pt-2">
+
+                    @if($eval->aspects_helped)
+
+                    <p class="text-[10px] text-blue-600"><span class="font-bold uppercase">Impact:</span> {{ $eval->aspects_helped }}</p>
+
+                    @endif
+
+                    @if($eval->aspects_improved)
+
+                    <p class="text-[10px] text-amber-600"><span class="font-bold uppercase">Growth Opportunity:</span> {{ $eval->aspects_improved }}</p>
+
+                    @endif
+
+                    </div>
+
+                    @endif
+
+                    </div>
+
+                    @empty
+
+                    <p class="text-xs text-slate-400 italic">No feedback entries.</p>
+
+                    @endforelse
+
+                    </div>
+
                     </div>
                 </div>
             @endforeach
+                </tbody>
+            </table>
+        </div>
         </div>
     </div>
 </div>

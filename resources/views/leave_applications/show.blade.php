@@ -12,7 +12,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Leave Application for {{ $leaveApplication->employee->name ?? 'N/A' }}</h3>
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Leave Application for {{ $leaveApplication->employee->first_name }} {{ $leaveApplication->employee->last_name }}</h3>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-6">
                     <div>
@@ -48,21 +48,21 @@
                             <h5 class="font-semibold text-gray-800">Academic Head Remarks</h5>
                             <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->ah_remarks ?? 'No remarks provided' }}</p>
                             @if($leaveApplication->ah_approved_at)
-                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->ah_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->ahApprover ? $leaveApplication->ahApprover->first_name . ' ' . $leaveApplication->ahApprover->last_name : 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Decision on: {{ $leaveApplication->ah_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->ahApprover ? $leaveApplication->ahApprover->first_name . ' ' . $leaveApplication->ahApprover->last_name : 'N/A' }}</p>
                             @endif
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h5 class="font-semibold text-gray-800">HR Remarks</h5>
                             <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->hr_remarks ?? 'No remarks provided' }}</p>
                             @if($leaveApplication->hr_approved_at)
-                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->hr_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->hrApprover ? $leaveApplication->hrApprover->first_name . ' ' . $leaveApplication->hrApprover->last_name : 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Decision on: {{ $leaveApplication->hr_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->hrApprover ? $leaveApplication->hrApprover->first_name . ' ' . $leaveApplication->hrApprover->last_name : 'N/A' }}</p>
                             @endif
                         </div>
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h5 class="font-semibold text-gray-800">Admin Remarks</h5>
                             <p class="text-sm text-gray-600 mt-2">{{ $leaveApplication->admin_remarks ?? 'No remarks provided' }}</p>
                             @if($leaveApplication->admin_approved_at)
-                                <p class="text-xs text-gray-500 mt-1">Approved on: {{ $leaveApplication->admin_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->adminApprover ? $leaveApplication->adminApprover->first_name . ' ' . $leaveApplication->adminApprover->last_name : 'N/A' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">Decision on: {{ $leaveApplication->admin_approved_at->format('M d, Y h:i A') }} by {{ $leaveApplication->adminApprover ? $leaveApplication->adminApprover->first_name . ' ' . $leaveApplication->adminApprover->last_name : 'N/A' }}</p>
                             @endif
                         </div>
                     </div>

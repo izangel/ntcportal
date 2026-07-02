@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 use App\Models\CourseBlock;
 use App\Models\Section;
 use App\Models\Course;
+use App\Models\Employee;
 use App\Models\User; // or App\Models\Faculty
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
@@ -16,8 +17,11 @@ class CourseBlockController extends Controller
     {
         // Fetch data for dropdowns
         $sections = Section::all();
-        $courses = Course::all();
-        $faculties = User::all();
+       // Sort courses by 'code' in ascending order
+        $courses = Course::orderBy('code', 'asc')->get();
+        
+        // Sort employees (faculties) by 'last_name' in ascending order
+        $faculties = Employee::orderBy('last_name', 'asc')->get();
         $academicYears = AcademicYear::all();
 
         return view('course_blocks.create', compact('sections', 'courses', 'faculties', 'academicYears'));
@@ -42,28 +46,41 @@ public function store(Request $request)
     // Add this method inside the class
 public function index(Request $request)
 {
-    // 1. Get Academic Years for the dropdown
-    $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+    $query = CourseBlock::with(['section.program', 'course', 'faculty', 'academicYear'])
+        ->join('sections', 'course_blocks.section_id', '=', 'sections.id')
+        ->join('programs', 'sections.program_id', '=', 'programs.id')
+        ->join('courses', 'course_blocks.course_id', '=', 'courses.id')
+        ->join('academic_years', 'course_blocks.academic_year_id', '=', 'academic_years.id')
+        ->join('employees', 'course_blocks.faculty_id', '=', 'employees.id');
 
-    // 2. Start Query
-    $query = CourseBlock::with(['section.program', 'course', 'faculty', 'academicYear']);
-
-    // 3. APPLY STRICT FILTERS 
-    // This ensures only the chosen Year and Semester are returned.
-    if ($request->filled('academic_year_id')) {
-        $query->where('academic_year_id', $request->academic_year_id);
+    // Filters (Level, AY, Sem)
+    if ($request->filled('level')) {
+        $request->level === 'SHS' 
+            ? $query->where('programs.name', 'LIKE', 'SHS%') 
+            : $query->where('programs.name', 'NOT LIKE', 'SHS%');
+    }
+    if ($request->filled('ay')) $query->where('course_blocks.academic_year_id', $request->ay);
+    if ($request->filled('sem')) {
+        $map = ['1st' => ['1st', '1st Semester'], '2nd' => ['2nd', '2nd Semester'], 'Summer' => ['Sum', 'Summer']];
+        if (isset($map[$request->sem])) $query->whereIn('course_blocks.semester', $map[$request->sem]);
     }
 
-    if ($request->filled('semester')) {
-        // We use a strict where match here
-        $query->where('semester', $request->semester);
-    }
+    // 1. Sort by Faculty Last Name First
+    $query->orderBy('employees.last_name', 'asc');
 
-    // 4. Execute Query
-    $courseBlocks = $query->latest()
-                          ->paginate(10)
-                          ->withQueryString(); 
+    // 2. Sort by MWF, TTH, SAT
+    $query->orderByRaw("CASE 
+            WHEN schedule_string LIKE '%MWF%' THEN 1 
+            WHEN schedule_string LIKE '%TTH%' THEN 2 
+            WHEN schedule_string LIKE '%SAT%' THEN 3 
+            WHEN schedule_string LIKE '%Monthly PE%' OR schedule_string LIKE '%MPE%' THEN 5
+            ELSE 4 END ASC");
 
+    $courseBlocks = $query->select('course_blocks.*')
+        ->paginate(100)
+        ->withQueryString();
+
+    $academicYears = \App\Models\AcademicYear::orderBy('start_year', 'desc')->get();
     return view('course_blocks.index', compact('courseBlocks', 'academicYears'));
 }
 
@@ -99,6 +116,16 @@ public function destroy(CourseBlock $courseBlock)
 {
     $courseBlock->delete();
     return redirect()->route('course_blocks.index')->with('success', 'Block deleted successfully!');
+}
+
+
+public function verify(Request $request)
+{
+    EvaluationSetting::where('is_active', true)->update([
+        'blocks_verified' => true
+    ]);
+
+    return back()->with('success', 'Blocks verified! Subject loading is now unlocked for the Registrar.');
 }
 
 

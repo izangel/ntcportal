@@ -42,7 +42,7 @@
                     </span>
                 @else
                     <span class="text-sm font-bold text-amber-500 flex items-center">
-                        <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span> Pending for {{ $currentSemester }}
+                        <span class="w-2 h-2 bg-amber-500 rounded-full mr-2"></span> Pending for {{ $currentSemester }} Semester
                     </span>
                 @endif
             </div>

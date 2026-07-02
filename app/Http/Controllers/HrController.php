@@ -2,144 +2,155 @@
 
 namespace App\Http\Controllers;
 
-// In app/Http/Controllers/HrController.php
 use App\Models\Employee;
 use App\Models\LeaveCredit;
 use App\Models\AcademicYear;
 use App\Models\LeaveType; 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class HrController extends Controller
-
-
 {
-
-
     /**
-     * Display a listing of the semesters.
+     * Display a listing of the leave credits.
      */
     public function index()
     {
-        // Eager load the academic year relationship
-   $leavecredits = LeaveCredit::with('academicYear', 'employee') // Eager load 'employee' too for the view
+        $leavecredits = LeaveCredit::with(['academicYear', 'employee'])
+            ->join('employees', 'leave_credits.employee_id', '=', 'employees.id')
+            ->orderBy('employees.last_name', 'asc') 
+            ->orderBy('academic_year_id', 'desc')
+            ->select('leave_credits.*') 
+            ->paginate(10);
         
-        // 1. Join the employees table to access the 'last_name' column
-        ->join('employees', 'leave_credits.employee_id', '=', 'employees.id')
-        
-        // 2. Add the sorting clause by the employee's last name
-        ->orderBy('employees.last_name', 'asc') 
-        
-        // 3. Keep secondary sorting (optional)
-        ->orderBy('academic_year_id', 'desc')
-        
-        // 4. Select the leave_credits columns to prevent overwriting issues
-        ->select('leave_credits.*') 
-        
-        ->paginate(10);
-        
-    return view('hr.leave_credits.index', compact('leavecredits'));
+        return view('hr.leave_credits.index', compact('leavecredits'));
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
-        $employees = Employee::all();
-        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); // Get all academic years for dropdown
-        return view('hr.leave_credits.create', compact('employees','academicYears'));
+        $employees = Employee::orderBy('last_name', 'asc')->get();
+        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+        
+        return view('hr.leave_credits.create', compact('employees', 'academicYears'));
     }
    
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-        
-        $validatedData = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'sick_leave' => 'required|numeric|min:0',
-            'vacation_leave' => 'required|numeric|min:0',
-            'service_incentive_leave' => 'required|numeric|min:0',
-            'academic_year_id' => 'required|exists:academic_years,id',
-        ]);
+        $validatedData = $request->validate($this->validationRules());
 
-        // Check if leave credits already exist for this employee and academic year
-        $existingLeaveCredit = LeaveCredit::where('employee_id', $validatedData['employee_id'])
+        // Check if unique combination already exists
+        $exists = LeaveCredit::where('employee_id', $validatedData['employee_id'])
             ->where('academic_year_id', $validatedData['academic_year_id'])
-            ->first();
+            ->exists();
 
-        if ($existingLeaveCredit) {
-            return redirect()->back()->with('error', 'Leave credits for this employee and academic year already exist.');
+        if ($exists) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Leave credits for this employee and academic year already exist.');
         }
 
-       LeaveCredit::create($validatedData);
+        LeaveCredit::create($validatedData);
 
-        return redirect()->route('leave-credits.index')->with('success', 'Leave credits updated successfully! ✅');
+        return redirect()->route('leave-credits.index')->with('success', 'Leave credits created successfully! ✅');
     }
 
-
-    public function edit(LeaveCredit $leave_credit)
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(LeaveCredit $leaveCredit)
     {
-        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); // Get all academic years for dropdown
-        $leavecredit = $leave_credit;
-        $employees = Employee::all();
-        return view('hr.leave_credits.edit', compact('leavecredit', 'academicYears','employees'));
+        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+        $employees = Employee::orderBy('last_name', 'asc')->get();
+        
+        return view('hr.leave_credits.edit', compact('leaveCredit', 'academicYears', 'employees'));
     }
 
-     public function update(Request $request, LeaveCredit $leave_credit)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, LeaveCredit $leaveCredit)
     {
-          
-        $validatedData = $request->validate([
-            'employee_id' => 'required|exists:employees,id',
-            'sick_leave' => 'required|numeric|min:0',
-            'vacation_leave' => 'required|numeric|min:0',
-            'service_incentive_leave' => 'required|numeric|min:0',
-            'academic_year_id' => 'required|exists:academic_years,id',
-        ]);
+        $validatedData = $request->validate($this->validationRules());
 
+        // Guard against updating to a duplicate pair assigned to another record
+        $duplicateExists = LeaveCredit::where('employee_id', $validatedData['employee_id'])
+            ->where('academic_year_id', $validatedData['academic_year_id'])
+            ->where('id', '!=', $leaveCredit->id)
+            ->exists();
 
-       
+        if ($duplicateExists) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Another record with this employee and academic year already exists.');
+        }
 
-        $leave_credit->update($validatedData);
+        $leaveCredit->update($validatedData);
 
         return redirect()->route('leave-credits.index')->with('success', 'Leave credit updated successfully.');
     }
 
-    public function destroy(LeaveCredit $leave_credit)
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(LeaveCredit $leaveCredit)
     {
-        // You might want to add a check here to prevent deleting if
-        // there are associated table.
-        
-        $leave_credit->delete();
+        $leaveCredit->delete();
 
         return redirect()->route('leave-credits.index')->with('success', 'Leave credit deleted successfully.');
     }
 
+    /**
+     * Display all employee leave credits (Fixed N+1 Issue).
+     */
     public function showAllEmployeeLeaveCredits()
     {
-        $employees = Employee::with('leaveCredits', 'leaveApplications')->get();
+        // Load relationships efficiently
+        $employees = Employee::with(['leaveCredits', 'leaveApplications'])->get();
+        $leaveTypes = LeaveType::all(); // Moved OUTSIDE the loop to prevent N+1 queries
         $allCredits = [];
 
         foreach ($employees as $employee) {
-            $leavecredit = $employee->leaveCredits()->first();
+            $leavecredit = $employee->leaveCredits->first(); // Uses already loaded collection rather than running query
+            
             $employeeData = [
-                'last_name' => $employee->last_name,
+                'last_name'  => $employee->last_name,
                 'first_name' => $employee->first_name,
-                'mid_name' => $employee->mid_name,
-                'credits' => 'No leave credits set.'
+                'mid_name'   => $employee->mid_name,
+                'credits'    => 'No leave credits set.'
             ];
 
             if ($leavecredit) {
                 $credits = [];
-                $leaveTypes = LeaveType::all();
-                
                 foreach ($leaveTypes as $leaveType) {
                     $key = strtolower(str_replace(' ', '_', $leaveType->name));
-                    $credits[$key] = $leavecredit->{$key};
+                    $credits[$key] = $leavecredit->{$key} ?? 0;
                 }
                 $employeeData['credits'] = $credits;
             }
+            
             $allCredits[] = $employeeData;
         }
 
-        return view('hr.leave_credits.all', [
-            'employeesData' => $allCredits
-        ]);
+        return view('hr.leave_credits.all', ['employeesData' => $allCredits]);
     }
 
+    /**
+     * Centralized validation rules to keep code DRY.
+     */
+    protected function validationRules(): array
+    {
+        return [
+            'employee_id'               => 'required|exists:employees,id',
+            'sick_leave'                => 'required|numeric|min:0',
+            'vacation_leave'            => 'required|numeric|min:0',
+            'service_incentive_leave'   => 'required|numeric|min:0',
+            'academic_year_id'          => 'required|exists:academic_years,id',
+        ];
+    }
 }

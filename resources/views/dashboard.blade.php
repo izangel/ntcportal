@@ -229,12 +229,15 @@
             </div>
         </div>
 
-                <div class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden h-full">
-                        <div class="p-4 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                            <h4 class="font-bold text-gray-800 text-sm uppercase tracking-wider">🔔 Notifications</h4>
-                            <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                {{ Auth::user()->unreadNotifications->count() }} New
+        {{-- 3. Role-Specific Main Content --}}
+        @if(Auth::user()->hasRole('student') && $user->student)
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-lg font-bold text-gray-800">🗓️ Academic Schedule</h4>
+                            <span class="text-[10px] font-black px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full uppercase tracking-widest">
+                                {{ $semesterName }} Semester
                             </span>
                         </div>
                         <div class="p-4 max-h-48 overflow-y-auto">

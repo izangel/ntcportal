@@ -557,6 +557,34 @@
                 </div>
             </div>
 
+            {{-- GUIDANCE SECTION --}}
+            <div class="mt-6 pt-3 border-t border-gray-700">
+                <h3 class="text-sm font-bold uppercase text-blue-400 px-3 py-1 bg-gray-800 rounded">
+                    GUIDANCE OFFICE
+                </h3>
+            </div>
+
+            
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Teachers Evaluation</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('evaluation.tracker') }}" :active="request()->routeIs('admin.candidacy.index')">
+                        <i class="fas fa-clipboard-check mr-3 text-lg"></i>
+                        {{ __('Start Evaluation') }}
+                    </x-nav-link>
+                    <x-nav-link href="#" :active="request()->routeIs('admin.candidacy.index')">
+                        <i class="fas fa-chart-bar mr-3 text-lg"></i>
+                        {{ __('Evaluation Results') }}
+                    </x-nav-link>
+                   
+                </div>
+            </div>
+
+
+            
 
                     <div class="mt-4 space-y-1" x-data="{ open: false }">
                         <button @click="open = !open"
@@ -759,10 +787,18 @@
                         <i class="fas fa-user-tie mr-3 text-lg"></i>
                         {{ __('Manage Employees') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('roles.index') }}" :active="request()->routeIs('employees.*')">
+                        <i class="fas fa-user-tag mr-3 text-lg"></i>
+                        {{ __('Employee Roles') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}
                     </x-nav-link>
+                     <x-nav-link href="{{ route('leave_credits.summary') }}" :active="request()->routeIs('leave_credits.summary')">
+                            <i class="fas fa-file-upload mr-3 text-lg"></i>
+                            {{ __('All Remaining Credits') }}
+                        </x-nav-link>
                     @if(Auth::user()->hasRole('academic_head'))
                         <x-nav-link href="{{ route('ah.leave_applications.index') }}" :active="request()->routeIs('ah.leave_applications.index')">
                             <i class="fas fa-hourglass-half mr-3 text-lg"></i>
@@ -772,23 +808,23 @@
                             <i class="fas fa-list-ul mr-3 text-lg"></i>
                             {{ __('All Leave Applications (HR)') }}
                         </x-nav-link>
+                        
+                       
                     @elseif(Auth::user()->hasRole('hr'))
                         <x-nav-link href="{{ route('hr.leave_applications.index') }}" :active="request()->routeIs('hr.leave_applications.index')">
                             <i class="fas fa-hourglass-half mr-3 text-lg"></i>
                             {{ __('Pending Leave Applications') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('hr.leave_applications.retroactive_form') }}" :active="request()->routeIs('hr.leave_applications.retroactive_form')">
+                        <x-nav-link href="{{ route('leave_applications.hr_create') }}" :active="request()->routeIs('leave_applications.hr_create')">
                             <i class="fas fa-file-upload mr-3 text-lg"></i>
                             {{ __('Unfiled Leave Applications') }}
                         </x-nav-link>
+                        
                         <x-nav-link href="{{ route('hr.leave_applications.all') }}" :active="request()->routeIs('hr.leave_applications.all')">
                             <i class="fas fa-list-ul mr-3 text-lg"></i>
                             {{ __('All Leave Applications') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('hr.leave_credits.all') }}" :active="request()->routeIs('hr.leave_credits.all')">
-                            <i class="fas fa-credit-card mr-3 text-lg"></i>
-                            {{ __('View All Remaining Leave Credits') }}
-                        </x-nav-link>
+                       
                     @elseif(Auth::user()->hasRole('admin'))
                         <x-nav-link href="{{ route('admin.leave_applications.index') }}" :active="request()->routeIs('admin.leave_applications.index')">
                             <i class="fas fa-hourglass-half mr-3 text-lg"></i>

@@ -12,7 +12,9 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "league/csv": "^9.24",
-        "livewire/livewire": "^3.0"
+        "livewire/livewire": "^3.0",
+        "maatwebsite/excel": "^3.1",
+        "yaza/laravel-google-drive-storage": "^4.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

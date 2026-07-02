@@ -76,6 +76,15 @@ use App\Http\Controllers\StudentPortalController;
 use App\Livewire\CourseAssignment;
 
 use App\Livewire\ViewCourseBlockStudents;
+use App\Http\Controllers\CourseAttainmentController;
+
+use App\Http\Controllers\EvaluationWorkflowController;
+
+use App\Http\Controllers\RoleAssignmentController;
+use App\Livewire\Hr\LeaveCreditsTable;
+use App\Livewire\LeaveApplicationManager;
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -124,15 +133,20 @@ Route::middleware([
         'destroy' => 'important_dates.destroy',
     ]);
 
-    // -- Admin and Teacher specific routes --
-    Route::middleware(['role:academic_head|registrar|hr|admin'])->group(function () {
+    // Admin and Teacher specific routes (apply roles middleware)
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs'])->group(function () {
+        
         Route::resource('courses', CourseController::class);
         Route::resource('coursetosections', CourseToSectionController::class);
         Route::resource('programs', ProgramController::class);
         Route::resource('sections', SectionController::class);
         Route::resource('academic_years', AcademicYearController::class);
         Route::resource('semesters', SemesterController::class);
-        
+        Route::get('/students/promote', [StudentController::class, 'showPromoteForm'])->name('students.promote.view');
+
+        // The POST action (this uses the logic already in your controller)
+        Route::post('/students/bulk-promote', [StudentController::class, 'bulkPromote'])->name('students.bulkPromote');
+
         Route::get('/students/upload', [StudentController::class, 'showUploadForm'])->name('students.upload.form');
         Route::post('/students/import', [StudentController::class, 'import'])->name('students.import');
         Route::get('/students/export', [StudentController::class, 'export'])->name('students.export');
@@ -161,28 +175,74 @@ Route::middleware([
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
 
-// List View
-    Route::get('/course-blocks', [CourseBlockController::class, 'index'])->name('course_blocks.index');
-    
-    // Create & Store (Existing)
-    Route::get('/course-blocks/create', [CourseBlockController::class, 'create'])->name('course_blocks.create');
-    Route::post('/course-blocks', [CourseBlockController::class, 'store'])->name('course_blocks.store');
+    // List View
+        Route::get('/course-blocks', [CourseBlockController::class, 'index'])->name('course_blocks.index');
+        
+        // Create & Store (Existing)
+        Route::get('/course-blocks/create', [CourseBlockController::class, 'create'])->name('course_blocks.create');
+        Route::post('/course-blocks', [CourseBlockController::class, 'store'])->name('course_blocks.store');
 
 
 
-    Route::get('/studentsportal', [StudentPortalController::class, 'index'])->name('students.studentportal');
-    Route::put('/students/{student}/update-section', [StudentPortalController::class, 'updateSection'])->name('students.updateSection');
-    
-    Route::get('/course-blocks/{id}/students', ViewCourseBlockStudents::class)->name('view-block-students');
+        Route::get('/studentsportal', [StudentPortalController::class, 'index'])->name('students.studentportal');
+        Route::put('/students/{student}/update-section', [StudentPortalController::class, 'updateSection'])->name('students.updateSection');
+        
+        Route::get('/course-blocks/{id}/students', ViewCourseBlockStudents::class)->name('view-block-students');
 
-    // Student Evaluation Compliance Tracker
-    Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
-        ->name('faculty.reports.student_compliance');
+        // Student Evaluation Compliance Tracker
+        Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
+            ->name('faculty.reports.student_compliance');
+
+        // routes/web.php
+        Route::get('/students/{student}/cor', [StudentController::class, 'printCOR'])->name('students.cor');
+
+     
+        // Route::get('/reports/class-list/{course_block}/{academic_year?}/{semester?}', [ReportController::class, 'classListPerSubj'])
+        //     ->name('reports.class-list');
+
+         
+// 1. The main management page (The list in your screenshot)
+    Route::get('/admin/roles', [RoleAssignmentController::class, 'index'])
+        ->name('roles.index');
+
+    // 2. Creating a brand new role (The "Add Role" form)
+    Route::post('/admin/roles/store', [RoleAssignmentController::class, 'store'])
+        ->name('roles.store');
+
+    // 3. Updating an employee's roles (The "Save" button on each row)
+    // We use PUT/PATCH because we are updating an existing user's relationships
+    Route::put('/admin/roles/{user}', [RoleAssignmentController::class, 'update'])
+        ->name('roles.update');
+
+        // The view to see the list and checkboxes
 
         Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
     });
 
-    });
+
+     // Admin and Teacher specific routes (apply roles middleware)
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
+              // The main tracker view
+                // The main Tracker page
+        Route::get('/evaluation/tracker', [EvaluationWorkflowController::class, 'index'])
+            ->name('evaluation.tracker');
+
+        // STEP 1: Registrar confirms the current SY/Semester
+        Route::post('/evaluation/verify-period', [EvaluationWorkflowController::class, 'verifyPeriod'])
+            ->name('evaluation.verifyPeriod');
+
+        // STEP 2: Program Head verifies the blocks
+        Route::post('/evaluation/verify-blocks', [EvaluationWorkflowController::class, 'verifyBlocks'])
+    ->name('evaluation.verifyBlocks');
+
+    Route::post('/evaluation/verify-students', [EvaluationWorkflowController::class, 'verifyStudents'])
+    ->name('evaluation.verifyStudents');
+
+    Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
+Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
+
+
+   });
 
     // -- HR specific routes --
     Route::middleware(['role:hr|admin|academic_head'])->group(function () {
@@ -216,7 +276,13 @@ Route::middleware([
 
         Route::get('/supervisor-assignments', [SupervisorAssignmentController::class, 'index'])->name('hr.supervisor-assignments.index');
         Route::post('/supervisor-assignments', [SupervisorAssignmentController::class, 'store'])->name('hr.supervisor-assignments.store');
-        Route::delete('/supervisor-assignments/{assignment}', [SupervisorAssignmentController::class, 'destroy'])->name('hr.supervisor-assignments.destroy');
+        Route::delete('/supervisor-assignments/{assignment}', [SupervisorAssignmentController::class, 'destroy'])
+                ->name('hr.supervisor-assignments.destroy');
+
+        //leave credits new
+       Route::get('/hr/leave-credits', LeaveCreditsTable::class)->name('leave-credits.index');
+        
+        
 
         // Bulk upload student user accounts
         Route::get('/admin/bulk-upload', [BulkUserController::class, 'index'])->name('admin.bulk-upload');
@@ -236,6 +302,17 @@ Route::middleware([
     // -- Reports Routes --
         Route::get('/admin/assign-courses', CourseAssignment::class)
         ->name('courses.assign');
+
+        Route::get('/leave-applications/hr-file', [LeaveApplicationController::class, 'createByHr'])->name('leave_applications.hr_create');
+        Route::post('/leave-applications/hr-file', [LeaveApplicationController::class, 'storeByHr'])->name('leave_applications.hr_store');
+        Route::get('/api/employee-credits/{id}', [LeaveApplicationController::class, 'getEmployeeCredits']);
+
+        Route::get('/leave-credits/summary', [LeaveApplicationManager::class, 'creditsSummary'])->name('leave_credits.summary');
+        Route::get('/leave-applications/export', [LeaveApplicationController::class, 'exportExcel'])
+    ->name('leave_applications.export');
+
+        Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
+        Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
     });
 
     
@@ -319,6 +396,12 @@ Route::middleware([
     // -- Global Notifications routes --
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/test/markall', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+
+    //Route::post('/students/bulk-promote', [StudentController::class, 'bulkPromote'])->name('students.bulkPromote');
+
+    
+    // Route::get('/test', [TestController::class, 'index'])->name('test.index');
+    // Route::post('/test/call', [TestController::class, 'call'])->name('test.call');
 });
 
 Route::middleware('auth')->group(function () {
@@ -451,10 +534,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/evaluations/{assignment}/create', [SupervisorEvaluationController::class, 'create'])->name('supervisor.evaluations.create');
     Route::post('/evaluations/{assignment}', [SupervisorEvaluationController::class, 'store'])->name('supervisor.evaluations.store');
 
-    // --- STUDENT ROUTES ---
-    Route::middleware(['role:student'])
-        ->prefix('student')
-        ->name('student.')
+    // Faculty routes
+    Route::get('/my-attainments', [CourseAttainmentController::class, 'index'])->name('attainment.index');
+    Route::post('/attainment/store', [CourseAttainmentController::class, 'store'])->name('attainment.store');
+
+    // Admin/Academic Head routes (add your admin middleware here)
+    Route::get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
+    
+    //Students
+   // --- STUDENT ROUTES ---
+    Route::middleware(['auth', 'role:student'])
+        ->prefix('student')    // URLs start with /student/...
+        ->name('student.')     // Names start with student....
         ->group(function () {
             Route::get('/evaluations', [StudentEvaluationController::class, 'index'])->name('evaluations.index');
             Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])->name('evaluations.create');
