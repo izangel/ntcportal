@@ -37,6 +37,11 @@ class CandidacyManagementController extends Controller
             });
         }
 
+        $applications = $query->paginate(15);
+        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
+        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
+
+        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen'));
         $applications = $query->paginate(10);
         $positionOrder = [
             'president' => 'President',
