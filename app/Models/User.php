@@ -64,28 +64,35 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Check if the user has a specific role.
-     *
-     * @param string $role
-     * @return bool
-     */
-    public function hasRole(string $role): bool
+    public function roles()
 {
-    // 1. Check for Employee Roles (Staff/Admin)
-    // If the user has an 'employee' record, check the role stored there.
-    if ($this->employee) {
-        return $this->employee->role === $role;
+    // Explicitly using the full namespace to avoid "Class not found"
+    return $this->belongsToMany(\App\Models\Role::class);
+}
+
+public function hasRole(string $role): bool
+{
+    // 1. Check New Multi-Role System
+    // This allows one user to have multiple roles (Faculty + Registrar)
+    if ($this->roles->contains('name', $role)) {
+        return true;
     }
 
-    // 2. Check for Student Role
-    // If the requested role is 'student', check if the user has a linked 'student' record.
-    // Assuming you have a 'student' relationship defined in the User model.
+    // 2. Existing Employee Roles (Legacy/Fallback)
+    if ($this->employee && $this->employee->role === $role) {
+        return true;
+    }
+
+    // 3. User Table Role (Fallback)
+    if ($this->role === $role) {
+        return true;
+    }
+
+    // 4. Student Role
     if ($role === 'student') {
         return (bool) $this->student; 
     }
 
-    // 3. Fallback
     return false;
 }
 

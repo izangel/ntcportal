@@ -42,7 +42,7 @@
                         <select name="faculty_id" id="faculty_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Select Faculty</option>
                             @foreach($faculties as $faculty)
-                                <option value="{{ $faculty->id }}">{{ $faculty->name }}</option>
+                                <option value="{{ $faculty->id }}">{{ $faculty->last_name }}, {{ $faculty->first_name }}, </option>
                             @endforeach
                         </select>
                         @error('faculty_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror

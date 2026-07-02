@@ -62,6 +62,6 @@ class AdminSurveyTracker extends Component
             'student' => $student,
             'reportData' => $reportData,
             'academicYears' => AcademicYear::orderBy('year_start', 'desc')->get()
-        ]);
+        ])->layout('layouts.admin'); 
     }
 }

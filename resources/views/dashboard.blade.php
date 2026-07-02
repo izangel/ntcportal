@@ -125,7 +125,7 @@
         </div>
 
         {{-- 3. Role-Specific Main Content --}}
-        @if(Auth::user()->hasRole('student'))
+        @if(Auth::user()->hasRole('student') && $user->student)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-2 space-y-8">
                     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">

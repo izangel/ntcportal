@@ -27,25 +27,33 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
+
+      
         $todayStr = now()->toDateString(); 
         $notifications = $user->unreadNotifications;
+
+        // 1. Get Active Semester early to use for both Students and Staff
+        $activeSemester = Semester::where('is_active', 1)->first();
+        $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
+
+        
+       
 
         $recentDates = ImportantDate::with('categories')
             ->where(function($query) use ($todayStr) {
                 $query->where('end_date', '>=', $todayStr)
-                      ->orWhere(function($q) use ($todayStr) {
-                          $q->whereNull('end_date')->where('start_date', '>=', $todayStr);
-                      });
+                    ->orWhere(function($q) use ($todayStr) {
+                        $q->whereNull('end_date')->where('start_date', '>=', $todayStr);
+                    });
             })
             ->orderByRaw("CASE WHEN '$todayStr' BETWEEN start_date AND COALESCE(end_date, start_date) THEN 1 ELSE 2 END ASC")
             ->orderBy('start_date', 'asc')
             ->take(5)
             ->get();
 
-        // LOGIC FOR WORK WEEK (MONDAY - FRIDAY)
-        $startOfWeek = now()->startOfWeek(); // Carbon default is Monday
+        $startOfWeek = now()->startOfWeek();
         $daysOfWeek = [];
-        for ($i = 0; $i < 5; $i++) { // Changed from 7 to 5
+        for ($i = 0; $i < 5; $i++) {
             $daysOfWeek[] = $startOfWeek->copy()->addDays($i);
         }
 
@@ -80,29 +88,21 @@ class DashboardController extends Controller
 
         if ($user->hasRole('student') && $user->student) {
             $student = $user->student;
-            
-            // 1. GET ACTIVE SEMESTER LOGIC (From Monitoring Controller)
-            $activeSemester = Semester::where('is_active', 1)->first();
-            $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
-            
             $enrolledCourses = collect([]);
             $upcomingSchedule = collect([]);
 
             if ($activeSemester) {
-                // 2. FIND STUDENT'S SECTION FOR THE ACTIVE SEMESTER
                 $studentSection = SectionStudent::where('student_id', $student->id)
                     ->where('academic_year_id', $activeSemester->academic_year_id)
                     ->where('semester', $semesterName)
                     ->first();
 
                 if ($studentSection) {
-                    // 3. GET SPECIFIC ENROLLMENTS FOR THIS SEMESTER
                     $enrolledCourseIds = Enrollment::where('student_id', $student->id)
                         ->where('academic_year_id', $activeSemester->academic_year_id)
                         ->where('semester', $semesterName)
                         ->pluck('course_id');
 
-                    // 4. GET COURSE BLOCKS (SCHEDULE)
                     $upcomingSchedule = CourseBlock::with(['course', 'faculty'])
                         ->where('section_id', $studentSection->section_id)
                         ->where('academic_year_id', $activeSemester->academic_year_id)
@@ -110,10 +110,12 @@ class DashboardController extends Controller
                         ->whereIn('course_id', $enrolledCourseIds)
                         ->get();
                 }
+
+               
             }
 
             $studentData = [
-                'enrolledCourses' => $student->enrollments, // Keep all for GPA
+                'enrolledCourses' => $student->enrollments,
                 'currentGPA' => $this->calculateGPA($student->enrollments), 
                 'totalCredits' => $student->enrollments->sum('course.credits'),
                 'upcomingSchedule' => $upcomingSchedule,
@@ -122,6 +124,8 @@ class DashboardController extends Controller
             ];
         }
         else { 
+
+          
             $staffData['totalStudents'] = Student::count();
             $staffData['totalCourses'] = Course::count();
             $staffData['totalEnrollments'] = Enrollment::count();
@@ -135,10 +139,11 @@ class DashboardController extends Controller
             $staffData['recentCourses'] = Course::latest()->take(5)->get();
 
             $staffData['myCourses'] = collect();
-            if ($user->employee) {
-                $currentAY = AcademicYear::orderBy('start_year', 'desc')->first();
+            if ($user->employee && $activeSemester) {
+                // REVISED: Filter by active Academic Year AND Active Semester name
                 $staffData['myCourses'] = CourseBlock::where('faculty_id', $user->employee->id)
-                    ->where('academic_year_id', $currentAY->id ?? null)
+                    ->where('academic_year_id', $activeSemester->academic_year_id)
+                    ->where('semester', $semesterName) // Filter by active semester name
                     ->with(['course', 'section.program'])
                     ->get()
                     ->groupBy(fn($item) => $item->course_id . '-' . $item->schedule_string)

@@ -19,6 +19,18 @@ class Student extends Model
         'email',
         'date_of_birth',
         'section_id',
+
+        'gender',           // Added
+        'birthday',         // Added
+        'requirements_submitted', // Added
+        'is_fully_enrolled',      // Added
+        'enrollment_status'       // Added
+    ];
+
+    protected $casts = [
+        'requirements_submitted' => 'array',
+        'birthday' => 'date',
+        'is_fully_enrolled' => 'boolean',
     ];
 
     /**
@@ -37,6 +49,15 @@ class Student extends Model
         return $this->belongsTo(Section::class);
     }
 
+    // app/Models/Student.php
+
+    public function sections()
+    {
+        return $this->belongsToMany(Section::class, 'section_student')
+                    ->withPivot('academic_year_id', 'semester', 'status') // ADD 'status' HERE
+                    ->withTimestamps();
+    }
+
     // Define many-to-many relationship with Course through Enrollment
     public function courses()
     {
@@ -51,16 +72,7 @@ class Student extends Model
         return $this->hasMany(Enrollment::class);
     }
 
-    /**
-     * Relationship with Section (Many-to-Many)
-     * This links to your new section_student pivot table
-     */
-    public function sections()
-    {
-        return $this->belongsToMany(Section::class, 'section_student')
-                    ->withPivot('academic_year_id', 'semester')
-                    ->withTimestamps();
-    }
+  
 
 
    

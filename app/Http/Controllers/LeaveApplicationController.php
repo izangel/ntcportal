@@ -17,6 +17,9 @@ use App\Notifications\LeaveApplicationSubmittedForAdmin;
 use App\Models\LeaveType;
 use App\Models\LeaveApplicationClass; 
 
+use App\Exports\LeaveApplicationsExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 class LeaveApplicationController extends Controller
 {
     // Apply middleware if you want to restrict access to authenticated users
@@ -131,33 +134,39 @@ class LeaveApplicationController extends Controller
     /**
      * Show the form for creating a new leave application.
      */
-    public function create()
-    {
-        $leaveTypes = LeaveType::orderBy('name')->get(); // Get all programs for the dropdown
+   public function create()
+{
+    $leaveTypes = LeaveType::orderBy('name')->get();
+    
+    // Crucial fix: even in personal mode, pass an empty collection for $employees 
+    // to prevent the "Undefined variable" error in the blade.
+    $employees = collect(); 
 
+    $loggedInEmployee = null;
+    $remainingCredits = null;
 
-        // Fetch all employees (if needed for other dropdowns, otherwise not strictly necessary)
-        $employees = Employee::orderBy('last_name')->get();
-
-        
-
-        // Fetch employees with 'teacher' role for the substitute dropdown
-        $teachers = Employee::where('role', '!=', 'staff')
-                     ->where('user_id', '!=', Auth::id())
-                     ->orderBy('last_name')->get();
-
-        // Fetch employees with 'staff' role for the personnel to take over dropdown
-        $staffPersonnel = Employee::where('user_id',  '!=', Auth::id())->orderBy('last_name')->get();
-
-        $loggedInEmployee = null;
-        $remainingCredits = null;
-        if (Auth::check() && Auth::user()->employee) {
-            $loggedInEmployee = Auth::user()->employee;
-            $remainingCredits = $loggedInEmployee->getRemainingLeaveCredits();
-        }
-
-        return view('leave_applications.create', compact('employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'leaveTypes', 'remainingCredits'));
+    if (Auth::check() && Auth::user()->employee) {
+        $loggedInEmployee = Auth::user()->employee;
+        $remainingCredits = $loggedInEmployee->getRemainingLeaveCredits();
     }
+
+    // Required for the teacher/staff sections of the form
+    $teachers = Employee::where('role', '!=', 'staff')
+                 ->where('user_id', '!=', Auth::id())
+                 ->orderBy('last_name')->get();
+
+    $staffPersonnel = Employee::where('user_id', '!=', Auth::id())->orderBy('last_name')->get();
+
+    // Flag to tell the form: "Display personal info, NOT the admin tools"
+    $isHrRecordingMode = false;
+
+    return view('leave_applications.create', compact(
+        'employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 
+        'leaveTypes', 'remainingCredits', 'isHrRecordingMode'
+    ));
+}
+
+    
 
     /**
  * Calculate total days including weekends but excluding hardcoded holidays.
@@ -208,33 +217,44 @@ private function calculateWorkDays($startDate, $endDate)
     return $totalDays - count($holidaysInRange);
 }
 
-    public function store(Request $request)
+   public function store(Request $request)
 {
+    // 1. Determine the "Mode"
+    // isHrRole: Does the user have the power?
+    // isSelfFiling: Is the user the TARGET of the leave?
+    $isHrRole = auth()->user()->hasRole('hr');
+    $isSelfFiling = (auth()->user()->employee->id == $request->employee_id);
+
+    // HR Direct Recording is ONLY true if HR is filing for someone ELSE
+    $isHrDirectRecording = ($isHrRole && !$isSelfFiling);
+
+    // 2. Dynamic Validation Rules
     $rules = [
-        'employee_id' => 'required|exists:employees,id',
-        'leave_type_id' => 'required',
-        'reason' => 'required|string|max:1000',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-        'tasks_endorsed' => 'nullable|string|max:1000',
-        'personnel_to_take_over_id' => 'nullable|exists:employees,id',
-        'acknowledgement_personnel_take_over_signature' => 'nullable|string|max:255',
+        'employee_id'   => 'required|exists:employees,id',
+        'leave_type_id' => 'required|exists:leave_types,id',
+        'reason'        => 'required|string|max:1000',
+        'start_date'    => 'required|date',
+        'end_date'      => 'required|date|after_or_equal:start_date',
     ];
 
-    $rules['classes_data'] = 'nullable|array';
-    $rules['classes_data.*.course_code'] = 'nullable|string|max:255';
-    $rules['classes_data.*.title'] = 'nullable|string|max:255';
-    $rules['classes_data.*.day_time_room'] = 'nullable|string|max:255';
-    $rules['classes_data.*.topics'] = 'nullable|string|max:1000';
-    $rules['classes_data.*.substitute_teacher_id'] = 'nullable|exists:employees,id';
-    $rules['classes_data.*.acknowledgement_signature'] = 'nullable|string|max:255';
+    if ($isHrDirectRecording) {
+        // HR Admin Mode: Approval Status is mandatory
+        $rules['approval_status'] = 'required|in:pending,approved_with_pay,approved_without_pay,rejected';
+        $rules['hr_remarks']      = 'nullable|string|max:500';
+    } else {
+        // Personal Mode (Employee or HR filing for self): Usual requirements
+        $rules['tasks_endorsed'] = 'nullable|string|max:1000';
+        $rules['personnel_to_take_over_id'] = 'nullable|exists:employees,id';
+        $rules['classes_data'] = 'nullable|array';
+    }
 
     $validatedData = $request->validate($rules);
 
-    // Use the helper method
+    // 3. System Calculations
     $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
-    
-    // Check leave credits availability
+    $validatedData['date_filed'] = now();
+
+    // 4. Employee Credit Validation
     $employee = Employee::find($validatedData['employee_id']);
     $leaveType = LeaveType::find($validatedData['leave_type_id']);
     
@@ -243,63 +263,74 @@ private function calculateWorkDays($startDate, $endDate)
         $creditColumn = strtolower(str_replace(' ', '_', $leaveType->name));
         $availableCredits = $remainingCredits[$creditColumn] ?? 0;
         
-        // Block if NO credits available
-        if ($availableCredits <= 0) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "Insufficient leave credits for {$leaveType->name}. You have 0 days available. Cannot file leave application.");
+        // Only block submission if it's NOT an HR Admin recording
+        if (!$isHrDirectRecording && $availableCredits < $validatedData['total_days']) {
+            return redirect()->back()->withInput()
+                ->with('error', "Insufficient credits. Available: {$availableCredits}, Requested: {$validatedData['total_days']}");
         }
-        
-        // Block if requested days exceed available credits
-        if ($availableCredits < $validatedData['total_days']) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', "Insufficient leave credits for {$leaveType->name}. Available: {$availableCredits} days, Requested: {$validatedData['total_days']} days. Please adjust your dates.");
-        }
-    } else {
-        return redirect()->back()
-            ->withInput()
-            ->with('error', "Invalid employee or leave type.");
     }
-    
-    $validatedData['date_filed'] = Carbon::now();
-    $validatedData['approval_status'] = 'pending';
 
-    if($employee->role ==='staff')
-        $validatedData['ah_status'] = 'approved';  // Initialize Academic Head status as pending
-    else
-        $validatedData['ah_status'] = 'pending';  // Initialize Academic Head status as pending
+    // 5. Workflow Logic & Signature Bypass
+    if ($isHrDirectRecording) {
+        // SCENARIO A: HR filing for others (Admin Bypass)
+        $validatedData['approval_status'] = $request->approval_status;
+        $validatedData['ah_status']       = 'approved'; 
+        $validatedData['hr_status']       = 'approved';
+        $validatedData['admin_status']    = 'approved';
+        
+        // Set Audit Trail
+        $hrName = auth()->user()->employee->first_name . ' ' . auth()->user()->employee->last_name;
+        $manualNote = $request->hr_remarks ? " - " . $request->hr_remarks : "";
+        $validatedData['hr_remarks'] = "Recorded by HR ({$hrName}) on " . now()->format('M d, Y') . $manualNote;
 
-    $validatedData['hr_status'] = 'pending';  // Initialize HR status as pending
-    $validatedData['admin_status'] = 'pending';  // Initialize Admin status as pending
+        $validatedData['hr_approved_by'] = auth()->user()->employee->id;
+        $validatedData['hr_approved_at'] = now();
+    } else {
+        // SCENARIO B: Regular filing (Employee OR HR for self)
+        $validatedData['approval_status'] = 'pending';
+        $validatedData['hr_status']       = 'pending';
+        $validatedData['admin_status']    = 'pending';
+        
+        // Staff bypass Academic Head, Teachers don't
+        $validatedData['ah_status'] = ($employee->role === 'staff') ? 'approved' : 'pending';
+        $validatedData['hr_remarks'] = "Self-filed";
+    }
 
+    // 6. Save Data
     $classesToSave = $validatedData['classes_data'] ?? [];
     unset($validatedData['classes_data']);
-
+    
     $leaveApplication = LeaveApplication::create($validatedData);
 
-    foreach ($classesToSave as $classData) {
-        if (array_filter($classData)) {
-            $leaveApplicationClass = $leaveApplication->classesToMiss()->create($classData);
-            if ($leaveApplicationClass->substitute_teacher_id) {
-                $substituteTeacher = $leaveApplicationClass->substituteTeacher;
-                if ($substituteTeacher && $substituteTeacher->user) {
-                    $substituteTeacher->user->notify(new SubstituteTeacherAssignment($leaveApplicationClass, $leaveApplication->employee->name));
+    // 7. Notification Logic
+    if (!$isHrDirectRecording) {
+        // Only send emails/notifs if it's a standard request
+        
+        // Handle Substitutes
+        if (!empty($classesToSave)) {
+            foreach ($classesToSave as $classData) {
+                if (array_filter($classData)) {
+                    $leaveClass = $leaveApplication->classesToMiss()->create($classData);
+                    if ($leaveClass->substitute_teacher_id && $leaveClass->substituteTeacher->user) {
+                        $leaveClass->substituteTeacher->user->notify(new SubstituteTeacherAssignment($leaveClass, $employee->name));
+                    }
                 }
             }
         }
+
+        // Notify Signatories
+        if ($employee->role === 'staff') {
+            $hrHeads = User::whereHas('employee', function ($q) { $q->where('role', 'hr'); })->get();
+            foreach ($hrHeads as $hr) { $hr->notify(new LeaveApplicationSubmittedForHR($leaveApplication)); }
+        } else {
+            $academicHeads = User::whereHas('employee', function ($q) { $q->where('role', 'academic_head'); })->get();
+            foreach ($academicHeads as $ah) { $ah->notify(new LeaveApplicationSubmittedForAH($leaveApplication)); }
+        }
     }
 
-    $user = Auth::user();
-    if ($user->hasRole('staff')){
-        $hrHeads = User::whereHas('employee', function ($query) { $query->where('role', 'hr'); })->get();
-        foreach ($hrHeads as $hrUser) { $hrUser->notify(new LeaveApplicationSubmittedForHR($leaveApplication)); }
-    } else {
-        $academicHeads = User::whereHas('employee', function ($query) { $query->where('role', 'academic_head'); })->get();
-        foreach ($academicHeads as $ahUser) { $ahUser->notify(new LeaveApplicationSubmittedForAH($leaveApplication)); }
-    }
-
-    return redirect()->route('leave_applications.index')->with('success', 'Leave application submitted successfully.');
+    // 8. Redirect based on role
+    $route = $isHrDirectRecording ? 'hr.leave_applications.all' : 'leave_applications.index';
+    return redirect()->route($route)->with('success', 'Leave record processed successfully.');
 }
 
     public function leaveSummary(Request $request)
@@ -336,39 +367,47 @@ private function calculateWorkDays($startDate, $endDate)
     ]);
 }
    
+public function edit(LeaveApplication $leaveApplication)
+{
+    $leaveTypes = LeaveType::orderBy('name')->get();
 
-    public function edit(LeaveApplication $leaveApplication)
-    {
-        $leaveTypes = LeaveType::orderBy('name')->get(); // Get all programs for the dropdown
+    // Eager load relationships
+    $leaveApplication->load(['employee', 'classesToMiss.acknowledgedBy']);
 
+    $employees = Employee::orderBy('last_name')->get();
 
-        // Eager load relationships for the form, including the acknowledgedBy for display
-        $leaveApplication->load(['employee', 'classesToMiss.acknowledgedBy']);
+    $teachers = Employee::where('role', '!=', 'staff')
+                 ->where('user_id', '!=', Auth::id())
+                 ->orderBy('last_name')->get();
 
-        $employees = Employee::orderBy('last_name')->get();
+    $staffPersonnel = Employee::where('role', 'staff')->orderBy('last_name')->get();
 
-         // Fetch employees with 'teacher' role for the substitute dropdown
-        $teachers = Employee::where('role', '!=', 'staff')
-                     ->where('user_id', '!=', Auth::id())
-                     ->orderBy('last_name')->get();
+    $loggedInEmployee = Auth::user()->employee;
+    $remainingCredits = $loggedInEmployee ? $loggedInEmployee->getRemainingLeaveCredits() : [];
 
-        $staffPersonnel = Employee::where('role', 'staff')->orderBy('last_name')->get();
+    // --- ADD THIS LINE ---
+    // Check if the person editing is HR and NOT editing their own leave
+    $isHrRecordingMode = Auth::user()->hasRole('hr') && ($leaveApplication->employee_id !== $loggedInEmployee->id);
 
-        $loggedInEmployee = null;
-        if (Auth::check() && Auth::user()->employee) {
-            $loggedInEmployee = Auth::user()->employee;
-        }
+    // Map existing classes for display
+    $existingClasses = $leaveApplication->classesToMiss->map(function ($class) {
+        $data = $class->toArray();
+        $data['acknowledged_by_name'] = $class->acknowledgedBy ? $class->acknowledgedBy->name : null;
+        return $data;
+    })->toArray();
 
-        // Map existing classes to include acknowledgedBy name for Blade display
-        $existingClasses = $leaveApplication->classesToMiss->map(function ($class) {
-            $data = $class->toArray();
-            $data['acknowledged_by_name'] = $class->acknowledgedBy ? $class->acknowledgedBy->name : null;
-            return $data;
-        })->toArray();
-
-        return view('leave_applications.edit', compact('leaveApplication', 'employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 'existingClasses', 'leaveTypes'));
-    }
-
+    return view('leave_applications.edit', compact(
+        'leaveApplication', 
+        'employees', 
+        'loggedInEmployee', 
+        'teachers', 
+        'staffPersonnel', 
+        'existingClasses', 
+        'leaveTypes',
+        'remainingCredits', // Ensure this is passed
+        'isHrRecordingMode' // Ensure this is passed
+    ));
+}
    
 
     public function update(Request $request, LeaveApplication $leaveApplication)
@@ -471,4 +510,112 @@ private function calculateWorkDays($startDate, $endDate)
         $leaveApplication->delete();
         return redirect()->route('leave_applications.index')->with('success', 'Leave application deleted successfully.');
     }
+
+    /**
+ * Show form for HR to file leave for someone else
+ */
+public function createByHr()
+{
+    $employees = Employee::orderBy('last_name')->get();
+    $leaveTypes = LeaveType::orderBy('name')->get();
+    
+    // In Recording Mode, we want the dropdown to be empty by default
+    $loggedInEmployee = null; 
+    $remainingCredits = null; 
+
+    // HR doesn't need these sections in recording mode (as per your request)
+    $teachers = collect();
+    $staffPersonnel = collect();
+
+    // Flag to tell the form: "Display admin tools, NOT personal info"
+    $isHrRecordingMode = true;
+
+    return view('leave_applications.create', compact(
+        'employees', 'loggedInEmployee', 'teachers', 'staffPersonnel', 
+        'leaveTypes', 'remainingCredits', 'isHrRecordingMode'
+    ));
+}
+
+/**
+ * Store logic specifically for HR filing
+ */
+public function storeByHr(Request $request)
+{
+    // Use your existing validation logic but make employee_id required and selectable
+    $rules = [
+        'employee_id' => 'required|exists:employees,id',
+        'leave_type_id' => 'required',
+        'reason' => 'required|string|max:1000',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ];
+
+    $validatedData = $request->validate($rules);
+    
+    // Calculate days using your existing private method
+    $validatedData['total_days'] = $this->calculateWorkDays($request->start_date, $request->end_date);
+    $validatedData['date_filed'] = Carbon::now();
+    
+    // HR Specific logic: Auto-approve HR stage
+    $validatedData['hr_status'] = 'approved';
+    $validatedData['hr_approved_at'] = now();
+    $validatedData['hr_approved_by'] = Auth::user()->employee->id;
+    $validatedData['approval_status'] = 'pending'; // Still needs Admin/Final approval
+    
+    // Check if employee is staff to bypass AH
+    $employee = Employee::find($request->employee_id);
+    $validatedData['ah_status'] = ($employee->role === 'staff') ? 'approved' : 'pending';
+
+    $leaveApplication = LeaveApplication::create($validatedData);
+
+    return redirect()->route('leave_applications.all')
+        ->with('success', 'Leave filed successfully for ' . $employee->full_name);
+}
+
+public function getEmployeeCredits($id)
+{
+    $employee = Employee::findOrFail($id);
+    return response()->json($employee->getRemainingLeaveCredits());
+}
+
+public function creditsSummary(Request $request)
+{
+    // 1. Get all employees with their related user data
+    $query = Employee::query();
+
+    // Optional: Search by name
+    if ($request->has('search')) {
+        $query->where('last_name', 'like', '%' . $request->search . '%')
+              ->orWhere('first_name', 'like', '%' . $request->search . '%');
+    }
+
+    $employees = $query->orderBy('last_name')->paginate(15);
+
+    // 2. Map the credits for each employee
+    $summary = $employees->getCollection()->map(function ($employee) {
+        return [
+            'id' => $employee->id,
+            'name' => "{$employee->last_name}, {$employee->first_name}",
+            'role' => $employee->role,
+            'credits' => $employee->getRemainingLeaveCredits(), // Uses your existing logic
+        ];
+    });
+
+    return view('admin.credits_summary', compact('summary', 'employees'));
+}
+
+public function exportExcel(Request $request)
+{
+    $start = $request->query('start_date');
+    $end = $request->query('end_date');
+
+    $fileName = 'Leave_Report';
+    if ($start && $end) {
+        $fileName .= "_{$start}_to_{$end}";
+    }
+    $fileName .= '.xlsx';
+
+    return Excel::download(new LeaveApplicationsExport($start, $end), $fileName);
+}
+
 }

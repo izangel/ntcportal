@@ -11,22 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('settings', function (Blueprint $table) {
-            $table->id();
-            $table->string('key')->unique();
-            $table->text('value')->nullable();
-            $table->string('description')->nullable();
-            $table->timestamps();
-        });
+        // Schema::create('settings', function (Blueprint $table) {
+        //     $table->id();
+        //     $table->string('key')->unique();
+        //     $table->text('value')->nullable();
+        //     $table->string('description')->nullable();
+        //     $table->timestamps();
+        // });
 
-        // Insert default candidacy Google Drive link
-        \DB::table('settings')->insert([
-            'key' => 'candidacy_google_drive_link',
-            'value' => 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F',
-            'description' => 'Google Drive folder link for candidacy student ID uploads',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // // Insert default candidacy Google Drive link
+        // \DB::table('settings')->insert([
+        //     'key' => 'candidacy_google_drive_link',
+        //     'value' => 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F',
+        //     'description' => 'Google Drive folder link for candidacy student ID uploads',
+        //     'created_at' => now(),
+        //     'updated_at' => now(),
+        // ]);
     }
 
     /**

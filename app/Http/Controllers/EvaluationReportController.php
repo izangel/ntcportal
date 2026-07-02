@@ -161,45 +161,73 @@ class EvaluationReportController extends Controller
 
 public function studentCompliance(Request $request)
 {
-    // 1. Get Active Period (or filtered)
+    // 1. Setup Period Context
     $activeSemester = Semester::where('is_active', 1)->first();
     $ayId = $request->academic_year_id ?? ($activeSemester->academic_year_id ?? null);
     $semesterInput = $request->semester ?? ($activeSemester->name ?? 'First Semester');
+    $sectionFilter = $request->section_id;
 
-    // 2. Resolve short name for CourseBlock matching (1st, 2nd, etc.)
+    // Normalize to "1st", "2nd" for database LIKE queries
     $shortSemester = str_contains($semesterInput, 'First') ? '1st' : (str_contains($semesterInput, 'Second') ? '2nd' : 'Summer');
-
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
-    // 3. Fetch all students and map their progress
-    $students = Student::orderBy('last_name', 'asc')->get()->map(function($student) use ($ayId, $shortSemester) {
-        
-        // Find enrolled course blocks for this specific period
-        // Logic matches your StudentEvaluationController@index
-        $courseLoad = \App\Models\CourseBlock::join('student_courseblock', 'course_blocks.id', '=', 'student_courseblock.course_block_id')
-            ->where('student_courseblock.student_id', $student->id)
-            ->where('course_blocks.academic_year_id', $ayId)
-            ->where('course_blocks.semester', 'LIKE', $shortSemester . '%')
-            ->select('course_blocks.id')
-            ->get();
+    // 2. Fetch Available Sections for the Dropdown
+    $availableSections = \App\Models\Section::join('section_student', 'sections.id', '=', 'section_student.section_id')
+        ->where('section_student.academic_year_id', $ayId)
+        ->where('section_student.semester', 'LIKE', $shortSemester . '%')
+        ->select('sections.id', 'sections.name')
+        ->distinct()
+        ->orderBy('sections.name', 'asc')
+        ->get();
 
-        $totalSubjects = $courseLoad->count();
-        $courseBlockIds = $courseLoad->pluck('id');
+    // 3. Build Student Compliance Query
+    $query = Student::query()
+        ->leftJoin('section_student', function($join) use ($ayId, $shortSemester) {
+            $join->on('students.id', '=', 'section_student.student_id')
+                 ->where('section_student.academic_year_id', $ayId)
+                 ->where('section_student.semester', 'LIKE', $shortSemester . '%');
+        })
+        ->leftJoin('sections', 'section_student.section_id', '=', 'sections.id')
+        ->select('students.*', 'sections.name as current_section_name', 'sections.id as current_section_id');
 
-        // Check how many of those IDs exist in the FacultyEvaluation table for this student
-        $completedCount = \App\Models\FacultyEvaluation::where('student_id', $student->id)
-            ->whereIn('course_block_id', $courseBlockIds)
-            ->count();
+    // Apply server-side Section filter
+    if ($request->filled('section_id')) {
+        $query->where('sections.id', $request->section_id);
+    }
 
-        $student->total_subjects = $totalSubjects;
-        $student->completed_count = $completedCount;
-        $student->is_complete = ($totalSubjects > 0 && $totalSubjects === $completedCount);
-        
-        return $student;
-    });
+    $students = $query->orderBy('sections.name', 'asc')
+        ->orderBy('students.last_name', 'asc')
+        ->get()
+        ->map(function($student) use ($ayId, $shortSemester) {
+            
+            // Fetch the specific course load for this student
+            $courseLoad = \App\Models\CourseBlock::with(['course', 'faculty'])
+                ->join('student_courseblock', 'course_blocks.id', '=', 'student_courseblock.course_block_id')
+                ->where('student_courseblock.student_id', $student->id)
+                ->where('course_blocks.academic_year_id', $ayId)
+                ->where('course_blocks.semester', 'LIKE', $shortSemester . '%')
+                ->select('course_blocks.*')
+                ->get();
 
-    return view('faculty.reports.student_compliance', compact('students', 'academicYears', 'ayId', 'semesterInput'));
+            // Cross-reference with FacultyEvaluations
+            $student->subjects = $courseLoad->map(function($block) use ($student) {
+                $block->has_been_evaluated = \App\Models\FacultyEvaluation::where([
+                    'student_id' => $student->id,
+                    'course_block_id' => $block->id
+                ])->exists();
+                return $block;
+            });
+
+            $student->total_subjects = $student->subjects->count();
+            $student->completed_count = $student->subjects->where('has_been_evaluated', true)->count();
+            $student->is_complete = ($student->total_subjects > 0 && $student->total_subjects === $student->completed_count);
+            
+            return $student;
+        });
+
+    return view('faculty.reports.student_compliance', compact(
+        'students', 'academicYears', 'availableSections', 'ayId', 'semesterInput', 'sectionFilter'
+    ));
 }
-
 
 }

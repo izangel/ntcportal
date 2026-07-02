@@ -6,7 +6,7 @@
         
         <div class="bg-white rounded-2xl border border-gray-200 p-6 mb-6 shadow-sm">
             <h1 class="text-xl font-bold text-gray-900">Self-Evaluation Form</h1>
-            <p class="text-sm text-gray-500">Reflect on your performance for <span class="font-bold text-indigo-600">{{ $currentAY->name }} - {{ $currentSemester }} Semester</span></p>
+            <p class="text-sm text-gray-500">Reflect on your performance for AY <span class="font-bold text-indigo-600">{{ $currentAY->start_year }} - {{ $currentAY->end_year }},  {{ $currentSemester }} </span></p>
         </div>
 
         <form action="{{ route('faculty.self-evaluations.store') }}" method="POST">

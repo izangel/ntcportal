@@ -145,6 +145,28 @@ class ReportController extends Controller
                   ->where('section_student.semester', $semester);
         })->orderBy('last_name', 'asc')->get();
 
+      
+
         return view('reports.class_list', compact('section', 'students', 'ay', 'semester'));
     }
+
+    // app/Http/Controllers/ReportController.php
+
+    public function classListPerSubj($course_block_id, $academic_year_id = null, $semester = null)
+    {
+        // If you only have the course_block_id, that is enough to find the students
+        $block = \App\Models\CourseBlock::with(['course', 'faculty', 'academicYear'])
+            ->findOrFail($course_block_id);
+
+        $students = \App\Models\Student::join('student_courseblock', 'students.id', '=', 'student_courseblock.student_id')
+            ->where('student_courseblock.course_block_id', $course_block_id)
+            ->orderBy('students.last_name', 'asc')
+            ->select('students.*')
+            ->get();
+
+        return view('reports.class-list', compact('block', 'students'));
+    }
+
+
+
 }

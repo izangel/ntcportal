@@ -1,5 +1,6 @@
 @extends('layouts.admin')
 
+
 @section('content')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -17,13 +18,15 @@
                     <span>{{ $semester }} Semester</span>
                 </div>
             </div>
+
             <div class="text-right">
                 <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mb-1">Institutional Score</p>
                 <div class="text-5xl font-black text-indigo-600 leading-none">{{ number_format($overallScore, 2) }}</div>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 print:grid-cols-4">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8 print:grid-cols-5">
+            {{-- Category Cards --}}
             @foreach(['student', 'peer', 'supervisor', 'self'] as $type)
                 @php $data = $breakdown[$type]['meta'] ?? null; @endphp
                 <div class="bg-white border-2 border-gray-100 p-5 rounded-2xl print:border-gray-200">
@@ -34,6 +37,43 @@
                     </div>
                 </div>
             @endforeach
+
+            {{-- Institutional Adjectival Rating Card --}}
+            @php
+                $score = (float)$overallScore;
+                if ($score >= 4.50) { $label = 'Outstanding'; $colorClass = 'text-emerald-700 bg-emerald-50 border-emerald-200 print:bg-emerald-50'; }
+                elseif ($score >= 3.50) { $label = 'Very Satisfactory'; $colorClass = 'text-blue-700 bg-blue-50 border-blue-200 print:bg-blue-50'; }
+                elseif ($score >= 2.50) { $label = 'Satisfactory'; $colorClass = 'text-amber-700 bg-amber-50 border-amber-200 print:bg-amber-50'; }
+                elseif ($score >= 1.50) { $label = 'Unsatisfactory'; $colorClass = 'text-orange-700 bg-orange-50 border-orange-200 print:bg-orange-50'; }
+                else { $label = 'Poor'; $colorClass = 'text-red-700 bg-red-50 border-red-200 print:bg-red-50'; }
+            @endphp
+
+            <div class="border-2 p-5 rounded-2xl flex flex-col justify-center items-center text-center shadow-sm {{ $colorClass }} print:border-gray-300 print:shadow-none" style="-webkit-print-color-adjust: exact;">
+                <p class="text-[9px] font-black uppercase tracking-widest mb-1 opacity-70">Institutional Rating</p>
+                <h4 class="text-lg font-black leading-tight uppercase tracking-tighter">
+                    {{ $label }}
+                </h4>
+                <p class="text-[10px] font-bold mt-1 opacity-80">Score: {{ number_format($score, 2) }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-8 shadow-sm">
+            <table class="w-full text-left text-[10px]">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th class="px-4 py-2 font-black text-gray-400 uppercase">Range</th>
+                        <th class="px-4 py-2 font-black text-gray-400 uppercase">Adjectival Rating</th>
+                        <th class="px-4 py-2 font-black text-gray-400 uppercase">Standard Description</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    <tr><td class="px-4 py-2 font-bold">4.50 – 5.00</td><td class="px-4 py-2 font-black text-emerald-600">OUTSTANDING</td><td class="px-4 py-2 text-gray-500 italic">Performance consistently exceeds all standards.</td></tr>
+                    <tr><td class="px-4 py-2 font-bold">3.50 – 4.49</td><td class="px-4 py-2 font-black text-blue-600">VERY SATISFACTORY</td><td class="px-4 py-2 text-gray-500 italic">Performance consistently meets standards.</td></tr>
+                    <tr><td class="px-4 py-2 font-bold">2.50 – 3.49</td><td class="px-4 py-2 font-black text-amber-600">SATISFACTORY</td><td class="px-4 py-2 text-gray-500 italic">Performance meets basic standards.</td></tr>
+                    <tr><td class="px-4 py-2 font-bold">1.50 – 2.49</td><td class="px-4 py-2 font-black text-orange-600">UNSATISFACTORY</td><td class="px-4 py-2 text-gray-500 italic">Needs improvement in key areas.</td></tr>
+                    <tr><td class="px-4 py-2 font-bold">1.00 – 1.49</td><td class="px-4 py-2 font-black text-red-600">POOR</td><td class="px-4 py-2 text-gray-500 italic">Performance is below acceptable standards.</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 page-break-avoid">
@@ -78,7 +118,7 @@
                     <div class="h-px flex-1 bg-gray-200"></div>
                 </div>
 
-                @if(isset($breakdown[$type]))
+                @if(!empty($breakdown[$type]['questions']) && is_array($breakdown[$type]['questions']))
                     <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-6 page-break-avoid">
                         <table class="w-full text-left">
                             <thead>
@@ -102,7 +142,7 @@
 </tbody>
                         </table>
                     </div>
-
+                    @if(!empty($breakdown[$type]['meta']['feedback']))
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
                         @foreach($breakdown[$type]['meta']['feedback'] as $fb)
                             @php
@@ -123,6 +163,7 @@
                             @endif
                         @endforeach
                     </div>
+                     @endif
                 @else
                     <p class="text-sm italic text-gray-400">No data submitted for this category.</p>
                 @endif
@@ -160,36 +201,51 @@
 </style>
 
 <script>
-    document.addEventListener('alpine:init', () => {
-        const ctx = document.getElementById('comparisonChart').getContext('2d');
+    document.addEventListener('DOMContentLoaded', () => {
+        const ctx = document.getElementById('comparisonChart');
+        if (!ctx) return;
+
+        // Safely get data from Laravel - ensuring they are numbers
+        const chartData = [
+            {{ floatval($breakdown['student']['meta']['average'] ?? 0) }},
+            {{ floatval($breakdown['peer']['meta']['average'] ?? 0) }},
+            {{ floatval($breakdown['supervisor']['meta']['average'] ?? 0) }},
+            {{ floatval($breakdown['self']['meta']['average'] ?? 0) }}
+        ];
+
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['STUDENTS', 'PEERS', 'SUPERVISOR', 'SELF'],
                 datasets: [{
-                    data: [
-                        {{ $breakdown['student']['meta']['average'] ?? 0 }},
-                        {{ $breakdown['peer']['meta']['average'] ?? 0 }},
-                        {{ $breakdown['supervisor']['meta']['average'] ?? 0 }},
-                        {{ $breakdown['self']['meta']['average'] ?? 0 }}
-                    ],
+                    data: chartData,
                     backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#374151'],
-                    borderRadius: 4
+                    borderRadius: 6
                 }]
             },
             options: { 
-                scales: { y: { beginAtZero: true, max: 5 } },
-                plugins: { legend: { display: false } }
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { 
+                    y: { 
+                        beginAtZero: true, 
+                        max: 5,
+                        grid: { display: false }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                },
+                plugins: { 
+                    legend: { display: false } 
+                }
             }
         });
     });
 
-
-function generateCompactPrint() {
-    // 1. Data Retrieval
+    function generateCompactPrint() {
+    // 1. Capture data from Laravel
     const rawData = @json($breakdown);
-    
-    // Variables from Laravel
     const teacherName = @json(auth()->user()->employee->first_name . ' ' . auth()->user()->employee->last_name);
     const academicYear = @json($academicYear->start_year . '-' . $academicYear->end_year);
     const semester = @json($semester);
@@ -200,15 +256,24 @@ function generateCompactPrint() {
         return;
     }
 
+    // 2. Determine Adjectival Rating based on Overall Score
+    const scoreNum = parseFloat(overallScore);
+    let institutionalRating = "";
+    if (scoreNum >= 4.50) institutionalRating = "Outstanding";
+    else if (scoreNum >= 3.50) institutionalRating = "Very Satisfactory";
+    else if (scoreNum >= 2.50) institutionalRating = "Satisfactory";
+    else if (scoreNum >= 1.50) institutionalRating = "Unsatisfactory";
+    else institutionalRating = "Poor";
+
     const printWindow = window.open('', '_blank', 'width=950,height=1000');
     if (!printWindow) {
         alert("Please allow popups for this website.");
         return;
     }
 
-    // Sequence: Self -> Peer -> Supervisor -> Student
     const categoriesOrder = ['self', 'peer', 'supervisor', 'student'];
 
+    // 3. Start building the HTML document
     let htmlContent = `
         <!DOCTYPE html>
         <html>
@@ -217,38 +282,26 @@ function generateCompactPrint() {
             <style>
                 @page { size: portrait; margin: 10mm; }
                 body { font-family: 'Arial', sans-serif; font-size: 8pt; line-height: 1.2; color: #000; margin: 0; padding: 0; }
-                
-                /* Header Section */
                 .report-header { border-bottom: 2.5px solid #000; padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end; }
-                .teacher-info h1 { margin: 0; font-size: 14pt; text-transform: uppercase; font-weight: 900; letter-spacing: -0.5px; }
-                .teacher-info p { margin: 2px 0 0 0; font-size: 9pt; font-weight: bold; color: #444; text-transform: uppercase; }
-                
+                .teacher-info h1 { margin: 0; font-size: 14pt; text-transform: uppercase; font-weight: 900; }
                 .score-display { text-align: right; }
-                .score-label { font-size: 7pt; font-weight: 900; color: #666; margin-bottom: -2px; }
                 .score-value { font-size: 22pt; font-weight: 900; color: #4f46e5; }
-
-                /* Tables */
+                
                 .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
                 .summary-table th, .summary-table td { border: 1px solid #000; padding: 4px; text-align: center; }
-                .summary-table th { background: #f2f2f2; text-transform: uppercase; font-size: 6.5pt; letter-spacing: 0.5px; }
-                .summary-table td { font-size: 11pt; font-weight: 900; }
-
-                /* Layout Grid */
+                .summary-table th { background: #f9fafb; font-weight: 900; text-transform: uppercase; }
+                
                 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
                 .section { border: 0.75px solid #000; padding: 6px; break-inside: avoid; border-radius: 4px; }
-                .section-header { background: #f9fafb; font-weight: 900; text-transform: uppercase; font-size: 7.5pt; padding: 3px 6px; border-bottom: 0.75px solid #000; margin: -6px -6px 6px -6px; display: flex; justify-content: space-between; }
+                .section-header { background: #f9fafb; font-weight: 900; text-transform: uppercase; font-size: 7.5pt; padding: 3px 6px; border-bottom: 0.75px solid #000; margin-bottom: 6px; }
                 
                 .score-table { width: 100%; border-collapse: collapse; }
                 .score-table td { padding: 2px 0; border-bottom: 0.5px solid #eee; font-size: 7pt; }
-                .score-col { text-align: right; font-weight: bold; width: 35px; font-size: 8pt; }
                 
-                /* Qualitative Feedback Table */
-                .qual-title { text-transform: uppercase; font-size: 9pt; font-weight: 900; margin: 15px 0 6px 0; border-bottom: 1.5px solid #000; padding-bottom: 2px; }
-                .feedback-table { width: 100%; border-collapse: collapse; table-layout: fixed; border: 0.75px solid #000; }
-                .feedback-table th, .feedback-table td { border: 0.75px solid #000; padding: 5px; font-size: 7pt; vertical-align: top; word-wrap: break-word; line-height: 1.3; }
-                .feedback-table th { background: #f2f2f2; text-align: left; text-transform: uppercase; font-size: 6.5pt; }
-
-                .tag { font-size: 6.5pt; font-weight: 900; border: 1px solid #000; padding: 0 4px; border-radius: 2px; background: #fff; }
+                .qual-title { text-transform: uppercase; font-size: 9pt; font-weight: 900; margin: 15px 0 6px 0; border-bottom: 1.5px solid #000; }
+                .feedback-table { width: 100%; border-collapse: collapse; border: 0.75px solid #000; margin-bottom: 10px; }
+                .feedback-table th, .feedback-table td { border: 0.75px solid #000; padding: 5px; font-size: 7pt; vertical-align: top; }
+                th { background: #f9fafb; }
             </style>
         </head>
         <body>
@@ -258,21 +311,23 @@ function generateCompactPrint() {
                     <p>AY: ${academicYear} | ${semester} Semester</p>
                 </div>
                 <div class="score-display">
-                    <div class="score-label">OVERALL RATING</div>
+                    <div style="font-size: 9pt; font-weight: 900; text-transform: uppercase;">${institutionalRating}</div>
+                    <div style="font-size: 7pt; font-weight: 900; color: #666;">INSTITUTIONAL MEAN</div>
                     <div class="score-value">${overallScore}</div>
                 </div>
             </div>
 
             <table class="summary-table">
                 <thead>
-                    <tr>${categoriesOrder.map(type => `<th>${type} Mean</th>`).join('')}</tr>
+                    <tr>
+                        ${categoriesOrder.map(type => `<th>${type.toUpperCase()} Mean</th>`).join('')}
+                        <th style="background: #eee;">ADJECTIVAL RATING</th>
+                    </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        ${categoriesOrder.map(type => {
-                            const avg = rawData[type]?.meta?.average || 0;
-                            return `<td>${parseFloat(avg).toFixed(2)}</td>`;
-                        }).join('')}
+                        ${categoriesOrder.map(type => `<td>${(rawData[type]?.meta?.average || 0).toFixed(2)}</td>`).join('')}
+                        <td style="font-weight: 900;">${institutionalRating}</td>
                     </tr>
                 </tbody>
             </table>
@@ -280,135 +335,84 @@ function generateCompactPrint() {
             <div class="grid">
     `;
 
-    // Generate detailed category boxes
+    // Detailed Question Results
     categoriesOrder.forEach(type => {
         const cat = rawData[type];
-        if (cat && cat.meta) {
+        if (cat && cat.questions && cat.questions.length > 0) {
             htmlContent += `
                 <div class="section">
-                    <div class="section-header">
-                        <span>${type} Detailed Result</span>
-                        <span class="tag">n=${cat.meta.count || 0}</span>
-                    </div>
+                    <div class="section-header">${type} Detailed Result</div>
                     <table class="score-table">
-<<<<<<< HEAD
-                        ${cat.questions ? Object.entries(cat.questions).map(([q, val]) => `
+                        ${cat.questions.map(q => `
                             <tr>
-                                <td style="font-weight: bold; width: 15px; color: #444;">${q}</td>
-                                <td>Performance Criterion Result</td>
-                                <td class="score-col">${parseFloat(val).toFixed(2)}</td>
-=======
-                        ${cat.questions ? cat.questions.map(q => `
-                            <tr>
-                                <td style="font-weight: bold; width: 25px; color: #444;">${q.key}</td>
+                                <td style="font-weight: bold; width: 25px;">${q.key}</td>
                                 <td>${q.text}</td>
-                                <td class="score-col">${parseFloat(q.score).toFixed(2)}</td>
->>>>>>> origin/main
+                                <td style="text-align: right; font-weight: bold;">${parseFloat(q.score).toFixed(2)}</td>
                             </tr>
-                        `).join('') : ''}
+                        `).join('')}
                     </table>
                 </div>
             `;
         }
     });
 
-    htmlContent += `</div>`; // Close Grid
+    htmlContent += `</div>`;
 
-<<<<<<< HEAD
-    // --- Student Feedback Section ---
-    const studentCat = rawData['student'] || {};
-    const meta = studentCat.meta || {};
-    // Object.values ensures the loop works even if IDs are non-sequential
-    const studentFeedbackList = Object.values(meta.feedback || meta.comments || []);
-
-    htmlContent += `
-        <div class="qual-title">Detailed Student Qualitative Feedback</div>
-        <table class="feedback-table">
-            <thead>
-                <tr>
-                    <th style="width: 33%;">Strengths (What helped learning)</th>
-                    <th style="width: 33%;">Growth Areas (What to improve)</th>
-                    <th style="width: 34%;">Additional Comments</th>
-                </tr>
-            </thead>
-            <tbody>
-    `;
-
-    if (studentFeedbackList.length > 0) {
-        studentFeedbackList.forEach(f => {
-            // Only add the row if it's not completely empty
-            if (f.helped || f.improved || f.comments || f.Comments) {
-                htmlContent += `
-                    <tr>
-                        <td>${f.helped || '-'}</td>
-                        <td>${f.improved || '-'}</td>
-                        <td>${f.comments || f.Comments || '-'}</td>
-                    </tr>
-                `;
-            }
-        });
-    } else {
-        htmlContent += `<tr><td colspan="3" style="text-align:center; padding: 15px; color: #666;">No written feedback submitted by students.</td></tr>`;
-    }
-
-    htmlContent += `
-            </tbody>
-        </table>
-        
-        <div style="margin-top: 25px; border-top: 1px solid #000; pt: 5px; text-align: center; font-size: 6.5pt; color: #666; text-transform: uppercase; font-weight: bold;">
-=======
-    // --- Qualitative Feedback Section (All Categories) ---
+    // Qualitative Feedback (Strengths, Growth, Comments)
     categoriesOrder.forEach(type => {
         const cat = rawData[type] || {};
-        const meta = cat.meta || {};
-        const feedbackList = Object.values(meta.feedback || meta.comments || []);
-        
-        if (feedbackList.length > 0) {
-            const hasContent = feedbackList.some(f => f.helped || f.improved || f.comments || f.Comments);
-            
-            if (hasContent) {
-                htmlContent += `
-                    <div class="qual-title">${type.charAt(0).toUpperCase() + type.slice(1)} Qualitative Feedback</div>
-                    <table class="feedback-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 33%;">Strengths</th>
-                                <th style="width: 33%;">Growth Areas</th>
-                                <th style="width: 34%;">Comments</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
-                feedbackList.forEach(f => {
-                    if (f.helped || f.improved || f.comments || f.Comments) {
-                        htmlContent += `
+        const feedbackRaw = cat.meta?.feedback || [];
+        // Ensure data is an array (converts object to array if needed)
+        const feedbackList = Array.isArray(feedbackRaw) ? feedbackRaw : Object.values(feedbackRaw);
+
+        // Filter for entries that actually have content
+        const validFeedback = feedbackList.filter(f => 
+            (f.helped && f.helped !== '-') || 
+            (f.improved && f.improved !== '-') || 
+            (f.comments && f.comments !== '-') ||
+            (f.Comments && f.Comments !== '-')
+        );
+
+        if (validFeedback.length > 0) {
+            htmlContent += `
+                <div class="qual-title">${type} Qualitative Feedback</div>
+                <table class="feedback-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 33%;">Strengths</th>
+                            <th style="width: 33%;">Growth Areas</th>
+                            <th>Additional Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${validFeedback.map(f => {
+                            // Map both possible comment keys
+                            const finalComment = f.comments || f.Comments || '-';
+                            return `
                             <tr>
                                 <td>${f.helped || '-'}</td>
                                 <td>${f.improved || '-'}</td>
-                                <td>${f.comments || f.Comments || '-'}</td>
-                            </tr>
-                        `;
-                    }
-                });
-
-                htmlContent += `</tbody></table>`;
-            }
+                                <td>${finalComment}</td>
+                            </tr>`;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
         }
     });
 
     htmlContent += `
-        <div style="margin-top: 25px; border-top: 1px solid #000; padding-top: 5px; text-align: center; font-size: 6.5pt; color: #666; text-transform: uppercase; font-weight: bold;">
->>>>>>> origin/main
-            Faculty Performance Report • Confidential Document • Generated ${new Date().toLocaleDateString()}
-        </div>
-    </body>
-    </html>
+            <div style="margin-top: 30px; text-align: center; font-size: 7pt; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
+                Generated via Institutional 360-Degree Feedback System • ${new Date().toLocaleDateString()}
+            </div>
+        </body>
+        </html>
     `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 
+    // Small delay to ensure styles render
     setTimeout(() => {
         printWindow.focus();
         printWindow.print();

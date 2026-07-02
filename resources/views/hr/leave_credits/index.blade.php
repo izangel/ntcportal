@@ -53,8 +53,10 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $leavecredit->service_incentive_leave }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $leavecredit->academicYear->start_year ?? 'N/A' }} - {{ $leavecredit->academicYear->end_year ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <a href="{{ route('leave-credits.edit', $leavecredit) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                        <form action="{{ route('leave-credits.destroy', $leavecredit) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this leave credit record?');">
+                                       {{-- Route action parameters updated to ensure smooth object-to-id evaluation --}}
+                                        <a href="{{ route('leave-credits.edit', $leavecredit->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+
+                                        <form action="{{ route('leave-credits.destroy', $leavecredit->id) }}" method="POST" class="inline-block" onsubmit="return confirm('Are you sure you want to delete this leave credit record?');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>

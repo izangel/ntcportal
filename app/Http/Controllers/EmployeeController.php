@@ -3,178 +3,158 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Models\User; // Import the User model
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule; // Import Rule for unique validation
-use Illuminate\Support\Str; // <-- ADD THIS LINE
-use Illuminate\Support\Facades\Hash; // <-- Make sure this line is also present
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class EmployeeController extends Controller
 {
     public function __construct()
     {
-        // Apply middleware (e.g., auth for all, and a role middleware if you have one)
         $this->middleware('auth');
-        // Example: $this->middleware('can:manage-employees'); // If you have Gates/Policies
     }
 
-    /**
-     * Display a listing of the employees.
-     */
-    public function index()
+    public function index(Request $request)
     {
-        $employees = Employee::with('user')->orderBy('last_name')->paginate(10);
-        return view('employees.index', compact('employees'));
+        $query = Employee::with('user');
+
+        // Filter by Keyword
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('last_name', 'like', '%' . $request->search . '%')
+                ->orWhere('first_name', 'like', '%' . $request->search . '%')
+                ->orWhere('email', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // Filter by Role
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        $employees = $query->orderBy('last_name')->paginate(10);
+        
+        // Pass roles array to view for dropdown population
+        $roles = ['teacher', 'staff', 'admin', 'hr', 'academic_head'];
+
+        return view('employees.index', compact('employees', 'roles'));
     }
 
-    /**
-     * Show the form for creating a new employee.
-     */
     public function create()
     {
-        // Get users who are not yet linked to an employee
-        $unlinkedUsers = User::doesntHave('employee')->get();
+        // Fetch only non-student users who are not yet linked to an employee profile
+      $unlinkedUsers = User::doesntHave('employee')
+        ->doesntHave('student')
+        ->orderBy('email')
+        ->get();
         return view('employees.create', compact('unlinkedUsers'));
     }
 
-    /**
-     * Store a newly created employee in storage.
-     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'last_name' => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'email' => 'nullable|email|unique:employees,email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'address' => 'nullable|string|max:255',
-            'role' => 'required|string|in:teacher,staff,admin,hr,academic_head', // Adjust roles as per your app
-            'user_id' => 'nullable|exists:users,id|unique:users,employee_id', // Must be an existing user, and that user shouldn't already have an employee_id
+            'last_name'   => 'required|string|max:255',
+            'first_name'  => 'required|string|max:255',
+            'mid_name' => 'nullable|string|max:255',
+            'email'       => 'nullable|email|unique:employees,email|max:255',
+            'phone'       => 'nullable|string|max:50',
+            'address'     => 'nullable|string|max:255',
+            'role'        => 'required|string|in:teacher,staff,admin,hr,academic_head',
+            'user_id'     => 'nullable|exists:users,id|unique:employees,user_id', // Enforce unique mapping constraints safely
         ]);
 
-       
-        $employee = Employee::create($validatedData);
-
-        // Link employee to user if user_id is provided
-        // if ($request->filled('user_id')) {
-        //     User::where('id', $validatedData['user_id'])->update(['employee_id' => $employee->id]);
-        // }
+        Employee::create($validatedData);
 
         return redirect()->route('employees.index')->with('success', 'Employee created successfully.');
     }
 
-    /**
-     * Display the specified employee.
-     */
     public function show(Employee $employee)
     {
-        $employee->load('user'); // Load the associated user
+        $employee->load('user');
         return view('employees.show', compact('employee'));
     }
 
-    /**
-     * Reset the password for the user linked to the specified employee.
-     */
     public function resetPassword(Employee $employee)
     {
-        // 1. Check if the employee has a linked user
         if (!$employee->user) {
             return redirect()->route('employees.index')->with('error', 'Cannot reset password: Employee is not linked to a user account.');
         }
 
-        // 2. Generate a new random password
-        // Adjust the length (e.g., 10 to 12) as needed.
         $newPassword = Str::random(12);
 
-        // 3. Update the user's password
         $employee->user->update([
             'password' => Hash::make($newPassword),
         ]);
 
-        // 4. Redirect with a success message including the new password
-        // IMPORTANT: In a real application, you should email this password
-        // or use a proper password reset token flow. Displaying it directly
-        // in a flash message is a security risk, but used here for demonstration.
+        // Swapped to markdown-safe HTML parsing using standard line-breaks for clean presentation
         return redirect()->route('employees.index')->with(
             'password_success',
-            "Password for **{$employee->user->email}** has been reset to: **{$newPassword}**. Please share this securely."
+            "Password for <strong>{$employee->user->email}</strong> has been reset to: <code class='bg-gray-100 p-1 rounded font-bold text-red-600'>{$newPassword}</code>. Please copy and share this securely right now."
         );
     }
 
-    /**
-     * Show the form for editing the specified employee.
-     */
     public function edit(Employee $employee)
     {
-        // Get users who are not yet linked OR who are currently linked to THIS employee
-        $unlinkedUsers = User::doesntHave('employee')
-                             ->orWhere('id', $employee->user_id)
-                             ->get();
+        // Load users without a linked employee profile, but preserve the current employee's link
+        $unlinkedUsers = User::where('role', '!=', 'student')
+            ->where(function ($query) use ($employee) {
+                $query->doesntHave('employee')
+                      ->orWhere('id', $employee->user_id);
+            })
+            ->orderBy('email')
+            ->get();
 
         return view('employees.edit', compact('employee', 'unlinkedUsers'));
     }
 
-    /**
-     * Update the specified employee in storage.
-     */
     public function update(Request $request, Employee $employee)
     {
         $validatedData = $request->validate([
-            'last_name' => 'required|string|max:255',
-            'first_name' => 'required|string|max:255',
+            'last_name'   => 'required|string|max:255',
+            'first_name'  => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
-            'email' => [
+            'email'       => [
                 'nullable',
                 'email',
-                Rule::unique('employees', 'email')->ignore($employee->id), // Ignore current employee's email
+                Rule::unique('employees', 'email')->ignore($employee->id),
                 'max:255',
             ],
-           
-            'role' => 'required|string|in:teacher,staff,admin,hr,academic_head',
-            // 'user_id' => [
-            //     'nullable',
-            //     'exists:users,id',
-            //     Rule::unique('users', 'employee_id')->ignore($employee->user_id ?? null, 'id'), // Ignore current linked user's employee_id
-            // ],
-
-            'user_id' => [
+            'phone'       => 'nullable|string|max:50',
+            'address'     => 'nullable|string|max:255',
+            'role'        => 'required|string|in:teacher,staff,admin,hr,academic_head',
+            'user_id'     => [
                 'nullable',
                 'exists:users,id',
-                Rule::unique('employees', 'user_id')->ignore($employee->id),
+                Rule::unique('employees', 'user_id')->ignore($employee->id), // Correct structural table targets
             ],
-           
         ]);
-        
-       
 
-        // Unlink previous user if a new user is selected or if user_id is intentionally nullified
-        if ($employee->user && ($request->user_id == null || $request->user_id != $employee->user->id)) {
-            $employee->user->update(['employee_id' => null]);
-        }
-
-        
         $employee->update($validatedData);
-
-        // Link new user if user_id is provided
-        if ($request->filled('user_id')) {
-            User::where('id', $validatedData['user_id'])->update(['employee_id' => $employee->id]);
-        }
 
         return redirect()->route('employees.index')->with('success', 'Employee updated successfully.');
     }
 
-    /**
-     * Remove the specified employee from storage.
-     */
     public function destroy(Employee $employee)
     {
-        // Unlink any associated user before deleting the employee
-        if ($employee->user) {
-            $employee->user->update(['employee_id' => null]);
-        }
-
+        // Eloquent takes care of unlinking implicitly if user_id is dropped on deletion
         $employee->delete();
         return redirect()->route('employees.index')->with('success', 'Employee deleted successfully.');
+    }
+
+    public function archive()
+    {
+        // Retrieve ONLY soft-deleted models
+        $employees = Employee::onlyTrashed()->orderBy('last_name')->paginate(10);
+        return view('employees.archive', compact('employees'));
+    }
+
+    public function restore($id)
+    {
+        $employee = Employee::onlyTrashed()->findOrFail($id);
+        $employee->restore();
+
+        return redirect()->route('employees.index')->with('success', "Profile for {$employee->first_name} has been successfully restored.");
     }
 }

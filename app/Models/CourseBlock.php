@@ -5,6 +5,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CourseBlock extends Model
 {
@@ -24,6 +25,12 @@ class CourseBlock extends Model
     {
         return $this->belongsTo(Section::class);
     }
+
+    public function sections()
+{
+    // Ensure the table name 'course_block_section' matches your DB exactly
+    return $this->belongsToMany(Section::class, 'course_block_section', 'course_block_id', 'section_id');
+}
 
     public function course()
     {
@@ -60,5 +67,11 @@ class CourseBlock extends Model
                 ]);
             }
         });
+    }
+
+    public function attainment(): HasOne
+    {
+        // 'course_session_id' is the foreign key in your course_attainments table
+        return $this->hasOne(CourseAttainment::class, 'course_session_id');
     }
 }

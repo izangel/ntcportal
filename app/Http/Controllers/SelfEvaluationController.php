@@ -2,53 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Evaluation, AcademicYear};
+use App\Models\{Evaluation, AcademicYear, Semester};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class SelfEvaluationController extends Controller
 {
+    /**
+     * Helper to convert "First Semester" to "1st", etc.
+     */
+    private function formatSemester($name)
+    {
+        if (str_contains($name, 'First')) return '1st';
+        if (str_contains($name, 'Second')) return '2nd';
+        if (str_contains($name, 'Summer')) return 'Sum';
+        return $name; // Fallback
+    }
+
+    private function getCurrentContext()
+    {
+        $activeSemester = Semester::where('is_active', true)->first();
+        
+        if (!$activeSemester) {
+            $activeAY = AcademicYear::where('is_active', true)->first();
+            return [
+                'ay' => $activeAY,
+                'semester' => '1st' 
+            ];
+        }
+
+        return [
+            'ay' => $activeSemester->academicYear,
+            'semester' => $this->formatSemester($activeSemester->name)
+        ];
+    }
+
     public function index()
     {
         $teacher = Auth::user()->employee;
+        $context = $this->getCurrentContext();
         
-        // Fetch all past self-evaluations
         $evaluations = Evaluation::with('academicYear')
             ->where('teacher_id', $teacher->id)
             ->where('evaluator_type', 'self')
             ->latest()
             ->get();
 
-        // Determine if current period is already done
-        $currentAY = AcademicYear::where('is_active', true)->first();
-        $currentSemester = "1st"; // Logic to get current semester
-        
-        $hasSubmittedCurrent = $evaluations->where('academic_year_id', $currentAY->id)
-                                        ->where('semester', $currentSemester)
+        $hasSubmittedCurrent = $evaluations->where('academic_year_id', $context['ay']->id)
+                                        ->where('semester', $context['semester'])
                                         ->isNotEmpty();
 
-        return view('faculty.self-evaluations.index', compact(
-            'evaluations', 
-            'hasSubmittedCurrent', 
-            'currentSemester'
-        ));
+        return view('faculty.self-evaluations.index', [
+            'evaluations' => $evaluations,
+            'hasSubmittedCurrent' => $hasSubmittedCurrent,
+            'currentSemester' => $context['semester'],
+            'currentAY' => $context['ay']
+        ]);
     }
 
     public function create()
     {
         $teacher = Auth::user()->employee;
-        
-        // Get the current active Academic Year (you may have a specific logic for 'active')
-        $currentAY = AcademicYear::where('is_active', true)->first();
-        $currentSemester = "1st"; // This should ideally come from a settings table
+        $context = $this->getCurrentContext();
 
-        // Check if already submitted
         $exists = Evaluation::where([
             'teacher_id' => $teacher->id,
-            'evaluator_id' => Auth::id(),
             'evaluator_type' => 'self',
-            'academic_year_id' => $currentAY->id,
-            'semester' => $currentSemester
+            'academic_year_id' => $context['ay']->id,
+            'semester' => $context['semester']
         ])->exists();
 
         if ($exists) {
@@ -56,12 +77,19 @@ class SelfEvaluationController extends Controller
                 ->with('error', 'You have already submitted your self-evaluation for this term.');
         }
 
-        return view('faculty.self-evaluations.form', compact('currentAY', 'currentSemester'));
+        return view('faculty.self-evaluations.form', [
+            'currentAY' => $context['ay'],
+            'currentSemester' => $context['semester']
+        ]);
     }
 
     public function store(Request $request)
     {
-        $request->validate(['ratings' => 'required|array']);
+        $request->validate([
+            'ratings' => 'required|array',
+            'academic_year_id' => 'required',
+            'semester' => 'required' // This will now be "1st", "2nd", or "Sum"
+        ]);
         
         $teacher = Auth::user()->employee;
         $ratings = $request->ratings;
@@ -72,7 +100,7 @@ class SelfEvaluationController extends Controller
             'evaluator_id' => $teacher->id,
             'evaluator_type' => 'self',
             'academic_year_id' => $request->academic_year_id,
-            'semester' => $request->semester,
+            'semester' => $request->semester, 
             'ratings' => $ratings,
             'mean_score' => $meanScore,
             'comments' => $request->comments,

@@ -32,85 +32,107 @@ class MyEvaluationController extends Controller
      * The actual 360-degree feedback report for the teacher.
      */
     public function show($academicYearId, $semester)
-    {
-        $teacher = auth()->user()->employee;
+{
+    $teacher = auth()->user()->employee;
 
-        $evaluations = \App\Models\Evaluation::where([
-            'teacher_id'       => $teacher->id,
-            'academic_year_id' => $academicYearId,
-            'semester'         => $semester
-        ])->get();
+    // 1. Get Peer, Self, and Supervisor Evaluations
+    $legacyEvals = \App\Models\Evaluation::where([
+        'teacher_id'       => $teacher->id,
+        'academic_year_id' => $academicYearId,
+        'semester'         => $semester
+    ])->get();
 
-        if ($evaluations->isEmpty()) {
-            return redirect()->route('teacher.evaluations.index')->with('error', 'No data found.');
+    // 2. Get Student Evaluations from faculty_evaluations
+    // We filter by searching for the semester (e.g. "1st") within the course blocks
+    $studentEvals = \App\Models\FacultyEvaluation::whereHas('courseBlock', function($q) use ($teacher, $academicYearId, $semester) {
+            $q->where('faculty_id', $teacher->id)
+              ->where('academic_year_id', $academicYearId)
+              ->where('semester', 'LIKE', $semester . '%');
+        })
+        ->get();
+
+    // If both are empty, no data
+    if ($legacyEvals->isEmpty() && $studentEvals->isEmpty()) {
+        return redirect()->route('teacher.evaluations.index')->with('error', 'No data found.');
+    }
+
+    $types = ['student', 'peer', 'self', 'supervisor'];
+    $breakdown = [];
+    $categoryAverages = [];
+
+    foreach ($types as $type) {
+        if ($type === 'student') {
+            $typeEvals = $studentEvals;
+        } else {
+            $typeEvals = $legacyEvals->where('evaluator_type', $type);
         }
-
-       $types = ['student', 'peer', 'self', 'supervisor'];
-        $breakdown = [];
-        $categoryAverages = [];
-
-        foreach ($types as $type) {
-            $typeEvals = $evaluations->where('evaluator_type', $type);
+        
+        if ($typeEvals->isNotEmpty()) {
+            $breakdown[$type]['questions'] = [];
             
-            if ($typeEvals->isNotEmpty()) {
-                $ratingKeys = array_keys($typeEvals->first()->ratings);
+            // Map questions based on type
+            if ($type === 'student') {
+                // For Students: We need to iterate through categories in config
+                foreach (config('evaluation_questions.student') as $group) {
+                    foreach ($group['questions'] as $q) {
+                        $key = $q['k']; // e.g., 'q1'
+                        
+                        // Calculate average for this specific key across all student evaluations
+                        $avgForQ = $typeEvals->map(function($e) use ($key) {
+                            $ratings = is_array($e->ratings) ? $e->ratings : json_decode($e->ratings, true);
+                            return $ratings[$key] ?? null;
+                        })->filter(fn($v) => !is_null($v))->average();
 
-                // Fetch the question mapping from the config
-                $questionMap = [];
-                $orderedConfigKeys = [];
-
-                if ($type === 'student') {
-                    foreach (config('evaluation_questions.student') as $group) {
-                        foreach ($group['questions'] as $q) {
-                            $questionMap[$q['k']] = $q['t'];
-                            $orderedConfigKeys[] = $q['k'];
-                        }
-                    }
-                } else {
-                    $questionMap = config("evaluation_questions.{$type}");
-                    if (is_array($questionMap)) {
-                        $orderedConfigKeys = array_keys($questionMap);
+                        $breakdown[$type]['questions'][] = [
+                            'key' => $key,
+                            'text' => $q['t'],
+                            'score' => $avgForQ ?? 0
+                        ];
                     }
                 }
+            } else {
+                // For Peer/Self/Supervisor: Use the flat key-value pairs from config
+                $questionMap = config("evaluation_questions.{$type}");
+                $firstEval = $typeEvals->first();
+                $ratings = is_array($firstEval->ratings) ? $firstEval->ratings : json_decode($firstEval->ratings, true);
 
-                $breakdown[$type]['questions'] = [];
-                foreach ($ratingKeys as $rKey) {
-                    $text = $questionMap[$rKey] ?? null;
-                    $displayKey = $rKey;
-
-                    // Fallback for indexed arrays (0, 1, 2...)
-                    if (!$text && is_numeric($rKey) && isset($orderedConfigKeys[$rKey])) {
-                        $configKey = $orderedConfigKeys[$rKey];
-                        $text = $questionMap[$configKey] ?? null;
-                        $displayKey = $configKey;
-                    }
-
+                foreach ($ratings as $rKey => $val) {
                     $breakdown[$type]['questions'][] = [
-                        'key' => $displayKey,
-                        'text' => $text ?? 'Question ' . $displayKey,
-                        'score' => $typeEvals->avg("ratings.$rKey")
+                        'key' => $rKey,
+                        'text' => $questionMap[$rKey] ?? 'Question ' . $rKey,
+                        'score' => $typeEvals->avg(function($e) use ($rKey) {
+                             $r = is_array($e->ratings) ? $e->ratings : json_decode($e->ratings, true);
+                             return $r[$rKey] ?? 0;
+                        })
                     ];
                 }
-
-                $breakdown[$type]['meta'] = [
-                    'count' => $typeEvals->count(),
-                    'average' => $typeEvals->avg('mean_score'),
-                    // Collecting all three types of qualitative feedback
-                    'feedback' => $typeEvals->map(fn($e) => [
-                        'helped' => $e->aspects_helped,
-                        'improved' => $e->aspects_improved,
-                        'comments' => $e->comments
-                    ])->filter(fn($f) => $f['helped'] || $f['improved'] || $f['comments'])
-                ];
-                $categoryAverages[] = $typeEvals->avg('mean_score');
-            } else {
-                $breakdown[$type] = null;
             }
+
+            $breakdown[$type]['meta'] = [
+                'count' => $typeEvals->count(),
+                'average' => $typeEvals->avg('mean_score'),
+                'feedback' => $typeEvals->map(fn($e) => [
+                    'helped' => $e->aspects_helped ?? $e->comment_helped ?? null, // Map student specific columns
+                    'improved' => $e->aspects_improved ?? $e->comment_improved ?? null,
+                    'comments' => $e->comments ?? null
+                ])->filter(fn($f) => $f['helped'] || $f['improved'] || $f['comments'])
+            ];
+            $categoryAverages[] = $typeEvals->avg('mean_score');
+        } else {
+            $breakdown[$type] = null;
         }
-
-        $overallScore = count($categoryAverages) > 0 ? array_sum($categoryAverages) / count($categoryAverages) : 0;
-        $academicYear = \App\Models\AcademicYear::find($academicYearId);
-
-        return view('teacher.evaluations.report', compact('breakdown', 'overallScore', 'academicYear', 'semester'));
     }
+
+    $overallScore = count($categoryAverages) > 0 ? array_sum($categoryAverages) / count($categoryAverages) : 0;
+    $academicYear = \App\Models\AcademicYear::find($academicYearId);
+
+        // Ensure all keys exist for the chart even if null
+    foreach(['student', 'peer', 'supervisor', 'self'] as $type) {
+        if (!isset($breakdown[$type])) {
+            $breakdown[$type] = ['meta' => ['average' => 0, 'count' => 0]];
+        }
+    }
+
+    return view('teacher.evaluations.report', compact('breakdown', 'overallScore', 'academicYear', 'semester'));
+}
 }
