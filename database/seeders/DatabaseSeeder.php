@@ -44,6 +44,16 @@ class DatabaseSeeder extends Seeder
                 'role' => 'student',
             ]
         );
+         User::firstOrCreate(
+            ['email' => 'admin2@example.com'],
+            [
+                'name' => 'Admin User',
+                'password' => bcrypt('password'),
+                'role' => 'admin',
+            ]
+        );
+        
+
 
         // Call your custom seeders here
         $this->call([

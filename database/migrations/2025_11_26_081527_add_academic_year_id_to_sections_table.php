@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('sections', function (Blueprint $table) {
-            // Uncommented these lines so the column actually gets created!
-            $table->foreignId('academic_year_id')
-                  ->nullable() 
-                  ->constrained('academic_years') 
-                  ->onDelete('cascade') 
-                  ->after('id'); 
-        });
+        // Only attempt to create the column and constraint if it doesn't already exist
+        if (!Schema::hasColumn('sections', 'academic_year_id')) {
+            Schema::table('sections', function (Blueprint $table) {
+                $table->foreignId('academic_year_id')
+                      ->nullable() 
+                      ->constrained('academic_years') 
+                      ->onDelete('cascade') 
+                      ->after('id'); 
+            });
+        }
     }
 
     /**
@@ -26,12 +28,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('sections', function (Blueprint $table) {
-            // Drop the foreign key constraint first
-            $table->dropForeign(['academic_year_id']);
+        // Only attempt to drop the foreign key and column if it actually exists
+        if (Schema::hasColumn('sections', 'academic_year_id')) {
+            Schema::table('sections', function (Blueprint $table) {
+                // Drop the foreign key constraint first
+                $table->dropForeign(['academic_year_id']);
 
-            // Then drop the column itself
-            $table->dropColumn('academic_year_id');
-        });
+                // Then drop the column itself
+                $table->dropColumn('academic_year_id');
+            });
+        }
     }
 };
