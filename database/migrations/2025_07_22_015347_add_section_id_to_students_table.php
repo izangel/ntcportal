@@ -11,9 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('students', function (Blueprint $table) {
-            $table->foreignId('section_id')->nullable()->constrained()->onDelete('set null'); // or ->onDelete('cascade') if deleting a section should delete students
-        
+        Schema::create('sections', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('program_id')->constrained()->onDelete('cascade'); // Link to programs table
+            $table->string('name'); // e.g., '1A', '1B'
+            $table->foreignId('student_id')->constrained()->onDelete('cascade');
+            $table->foreignId('section_id')->constrained()->onDelete('cascade');
+            $table->foreignId('academic_year_id')->constrained()->onDelete('cascade');
+            $table->string('semester'); // '1st Semester', '2nd Semester', etc.
+            $table->timestamps();
         });
     }
 
@@ -22,9 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('students', function (Blueprint $table) {
-            $table->dropForeign(['section_id']);
-            $table->dropColumn('section_id');
-        });
+        Schema::dropIfExists('sections');
     }
 };

@@ -27,7 +27,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role', // This 'role' in users table might be legacy, but keep for now if used elsewhere
-        // 'employee_id', // <-- REMOVE THIS LINE IF users table DOES NOT HAVE employee_id
+         'employee_id', // <-- REMOVE THIS LINE IF users table DOES NOT HAVE employee_id
     ];
 
     /**
@@ -78,6 +78,7 @@ public function hasRole(string $role): bool
         return true;
     }
 
+    
     // 2. Existing Employee Roles (Legacy/Fallback)
     if ($this->employee && $this->employee->role === $role) {
         return true;
@@ -110,7 +111,7 @@ public function hasRole(string $role): bool
     public function employee()
     {
         // This assumes 'user_id' is the foreign key on the 'employees' table
-        return $this->hasOne(Employee::class); // <-- CORRECTED THIS LINE
+        return $this->hasOne(Employee::class, 'user_id'); // <-- CORRECTED THIS LINE
     }
 
     public function announcements()
@@ -122,9 +123,13 @@ public function hasRole(string $role): bool
     {
         return $this->hasMany(ImportantDate::class);
     }
-    public function hasAnyRole(array $roles)
+  public function hasAnyRole(array $roles)
 {
-    // Adjust this logic to match how your roles are stored (e.g., a 'role' string or a relationship)
-    return in_array($this->role, $roles);
+    foreach ($roles as $role) {
+        if ($this->hasRole($role)) {
+            return true;
+        }
+    }
+    return in_array($this->role, $roles); // Keep your original fallback check intact
 }
 }
