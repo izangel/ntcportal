@@ -147,7 +147,7 @@
                                 Read
                             </a>
 
-                            @if(auth()->check() && auth()->user()->roles->pluck('name')->intersect(['teacher', 'staff'])->isNotEmpty())
+                              @if(auth()->check() && (auth()->id() === 1 || auth()->user()->hasRole('admin')))
 
                                 <form action="{{ route('admin.memos.destroy', $advisory->id) }}"
                                       method="POST"
