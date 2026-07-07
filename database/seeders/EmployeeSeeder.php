@@ -57,5 +57,29 @@ class EmployeeSeeder extends Seeder
             'address' => '202 Birch Blvd, Anytown',
             'role' => 'admin',
         ]);
+         Employee::create([
+            'last_name' => 'Coco',
+            'first_name' => 'Snappy',
+            'email' => 'snappy.coco@example.com',
+            'phone' => '09667778888',
+            'address' => '204 Birch Blvd, Anytown',
+            'role' => 'admin',
+        ]);
+         Employee::create([
+            'last_name' => 'cruz',
+            'first_name' => 'juan',
+            'email' => 'juan.cruz@example.com',
+            'phone' => '09667778888',
+            'address' => '204 Birch Blvd, Anytown',
+            'role' => 'SHS',
+        ]);
+         Employee::create([
+            'last_name' => 'delacruz',
+            'first_name' => 'juancho',
+            'email' => 'juancho.delacruz@example.com',
+            'phone' => '09667778888',
+            'address' => '204 Birch Blvd, Anytown',
+            'role' => 'COLLEGE',
+        ]);
     }
 }

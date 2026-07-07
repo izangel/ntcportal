@@ -128,7 +128,7 @@ class LeaveApplicationController extends Controller
                      ->where('user_id', '!=', Auth::id())
                      ->orderBy('name')->get();
         $staffPersonnel = Employee::where('user_id', '!=', Auth::id())->orderBy('name')->get();
-
+    
     /**
      * Show the form for creating a new leave application.
      */
