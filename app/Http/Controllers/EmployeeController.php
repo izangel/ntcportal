@@ -157,4 +157,27 @@ class EmployeeController extends Controller
 
         return redirect()->route('employees.index')->with('success', "Profile for {$employee->first_name} has been successfully restored.");
     }
+public function search(Request $request)
+{
+    
+    $q = trim($request->get('q'));
+
+    if (empty($q)) {
+        return response()->json([]);
+    }
+
+    $employees = Employee::where(function ($query) use ($q) {
+            $query->where('first_name', 'LIKE', "%{$q}%")
+                  ->orWhere('last_name', 'LIKE', "%{$q}%");
+        })
+        ->orderBy('last_name')
+        ->limit(10)
+        ->get([
+            'id',
+            'first_name',
+            'last_name',
+        ]);
+
+    return response()->json($employees);
+}
 }

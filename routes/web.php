@@ -264,10 +264,22 @@ Route::middleware(['auth', 'role:hr|admin|academic_head'])->group(function () {
     // Leave Manager & Exports
     Route::get('/leave-credits/summary', [LeaveApplicationManager::class, 'creditsSummary'])->name('leave_credits.summary');
     Route::get('/leave-applications/export', [LeaveApplicationController::class, 'exportExcel'])->name('leave_applications.export');
+    // Employee search (FIRST)
+    Route::get('admin/employees/search', [EmployeeController::class, 'search'])
+    ->name('employees.search');
 
-    // Archive Employees
-    Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
-    Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
+// Archive
+Route::get('/employees/archive', [EmployeeController::class, 'archive'])
+    ->name('employees.archive');
+
+Route::post('/employees/{id}/restore', [EmployeeController::class, 'restore'])
+    ->name('employees.restore');
+
+Route::post('/employees/{employee}/reset-password', [EmployeeController::class, 'resetPassword'])
+    ->name('employees.reset-password');
+
+// ONE resource route ONLY
+Route::resource('employees', EmployeeController::class);
 });
 
 // Authenticated General Routes Group

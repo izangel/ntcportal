@@ -13,6 +13,7 @@
             <i class="fas fa-arrow-left mr-2"></i>Back to List
         </a>
     </div>
+
     @if ($errors->any())
     <div class="mb-4 rounded-lg bg-red-100 p-4 text-red-700">
         <strong>Validation Errors:</strong>
@@ -22,14 +23,20 @@
             @endforeach
         </ul>
     </div>
-@endif
+    @endif
 
     {{-- Role Authorization Check --}}
     @if(Auth::user()->hasRole('admin') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('academic_head'))
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" x-data="recipientSelector()">
         <form action="{{ route('admin.memos.store') }}" method="POST" class="p-6 space-y-6">
             @csrf
+
+            {{-- FIXED: Dynamically creates a native HTML input array for each selected employee --}}
+            {{-- This ensures the data is perfectly readable by the request container regardless of visible elements layout --}}
+            <template x-for="employeeId in selectedEmployees" :key="employeeId">
+                <input type="hidden" name="specific_personnel[]" :value="employeeId">
+            </template>
 
             {{-- Auto-generating Advisory No --}}
             <div>
@@ -55,86 +62,44 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {{-- To Field --}}
-                <div x-data="recipientSelector()" class="space-y-4">
-                    <div>
-                        <label for="to_groups" class="block text-sm font-semibold text-gray-700">Send To (Select multiple)</label>
-                        
-                        <!-- Hidden input to submit the selected groups array to Laravel backend -->
-                        <template x-for="group in selectedGroups" :key="group">
-                            <input type="hidden" name="to_groups[]" :value="group">
-                        </template>
+                {{-- To Field (Multi-Select Group Column) --}}
+                <div class="space-y-2">
+                    <label for="to_groups" class="block text-sm font-semibold text-gray-700">Send To (Select multiple)</label>
+                    
+                    <template x-for="group in selectedGroups" :key="group">
+                        <input type="hidden" name="to_groups[]" :value="group">
+                    </template>
 
-                        <!-- Custom Multi-Select Dropdown -->
-                        <div class="relative mt-1">
-                            <div @click="open = !open" 
-                                 class="min-h-[38px] w-full rounded-lg border border-gray-300 bg-white p-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 sm:text-sm flex flex-wrap gap-1.5 cursor-pointer items-center">
-                                
-                                <!-- Placeholder text if empty -->
-                                <span x-show="selectedGroups.length === 0" class="text-gray-400 pl-1.5 select-none">Select target audience...</span>
-                                
-                                <!-- Selected Badges/Pills formatted as requested in Option 2 -->
-                                <template x-for="group in selectedGroups" :key="group">
-                                    <span class="inline-flex items-center gap-1 rounded bg-gray-800 px-2 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-gray-700">
-                                        <span x-text="formatLabel(group)"></span>
-                                        <button type="button" @click.stop="toggleGroup(group)" class="text-gray-400 hover:text-gray-200 font-bold ml-1">&times;</button>
-                                    </span>
-                                </template>
-                            </div>
-
-                            <!-- Dropdown Options Menu -->
-                            <div x-show="open" @click.outside="open = false" 
-                                 class="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" x-cloak>
-                                <template x-for="option in options" :key="option.value">
-                                    <div @click="toggleGroup(option.value)"
-                                         :class="selectedGroups.includes(option.value) ? 'bg-blue-50 text-blue-900 font-semibold' : 'text-gray-900'"
-                                         class="relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-gray-100 flex items-center justify-between">
-                                        <span x-text="option.label"></span>
-                                        <span x-show="selectedGroups.includes(option.value)" class="text-blue-600">✓</span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                        
-                        @error('to_groups')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Dynamic Specific Personnel Search Field -->
-                    <div x-show="selectedGroups.includes('specific_personnel')" x-transition x-cloak>
-                        <label for="specific_personnel_search" class="block text-sm font-semibold text-gray-700">Search & Select Personnel</label>
-                        
-                        <!-- Hidden input to submit selected employee IDs -->
-                        <template x-for="id in selectedEmployees" :key="id">
-                            <input type="hidden" name="specific_personnel[]" :value="id">
-                        </template>
-
-                        <!-- Personnel Search Dropdown -->
-                        <div class="relative mt-1">
-                            <input type="text" x-model="searchQuery" @input="searchEmployees" placeholder="Type employee name..."
-                                   class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <div class="relative mt-1">
+                        <div @click="open = !open" 
+                             class="min-h-[38px] w-full rounded-lg border border-gray-300 bg-white p-1.5 shadow-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 sm:text-sm flex flex-wrap gap-1.5 cursor-pointer items-center">
                             
-                            <!-- Employee Search Results -->
-                            <div x-show="searchResults.length > 0" class="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm">
-                                <template x-for="emp in searchResults" :key="emp.id">
-                                    <div @click="addEmployee(emp)" class="cursor-pointer py-2 pl-3 pr-9 hover:bg-gray-100 text-gray-900">
-                                        <span x-text="emp.name"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
-                        <!-- Selected Employees Pills (Styled with dark badges) -->
-                        <div class="mt-2 flex flex-wrap gap-1.5">
-                            <template x-for="emp in selectedEmployeesDetails" :key="emp.id">
-                                <span class="inline-flex items-center rounded-md bg-gray-800 px-2 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-gray-700">
-                                    <span x-text="emp.name"></span>
-                                    <button type="button" @click="removeEmployee(emp.id)" class="text-gray-400 hover:text-gray-200 font-bold ml-1">&times;</button>
+                            <span x-show="selectedGroups.length === 0" class="text-gray-400 pl-1.5 select-none">Select target audience...</span>
+                            
+                            <template x-for="group in selectedGroups" :key="group">
+                                <span class="inline-flex items-center gap-1 rounded bg-gray-800 px-2 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-gray-700">
+                                    <span x-text="formatLabel(group)"></span>
+                                    <button type="button" @click.stop="toggleGroup(group)" class="text-gray-400 hover:text-gray-200 font-bold ml-1">&times;</button>
                                 </span>
                             </template>
                         </div>
+
+                        <div x-show="open" @click.outside="open = false" 
+                             class="absolute left-0 right-0 z-30 mt-1 max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm" x-cloak>
+                            <template x-for="option in options" :key="option.value">
+                                <div @click="toggleGroup(option.value)"
+                                     :class="selectedGroups.includes(String(option.value)) ? 'bg-blue-50 text-blue-900 font-semibold' : 'text-gray-900'"
+                                     class="relative cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-gray-100 flex items-center justify-between">
+                                    <span x-text="option.label"></span>
+                                    <span x-show="selectedGroups.includes(String(option.value))" class="text-blue-600">✓</span>
+                                </div>
+                            </template>
+                        </div>
                     </div>
+                    
+                    @error('to_groups')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 {{-- From Field --}}
@@ -143,17 +108,14 @@
 
                     @php
                     $user = Auth::user();
-                    $fullName = $user->name; // Default fallback
+                    $fullName = $user->name;
 
-                    // If the user has an assigned employee_id, look up that unique employee record
                     if (!empty($user->employee_id)) {
                         $employeeData = \App\Models\Employee::find($user->employee_id);
-
                         if ($employeeData) {
                             $fullName = $employeeData->first_name . ' ' . $employeeData->last_name;
                         }
                     } else {
-                        // Remainder hint if your account's employee_id column in the database is still NULL
                         $fullName = $user->name . ' (Please set employee_id in users table)';
                     }
                     @endphp
@@ -178,19 +140,45 @@
                 </div>
             </div>
 
-            {{-- Body Content --}}
-            <div>
-                <label for="body" class="block text-sm font-semibold text-gray-700">
-                    Body (Main Content)
+            {{-- Dynamic Specific Personnel Search Field --}}
+            <div x-show="selectedGroups.includes('specific_personnel')" x-transition x-cloak class="relative border-l-2 border-blue-500 pl-4 py-1 mt-4">
+                <label for="specific_personnel_search" class="block text-sm font-semibold text-gray-700">
+                    Search & Select Personnel
                 </label>
 
-                <textarea
-                    name="body"
-                    id="body"
-                    rows="10"
-                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('body') border-red-300 @enderror"
-                    >{{ old('body') }}</textarea>
+                <div class="relative mt-1 max-w-md">
+                    <input type="text" x-model="searchQuery" @input="searchEmployees()"
+                        placeholder="Type employee name..."
+                        class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
 
+                    <div x-show="searchResults.length > 0" x-cloak
+                        class="absolute left-0 right-0 z-30 mt-1 max-h-48 overflow-auto rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+                        <template x-for="emp in searchResults" :key="emp.id">
+                            <div @click="addEmployee(emp)" class="cursor-pointer px-3 py-2 hover:bg-gray-100 text-gray-900 text-sm">
+                                <span x-text="emp.first_name + ' ' + emp.last_name"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <div class="mt-3 flex flex-wrap gap-2">
+                    <template x-for="emp in selectedEmployeesDetails" :key="emp.id">
+                        <span class="inline-flex items-center rounded-md bg-gray-800 px-2 py-1 text-xs font-medium text-gray-300 ring-1 ring-inset ring-gray-700">
+                            <span x-text="emp.first_name + ' ' + emp.last_name"></span>
+                            <button type="button" @click="removeEmployee(emp.id)" class="ml-1 font-bold text-gray-400 hover:text-white">&times;</button>
+                        </span>
+                    </template>
+                </div>
+                @error('specific_personnel')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- Body Content --}}
+            <div>
+                <label for="body" class="block text-sm font-semibold text-gray-700">Body (Main Content)</label>
+                <textarea name="body" id="body" rows="10"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm @error('body') border-red-300 @enderror">{{ old('body') }}</textarea>
                 @error('body')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
@@ -199,7 +187,6 @@
             {{-- Publishing Action Row --}}
             <div class="bg-gray-50 -mx-6 -mb-6 p-4 flex items-center justify-end border-t border-gray-200">
                 <div class="flex space-x-3">
-                    
                     <button type="button" onclick="window.history.back()"
                         class="bg-white py-2 px-4 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
                         Cancel
@@ -207,11 +194,9 @@
                     <button type="submit"
                         class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                         Save Advisory
-                        
                     </button>
                 </div>
             </div>
-
         </form>
     </div>
 
@@ -246,15 +231,12 @@ ClassicEditor
             'insertTable', 'blockQuote', 'undo', 'redo'
         ]
     })
-    .catch(error => {
-        console.error(error);
-    });
+    .catch(error => { console.error(error); });
 
-// Alpine.js Option 2 Selector Logic
 function recipientSelector() {
     return {
         open: false,
-        selectedGroups: @json(old('to_groups', [])),
+        selectedGroups: @json(old('to_groups', [])).map(g => String(g).trim()),
         options: [
             { value: 'all_students', label: 'To All Students' },
             { value: 'all_staff', label: 'To All Staff' },
@@ -267,24 +249,37 @@ function recipientSelector() {
         searchResults: [],
         selectedEmployees: @json(old('specific_personnel', [])),
         selectedEmployeesDetails: [],
-
+        
         toggleGroup(value) {
-            if (this.selectedGroups.includes(value)) {
-                this.selectedGroups = this.selectedGroups.filter(g => g !== value);
+            const target = String(value).trim();
+            if (this.selectedGroups.includes(target)) {
+                this.selectedGroups = this.selectedGroups.filter(g => String(g).trim() !== target);
             } else {
-                this.selectedGroups.push(value);
+                this.selectedGroups.push(target);
             }
         },
         formatLabel(value) {
-            return this.options.find(o => o.value === value)?.label || value;
+            const target = String(value).trim();
+            return this.options.find(o => String(o.value).trim() === target)?.label || value;
         },
         async searchEmployees() {
             if (this.searchQuery.length < 2) {
                 this.searchResults = [];
                 return;
             }
-            let response = await fetch(`/api/employees/search?q=${this.searchQuery}`);
-            this.searchResults = await response.json();
+            const url = `{{ route('employees.search') }}?q=${encodeURIComponent(this.searchQuery)}`;
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                this.searchResults = await response.json();
+            } catch (error) {
+                console.error("Search Error:", error);
+            }
         },
         addEmployee(emp) {
             if (!this.selectedEmployees.includes(emp.id)) {
