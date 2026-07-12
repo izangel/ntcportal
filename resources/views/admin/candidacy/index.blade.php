@@ -175,19 +175,19 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-gray-50 border-b border-gray-200">
                 <div class="bg-white p-4 rounded-lg shadow-sm">
                     <p class="text-sm text-gray-500">Total Applications</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ \App\Models\Candidacy::count() }}</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ \App\Models\Candidacy::notArchived()->count() }}</p>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-sm">
                     <p class="text-sm text-gray-500">Pending</p>
-                    <p class="text-2xl font-bold text-yellow-600">{{ \App\Models\Candidacy::pending()->count() }}</p>
+                    <p class="text-2xl font-bold text-yellow-600">{{ \App\Models\Candidacy::notArchived()->pending()->count() }}</p>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-sm">
                     <p class="text-sm text-gray-500">Approved</p>
-                    <p class="text-2xl font-bold text-green-600">{{ \App\Models\Candidacy::approved()->count() }}</p>
+                    <p class="text-2xl font-bold text-green-600">{{ \App\Models\Candidacy::notArchived()->approved()->count() }}</p>
                 </div>
                 <div class="bg-white p-4 rounded-lg shadow-sm">
                     <p class="text-sm text-gray-500">Rejected</p>
-                    <p class="text-2xl font-bold text-red-600">{{ \App\Models\Candidacy::rejected()->count() }}</p>
+                    <p class="text-2xl font-bold text-red-600">{{ \App\Models\Candidacy::notArchived()->rejected()->count() }}</p>
                 </div>
             </div>
 
