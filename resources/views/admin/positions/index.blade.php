@@ -30,7 +30,6 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Program Type</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -40,7 +39,6 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($positions as $position)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $position->sort_order }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ $position->name }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($position->program_type == 'shs')
@@ -70,7 +68,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                                <td colspan="4" class="px-6 py-12 text-center text-gray-500">
                                     <i class="fas fa-list text-4xl mb-4"></i>
                                     <p>No positions yet.</p>
                                 </td>

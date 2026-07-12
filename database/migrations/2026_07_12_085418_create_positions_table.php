@@ -11,10 +11,8 @@ return new class extends Migration
         Schema::create('positions', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('slug')->unique();
             $table->enum('program_type', ['shs', 'college', 'both'])->default('both');
             $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
             $table->timestamps();
         });
     }

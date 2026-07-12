@@ -10,7 +10,7 @@ class PositionController extends Controller
 {
     public function index()
     {
-        $positions = Position::orderBy('sort_order')->orderBy('name')->paginate(15);
+        $positions = Position::orderBy('name')->paginate(15);
         return view('admin.positions.index', compact('positions'));
     }
 
@@ -24,13 +24,10 @@ class PositionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'program_type' => 'required|in:shs,college,both',
-            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
-        $validated['slug'] = str_replace(' ', '_', strtolower($validated['name']));
 
         Position::create($validated);
 
@@ -48,13 +45,10 @@ class PositionController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'program_type' => 'required|in:shs,college,both',
-            'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'nullable|boolean',
         ]);
 
         $validated['is_active'] = $request->boolean('is_active');
-        $validated['sort_order'] = $validated['sort_order'] ?? 0;
-        $validated['slug'] = str_replace(' ', '_', strtolower($validated['name']));
 
         $position->update($validated);
 

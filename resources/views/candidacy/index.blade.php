@@ -29,7 +29,7 @@
                         <div class="text-left space-y-3">
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Position:</span>
-                                <span class="font-medium text-gray-900">{{ ucwords(str_replace('_', ' ', $existingCandidacy->position_applied)) }}</span>
+                                <span class="font-medium text-gray-900">{{ $existingCandidacy->position->name ?? 'N/A' }}</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-500">Partylist:</span>
@@ -130,8 +130,8 @@
                                     <div class="flex-1">
                                         <select name="position" id="position" class="w-full border-0 border-b border-gray-400 bg-transparent focus:ring-0 focus:border-blue-500 px-0 text-sm" required>
                                             <option value="" disabled selected>Select Position</option>
-                                            @foreach($positions as $slug => $name)
-                                                <option value="{{ $slug }}">{{ $name }}</option>
+                                            @foreach($positions as $id => $name)
+                                                <option value="{{ $id }}">{{ $name }}</option>
                                             @endforeach
                                         </select>
                                     </div>

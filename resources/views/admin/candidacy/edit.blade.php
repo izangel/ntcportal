@@ -28,15 +28,15 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <label for="position_applied" class="block font-medium text-sm text-gray-700">{{ __('Position Applied For') }}</label>
-                        <select id="position_applied" name="position_applied" class="block w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <label for="position_id" class="block font-medium text-sm text-gray-700">{{ __('Position Applied For') }}</label>
+                        <select id="position_id" name="position_id" class="block w-full mt-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             @foreach($positions as $value => $label)
-                                <option value="{{ $value }}" {{ old('position_applied', $candidacy->position_applied) == $value ? 'selected' : '' }}>
+                                <option value="{{ $value }}" {{ old('position_id', $candidacy->position_id) == $value ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
                             @endforeach
                         </select>
-                        @error('position_applied')
+                        @error('position_id')
                             <p class="text-sm text-red-600 mt-2">{{ $message }}</p>
                         @enderror
                     </div>

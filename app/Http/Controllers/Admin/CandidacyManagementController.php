@@ -47,14 +47,14 @@ class CandidacyManagementController extends Controller
         }
 
         $positionOrder = Position::where('is_active', true)
-            ->orderBy('sort_order')
-            ->pluck('name', 'slug')
+            ->orderBy('name')
+            ->pluck('name', 'id')
             ->toArray();
         $positionCounts = Candidacy::query()
             ->notArchived()
-            ->selectRaw('position_applied, COUNT(*) as total')
-            ->groupBy('position_applied')
-            ->pluck('total', 'position_applied');
+            ->selectRaw('position_id, COUNT(*) as total')
+            ->groupBy('position_id')
+            ->pluck('total', 'position_id');
 
         $applications = $query->paginate(15);
         $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
@@ -80,8 +80,8 @@ class CandidacyManagementController extends Controller
     {
         $candidacy->load('student.user');
         $positions = Position::where('is_active', true)
-            ->orderBy('sort_order')
-            ->pluck('name', 'slug')
+            ->orderBy('name')
+            ->pluck('name', 'id')
             ->toArray();
         return view('admin.candidacy.edit', compact('candidacy', 'positions'));
     }
@@ -91,14 +91,14 @@ class CandidacyManagementController extends Controller
      */
     public function update(Request $request, Candidacy $candidacy)
     {
-        $allowedPositions = Position::where('is_active', true)->pluck('slug')->implode(',');
+        $allowedPositions = Position::where('is_active', true)->pluck('id')->implode(',');
         $request->validate([
-            'position_applied' => 'required|string|in:' . $allowedPositions,
+            'position_id' => 'required|string|in:' . $allowedPositions,
             'is_independent' => 'required|boolean',
             'partylist' => 'nullable|string|max:255',
         ]);
 
-        $data = $request->only(['position_applied', 'is_independent']);
+        $data = $request->only(['position_id', 'is_independent']);
         $data['partylist'] = $request->is_independent ? null : $request->partylist;
 
         $candidacy->update($data);
@@ -155,11 +155,11 @@ class CandidacyManagementController extends Controller
      */
     private function positionOrderCaseStatement(): string
     {
-        $positions = Position::where('is_active', true)->orderBy('sort_order')->pluck('slug');
-        $sql = 'CASE position_applied';
+        $positions = Position::where('is_active', true)->orderBy('name')->pluck('id');
+        $sql = 'CASE position_id';
         $index = 1;
-        foreach ($positions as $slug) {
-            $sql .= " WHEN '{$slug}' THEN {$index}";
+        foreach ($positions as $id) {
+            $sql .= " WHEN '{$id}' THEN {$index}";
             $index++;
         }
         $sql .= ' ELSE 99 END';

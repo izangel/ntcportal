@@ -35,14 +35,14 @@ class StudentVotingController extends Controller
         $positions = $this->positionOrder($programType);
 
         $candidates = $this->approvedCandidatesQuery($activeAcademicYear, $programType)->get();
-        $candidatesByPosition = $candidates->groupBy('position_applied');
+        $candidatesByPosition = $candidates->groupBy('position_id');
 
         $selectedVotesQuery = $this->studentVotesQueryForElection($student->id, $activeAcademicYear);
         $selectedVotes = (clone $selectedVotesQuery)
-            ->with('candidacy:id,position_applied')
+            ->with('candidacy:id,position_id')
             ->get()
-            ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_applied))
-            ->mapWithKeys(fn (ElectionVote $vote) => [$vote->candidacy->position_applied => $vote->candidacy_id]);
+            ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_id))
+            ->mapWithKeys(fn (ElectionVote $vote) => [$vote->candidacy->position_id => $vote->candidacy_id]);
         $hasSubmittedVotes = (clone $selectedVotesQuery)->exists();
 
         return view('student.voting.index', compact(
@@ -79,8 +79,8 @@ class StudentVotingController extends Controller
         $programType = $student->program_type;
 
         $candidateIdsByPosition = $this->approvedCandidatesQuery($activeAcademicYear, $programType)
-            ->get(['id', 'position_applied'])
-            ->groupBy('position_applied')
+            ->get(['id', 'position_id'])
+            ->groupBy('position_id')
             ->map(fn (Collection $group) => $group->pluck('id')->all())
             ->toArray();
 
@@ -142,7 +142,7 @@ class StudentVotingController extends Controller
         $positions = $this->positionOrder($programType);
 
         $approvedCandidates = $this->approvedCandidatesQuery($activeAcademicYear, $programType)->get();
-        $candidatesByPosition = $approvedCandidates->groupBy('position_applied');
+        $candidatesByPosition = $approvedCandidates->groupBy('position_id');
 
         $votesQuery = $this->votesQueryForAcademicYear($activeAcademicYear);
 
@@ -153,8 +153,8 @@ class StudentVotingController extends Controller
 
         $totalVotesByPosition = (clone $votesQuery)
             ->join('candidacies', 'election_votes.candidacy_id', '=', 'candidacies.id')
-            ->selectRaw('candidacies.position_applied as position, COUNT(*) as total_votes')
-            ->groupBy('candidacies.position_applied')
+            ->selectRaw('candidacies.position_id as position, COUNT(*) as total_votes')
+            ->groupBy('candidacies.position_id')
             ->pluck('total_votes', 'position');
 
         $totalVoters = (clone $votesQuery)
@@ -164,8 +164,8 @@ class StudentVotingController extends Controller
         $myVotes = $this->studentVotesQueryForElection($student->id, $activeAcademicYear)
             ->with('candidacy.student')
             ->get()
-            ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_applied))
-            ->keyBy(fn (ElectionVote $vote) => $vote->candidacy->position_applied);
+            ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_id))
+            ->keyBy(fn (ElectionVote $vote) => $vote->candidacy->position_id);
 
         return view('student.voting.results', compact(
             'positions',
@@ -187,7 +187,7 @@ class StudentVotingController extends Controller
         $positions = $this->positionOrder();
 
         $approvedCandidates = $this->approvedCandidatesQuery($activeAcademicYear)->get();
-        $candidatesByPosition = $approvedCandidates->groupBy('position_applied');
+        $candidatesByPosition = $approvedCandidates->groupBy('position_id');
 
         $votesQuery = $this->votesQueryForAcademicYear($activeAcademicYear);
 
@@ -198,8 +198,8 @@ class StudentVotingController extends Controller
 
         $totalVotesByPosition = (clone $votesQuery)
             ->join('candidacies', 'election_votes.candidacy_id', '=', 'candidacies.id')
-            ->selectRaw('candidacies.position_applied as position, COUNT(*) as total_votes')
-            ->groupBy('candidacies.position_applied')
+            ->selectRaw('candidacies.position_id as position, COUNT(*) as total_votes')
+            ->groupBy('candidacies.position_id')
             ->pluck('total_votes', 'position');
 
         $totalVoters = (clone $votesQuery)

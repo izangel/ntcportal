@@ -12,7 +12,7 @@ class Candidacy extends Model
     protected $fillable = [
         'student_id',
         'academic_year_id',
-        'position_applied',
+        'position_id',
         'partylist',
         'is_independent',
         'status',
@@ -51,6 +51,14 @@ class Candidacy extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the position for the candidacy.
+     */
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
     }
 
     /**

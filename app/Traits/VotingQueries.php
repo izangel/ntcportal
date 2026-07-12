@@ -16,7 +16,7 @@ trait VotingQueries
     {
         $query = Candidacy::with('student.user')
             ->where('status', 'approved')
-            ->whereIn('position_applied', array_keys($this->positionOrder($programType)))
+            ->whereIn('position_id', array_keys($this->positionOrder($programType)))
             ->when($activeAcademicYear, function ($query) use ($activeAcademicYear) {
                 $query->where('academic_year_id', $activeAcademicYear->id);
             })
@@ -32,13 +32,13 @@ trait VotingQueries
      */
     protected function positionOrder(?string $programType = null): array
     {
-        $query = Position::where('is_active', true)->orderBy('sort_order');
+        $query = Position::where('is_active', true)->orderBy('name');
 
         if ($programType) {
             $query->whereIn('program_type', [$programType, 'both']);
         }
 
-        return $query->pluck('name', 'slug')->toArray();
+        return $query->pluck('name', 'id')->toArray();
     }
 
     /**
@@ -47,14 +47,14 @@ trait VotingQueries
     protected function positionOrderCaseStatement(): string
     {
         $cases = Position::where('is_active', true)
-            ->orderBy('sort_order')
-            ->pluck('slug')
+            ->orderBy('name')
+            ->pluck('id')
             ->values();
 
-        $sql = 'CASE position_applied';
+        $sql = 'CASE position_id';
         $index = 1;
-        foreach ($cases as $slug) {
-            $sql .= " WHEN '{$slug}' THEN {$index}";
+        foreach ($cases as $id) {
+            $sql .= " WHEN '{$id}' THEN {$index}";
             $index++;
         }
         $sql .= ' ELSE 99 END';
@@ -67,7 +67,7 @@ trait VotingQueries
      */
     protected function formatPosition(string $position): string
     {
-        $positionModel = Position::where('slug', $position)->first();
+        $positionModel = Position::where('id', $position)->first();
         return $positionModel ? $positionModel->name : ucwords(str_replace('_', ' ', $position));
     }
 

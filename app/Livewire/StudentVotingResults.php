@@ -20,7 +20,7 @@ class StudentVotingResults extends Component
         $positions = $this->positionOrder();
 
         $approvedCandidates = $this->approvedCandidatesQuery($activeAcademicYear)->get();
-        $candidatesByPosition = $approvedCandidates->groupBy('position_applied');
+        $candidatesByPosition = $approvedCandidates->groupBy('position_id');
 
         $votesQuery = $this->votesQueryForAcademicYear($activeAcademicYear);
 
@@ -31,8 +31,8 @@ class StudentVotingResults extends Component
 
         $totalVotesByPosition = (clone $votesQuery)
             ->join('candidacies', 'election_votes.candidacy_id', '=', 'candidacies.id')
-            ->selectRaw('candidacies.position_applied as position, COUNT(*) as total_votes')
-            ->groupBy('candidacies.position_applied')
+            ->selectRaw('candidacies.position_id as position, COUNT(*) as total_votes')
+            ->groupBy('candidacies.position_id')
             ->pluck('total_votes', 'position');
 
         $totalVoters = (clone $votesQuery)
@@ -44,8 +44,8 @@ class StudentVotingResults extends Component
             $myVotes = $this->studentVotesQueryForElection($student->id, $activeAcademicYear)
                 ->with('candidacy.student')
                 ->get()
-                ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_applied))
-                ->keyBy(fn (ElectionVote $vote) => $vote->candidacy->position_applied);
+                ->filter(fn (ElectionVote $vote) => !empty($vote->candidacy?->position_id))
+                ->keyBy(fn (ElectionVote $vote) => $vote->candidacy->position_id);
         } else {
             $myVotes = collect();
         }

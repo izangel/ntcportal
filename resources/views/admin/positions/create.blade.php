@@ -38,13 +38,6 @@
                         @error('program_type') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
 
-                    <div>
-                        <label for="sort_order" class="block text-sm font-medium text-gray-700">Sort Order</label>
-                        <input type="number" name="sort_order" id="sort_order" value="{{ old('sort_order', 0) }}" min="0"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                        @error('sort_order') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-                    </div>
-
                     <div class="flex items-center gap-2">
                         <input type="checkbox" name="is_active" id="is_active" value="1" checked
                             class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">

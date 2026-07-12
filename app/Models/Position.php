@@ -11,10 +11,8 @@ class Position extends Model
 
     protected $fillable = [
         'name',
-        'slug',
         'program_type',
         'is_active',
-        'sort_order',
     ];
 
     protected $casts = [

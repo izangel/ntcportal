@@ -28,8 +28,8 @@ class CandidacyController extends Controller
             $isApplicationOpen = Setting::get('candidacy_application_open_' . $programType, 'true') === 'true';
             $positions = Position::where('is_active', true)
                 ->whereIn('program_type', [$programType, 'both'])
-                ->orderBy('sort_order')
-                ->pluck('name', 'slug')
+                ->orderBy('name')
+                ->pluck('name', 'id')
                 ->toArray();
         }
         
@@ -51,7 +51,7 @@ class CandidacyController extends Controller
                 ->with('error', "Candidacy applications are currently closed for {$label} students.");
         }
 
-        $allowedPositions = Position::where('is_active', true)->pluck('slug')->implode(',');
+        $allowedPositions = Position::where('is_active', true)->pluck('id')->implode(',');
         $request->validate([
             'position' => 'required|string|in:' . $allowedPositions,
             'partylist' => 'nullable|string|max:255',
@@ -71,7 +71,7 @@ class CandidacyController extends Controller
         Candidacy::create([
             'student_id' => $student->id,
             'academic_year_id' => $activeAcademicYear?->id,
-            'position_applied' => $request->position,
+            'position_id' => $request->position,
             'partylist' => $request->partylist,
             'is_independent' => $request->has('is_independent'),
             'status' => 'pending',

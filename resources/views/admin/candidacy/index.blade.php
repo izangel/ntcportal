@@ -234,7 +234,7 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="text-sm text-gray-900">{{ ucwords(str_replace('_', ' ', $application->position_applied)) }}</span>
+                                    <span class="text-sm text-gray-900">{{ $application->position->name ?? 'N/A' }}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="text-sm text-gray-900">
