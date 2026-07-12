@@ -25,6 +25,7 @@ class Candidacy extends Model
     protected $casts = [
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
+        'archived_at' => 'datetime',
         'is_independent' => 'boolean',
     ];
 
@@ -82,5 +83,29 @@ class Candidacy extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    /**
+     * Scope to exclude archived records.
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope for archived records only.
+     */
+    public function scopeArchived($query)
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    /**
+     * Check if this candidacy is archived.
+     */
+    public function getIsArchivedAttribute(): bool
+    {
+        return $this->archived_at !== null;
     }
 }

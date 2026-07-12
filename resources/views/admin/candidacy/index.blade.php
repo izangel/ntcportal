@@ -50,37 +50,75 @@
             </div>
         </div>
 
-        {{-- Application Status Toggle --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-            <div class="p-6 {{ $isApplicationOpen ? 'bg-green-50' : 'bg-red-50' }}">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full {{ $isApplicationOpen ? 'bg-green-100' : 'bg-red-100' }} flex items-center justify-center">
-                            <i class="fas {{ $isApplicationOpen ? 'fa-door-open text-green-600' : 'fa-door-closed text-red-600' }} text-xl"></i>
+        {{-- Application Status Toggles --}}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {{-- SHS Toggle --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 {{ $isApplicationOpenSHS ? 'bg-purple-50' : 'bg-red-50' }}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full {{ $isApplicationOpenSHS ? 'bg-purple-100' : 'bg-red-100' }} flex items-center justify-center">
+                                <i class="fas {{ $isApplicationOpenSHS ? 'fa-door-open text-purple-600' : 'fa-door-closed text-red-600' }} text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold {{ $isApplicationOpenSHS ? 'text-purple-800' : 'text-red-800' }}">
+                                    SHS: {{ $isApplicationOpenSHS ? 'OPEN' : 'CLOSED' }}
+                                </h3>
+                                <p class="text-sm {{ $isApplicationOpenSHS ? 'text-purple-600' : 'text-red-600' }}">
+                                    @if($isApplicationOpenSHS)
+                                        SHS students can submit candidacy applications.
+                                    @else
+                                        SHS students cannot submit at this time.
+                                    @endif
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-semibold {{ $isApplicationOpen ? 'text-green-800' : 'text-red-800' }}">
-                                Application Status: {{ $isApplicationOpen ? 'OPEN' : 'CLOSED' }}
-                            </h3>
-                            <p class="text-sm {{ $isApplicationOpen ? 'text-green-600' : 'text-red-600' }}">
-                                @if($isApplicationOpen)
-                                    Students can currently submit their candidacy applications.
-                                @else
-                                    Students cannot submit candidacy applications at this time.
-                                @endif
-                            </p>
-                        </div>
+                        <form action="{{ route('admin.candidacy.toggleApplication', 'shs') }}" method="POST">
+                            @csrf
+                            <button type="submit" 
+                                class="px-4 py-2 rounded-md text-white font-medium text-sm transition
+                                {{ $isApplicationOpenSHS ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
+                                onclick="return confirm('Are you sure you want to {{ $isApplicationOpenSHS ? 'close' : 'open' }} SHS candidacy applications?')">
+                                <i class="fas {{ $isApplicationOpenSHS ? 'fa-lock' : 'fa-unlock' }} mr-2"></i>
+                                {{ $isApplicationOpenSHS ? 'Close SHS' : 'Open SHS' }}
+                            </button>
+                        </form>
                     </div>
-                    <form action="{{ route('admin.candidacy.toggleApplication') }}" method="POST">
-                        @csrf
-                        <button type="submit" 
-                            class="px-5 py-2.5 rounded-md text-white font-medium text-sm transition
-                            {{ $isApplicationOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
-                            onclick="return confirm('Are you sure you want to {{ $isApplicationOpen ? 'close' : 'open' }} candidacy applications?')">
-                            <i class="fas {{ $isApplicationOpen ? 'fa-lock' : 'fa-unlock' }} mr-2"></i>
-                            {{ $isApplicationOpen ? 'Close Applications' : 'Open Applications' }}
-                        </button>
-                    </form>
+                </div>
+            </div>
+
+            {{-- College Toggle --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-6 {{ $isApplicationOpenCollege ? 'bg-blue-50' : 'bg-red-50' }}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full {{ $isApplicationOpenCollege ? 'bg-blue-100' : 'bg-red-100' }} flex items-center justify-center">
+                                <i class="fas {{ $isApplicationOpenCollege ? 'fa-door-open text-blue-600' : 'fa-door-closed text-red-600' }} text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold {{ $isApplicationOpenCollege ? 'text-blue-800' : 'text-red-800' }}">
+                                    College: {{ $isApplicationOpenCollege ? 'OPEN' : 'CLOSED' }}
+                                </h3>
+                                <p class="text-sm {{ $isApplicationOpenCollege ? 'text-blue-600' : 'text-red-600' }}">
+                                    @if($isApplicationOpenCollege)
+                                        College students can submit candidacy applications.
+                                    @else
+                                        College students cannot submit at this time.
+                                    @endif
+                                </p>
+                            </div>
+                        </div>
+                        <form action="{{ route('admin.candidacy.toggleApplication', 'college') }}" method="POST">
+                            @csrf
+                            <button type="submit" 
+                                class="px-4 py-2 rounded-md text-white font-medium text-sm transition
+                                {{ $isApplicationOpenCollege ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700' }}"
+                                onclick="return confirm('Are you sure you want to {{ $isApplicationOpenCollege ? 'close' : 'open' }} College candidacy applications?')">
+                                <i class="fas {{ $isApplicationOpenCollege ? 'fa-lock' : 'fa-unlock' }} mr-2"></i>
+                                {{ $isApplicationOpenCollege ? 'Close College' : 'Open College' }}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -89,9 +127,33 @@
             {{-- Header & Filters --}}
             <div class="p-6 border-b border-gray-200">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <h3 class="text-lg font-semibold text-gray-900">SSG Election - Candidacy Applications</h3>
+                    <div class="flex items-center gap-4">
+                        <h3 class="text-lg font-semibold text-gray-900">SSG Election - Candidacy Applications</h3>
+                        
+                        {{-- Archive Toggle --}}
+                        <a href="{{ route('admin.candidacy.index', array_merge(request()->query(), ['archived' => $showArchived ? 0 : 1])) }}" 
+                            class="px-3 py-1.5 rounded-md text-xs font-semibold transition
+                            {{ $showArchived ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200' }}">
+                            <i class="fas {{ $showArchived ? 'fa-archive' : 'fa-inbox' }} mr-1"></i>
+                            {{ $showArchived ? 'Active Records' : 'Archived' }}
+                        </a>
+
+                        {{-- Archive All (only when viewing active) --}}
+                        @if(!$showArchived)
+                            <form action="{{ route('admin.candidacy.archiveAll') }}" method="POST" class="inline"
+                                onsubmit="return confirm('Archive all candidacy applications? This will move them out of the active list.')">
+                                @csrf
+                                <button type="submit" class="px-3 py-1.5 bg-gray-600 text-white rounded-md text-xs font-semibold hover:bg-gray-700">
+                                    <i class="fas fa-archive mr-1"></i> Archive All
+                                </button>
+                            </form>
+                        @endif
+                    </div>
                     
                     <form action="{{ route('admin.candidacy.index') }}" method="GET" class="flex flex-col md:flex-row gap-3">
+                        @if($showArchived)
+                            <input type="hidden" name="archived" value="1">
+                        @endif
                         <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name..." 
                             class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm">
                         
@@ -202,7 +264,10 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <div class="flex items-center gap-3">
+                                    <div class="flex items-center gap-2">
+                                        @if($application->is_archived)
+                                            <span class="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-200 text-gray-600 uppercase">Archived</span>
+                                        @endif
                                         {{-- View Link --}}
                                         <a href="{{ route('admin.candidacy.show', $application) }}"
                                             class="text-blue-600 hover:text-blue-900 hover:underline">
@@ -231,6 +296,26 @@
                                                 onclick="openRejectModal({{ $application->id }})">
                                                 Reject
                                             </button>
+                                        @endif
+
+                                        {{-- Archive / Restore Button --}}
+                                        @if($application->is_archived)
+                                            <form action="{{ route('admin.candidacy.restore', $application) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="text-green-600 hover:text-green-900 hover:underline">
+                                                    Restore
+                                                </button>
+                                            </form>
+                                        @else
+                                            <form action="{{ route('admin.candidacy.archive', $application) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="text-gray-600 hover:text-gray-900 hover:underline"
+                                                    onclick="return confirm('Archive this application?')">
+                                                    Archive
+                                                </button>
+                                            </form>
                                         @endif
 
                                         {{-- Delete Button --}}

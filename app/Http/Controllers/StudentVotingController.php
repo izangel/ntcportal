@@ -24,15 +24,17 @@ class StudentVotingController extends Controller
         $student = Auth::user()->student;
         abort_unless($student, 403);
 
-        $electionStatus = \App\Models\Setting::get('election_status', 'open');
+        $activeAcademicYear = AcademicYear::where('is_active', true)->first();
+        $programType = $student->program_type;
+        $electionStatus = \App\Models\Setting::get('election_status_' . $programType, 'open');
         if ($electionStatus !== 'open') {
-            return redirect()->route('dashboard')->with('error', 'The election is currently closed.');
+            $label = $programType === 'shs' ? 'SHS' : 'College';
+            return redirect()->route('dashboard')->with('error', "The election is currently closed for {$label} students.");
         }
 
-        $activeAcademicYear = AcademicYear::where('is_active', true)->first();
-        $positions = $this->positionOrder();
+        $positions = $this->positionOrder($programType);
 
-        $candidates = $this->approvedCandidatesQuery($activeAcademicYear)->get();
+        $candidates = $this->approvedCandidatesQuery($activeAcademicYear, $programType)->get();
         $candidatesByPosition = $candidates->groupBy('position_applied');
 
         $selectedVotesQuery = $this->studentVotesQueryForElection($student->id, $activeAcademicYear);
@@ -60,12 +62,13 @@ class StudentVotingController extends Controller
         $student = Auth::user()->student;
         abort_unless($student, 403);
 
-        $electionStatus = \App\Models\Setting::get('election_status', 'open');
-        if ($electionStatus !== 'open') {
-            return redirect()->route('dashboard')->with('error', 'The election is currently closed.');
-        }
-
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
+        $programType = $student->program_type;
+        $electionStatus = \App\Models\Setting::get('election_status_' . $programType, 'open');
+        if ($electionStatus !== 'open') {
+            $label = $programType === 'shs' ? 'SHS' : 'College';
+            return redirect()->route('dashboard')->with('error', "The election is currently closed for {$label} students.");
+        }
 
         if ($this->studentVotesQueryForElection($student->id, $activeAcademicYear)->exists()) {
             return redirect()
@@ -73,7 +76,9 @@ class StudentVotingController extends Controller
                 ->with('error', 'You already submitted your votes. Vote changes are no longer allowed.');
         }
 
-        $candidateIdsByPosition = $this->approvedCandidatesQuery($activeAcademicYear)
+        $programType = $student->program_type;
+
+        $candidateIdsByPosition = $this->approvedCandidatesQuery($activeAcademicYear, $programType)
             ->get(['id', 'position_applied'])
             ->groupBy('position_applied')
             ->map(fn (Collection $group) => $group->pluck('id')->all())
@@ -133,9 +138,10 @@ class StudentVotingController extends Controller
         abort_unless($student, 403);
 
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
-        $positions = $this->positionOrder();
+        $programType = $student->program_type;
+        $positions = $this->positionOrder($programType);
 
-        $approvedCandidates = $this->approvedCandidatesQuery($activeAcademicYear)->get();
+        $approvedCandidates = $this->approvedCandidatesQuery($activeAcademicYear, $programType)->get();
         $candidatesByPosition = $approvedCandidates->groupBy('position_applied');
 
         $votesQuery = $this->votesQueryForAcademicYear($activeAcademicYear);

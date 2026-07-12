@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Candidacy;
+use App\Models\Position;
 use App\Models\Setting;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -17,6 +18,14 @@ class CandidacyManagementController extends Controller
     public function index(Request $request)
     {
         $query = Candidacy::with('student.user');
+
+        // Filter archived status
+        $showArchived = $request->boolean('archived');
+        if ($showArchived) {
+            $query->archived();
+        } else {
+            $query->notArchived();
+        }
 
         $this->applyPositionOrdering($query)
             ->orderByDesc('submitted_at')
@@ -37,29 +46,22 @@ class CandidacyManagementController extends Controller
             });
         }
 
-        $applications = $query->paginate(15);
-        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
-        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
-
-        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen'));
-        $applications = $query->paginate(10);
-        $positionOrder = [
-            'president' => 'President',
-            'vice_president' => 'Vice President',
-            'secretary' => 'Secretary',
-            'treasurer' => 'Treasurer',
-            'auditor' => 'Auditor',
-            'pio' => 'PIO',
-            'business_manager' => 'Business Manager',
-        ];
+        $positionOrder = Position::where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('name', 'slug')
+            ->toArray();
         $positionCounts = Candidacy::query()
+            ->notArchived()
             ->selectRaw('position_applied, COUNT(*) as total')
             ->groupBy('position_applied')
             ->pluck('total', 'position_applied');
-        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
-        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
 
-        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpen', 'positionOrder', 'positionCounts'));
+        $applications = $query->paginate(15);
+        $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
+        $isApplicationOpenSHS = Setting::get('candidacy_application_open_shs', 'true') === 'true';
+        $isApplicationOpenCollege = Setting::get('candidacy_application_open_college', 'true') === 'true';
+
+        return view('admin.candidacy.index', compact('applications', 'googleDriveLink', 'isApplicationOpenSHS', 'isApplicationOpenCollege', 'positionOrder', 'positionCounts', 'showArchived'));
     }
 
     /**
@@ -77,15 +79,10 @@ class CandidacyManagementController extends Controller
     public function edit(Candidacy $candidacy)
     {
         $candidacy->load('student.user');
-        $positions = [
-            'president' => 'President',
-            'vice_president' => 'Vice President',
-            'secretary' => 'Secretary',
-            'treasurer' => 'Treasurer',
-            'auditor' => 'Auditor',
-            'pio' => 'PIO',
-            'business_manager' => 'Business Manager',
-        ];
+        $positions = Position::where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('name', 'slug')
+            ->toArray();
         return view('admin.candidacy.edit', compact('candidacy', 'positions'));
     }
 
@@ -94,8 +91,9 @@ class CandidacyManagementController extends Controller
      */
     public function update(Request $request, Candidacy $candidacy)
     {
+        $allowedPositions = Position::where('is_active', true)->pluck('slug')->implode(',');
         $request->validate([
-            'position_applied' => 'required|string|in:president,vice_president,secretary,treasurer,auditor,pio,business_manager',
+            'position_applied' => 'required|string|in:' . $allowedPositions,
             'is_independent' => 'required|boolean',
             'partylist' => 'nullable|string|max:255',
         ]);
@@ -107,15 +105,6 @@ class CandidacyManagementController extends Controller
 
         return redirect()->route('admin.candidacy.index')
             ->with('success', 'Candidacy application updated successfully.');
-        $candidacy->update([
-            'status' => 'approved',
-            'remarks' => $request->remarks,
-            'reviewed_at' => now(),
-            'reviewed_by' => Auth::id(),
-        ]);
-
-        return redirect()->route('admin.candidacy.index')
-            ->with('success', 'Candidacy application has been approved.');
     }
 
     /**
@@ -166,16 +155,15 @@ class CandidacyManagementController extends Controller
      */
     private function positionOrderCaseStatement(): string
     {
-        return "CASE position_applied
-            WHEN 'president' THEN 1
-            WHEN 'vice_president' THEN 2
-            WHEN 'secretary' THEN 3
-            WHEN 'treasurer' THEN 4
-            WHEN 'auditor' THEN 5
-            WHEN 'pio' THEN 6
-            WHEN 'business_manager' THEN 7
-            ELSE 99
-        END";
+        $positions = Position::where('is_active', true)->orderBy('sort_order')->pluck('slug');
+        $sql = 'CASE position_applied';
+        $index = 1;
+        foreach ($positions as $slug) {
+            $sql .= " WHEN '{$slug}' THEN {$index}";
+            $index++;
+        }
+        $sql .= ' ELSE 99 END';
+        return $sql;
     }
 
     /**
@@ -194,18 +182,20 @@ class CandidacyManagementController extends Controller
     }
 
     /**
-     * Toggle the candidacy application open/closed status.
+     * Toggle the candidacy application open/closed status for a program type.
      */
-    public function toggleApplicationStatus()
+    public function toggleApplicationStatus(string $programType)
     {
-        $currentStatus = Setting::get('candidacy_application_open', 'true');
+        $key = 'candidacy_application_open_' . $programType;
+        $currentStatus = Setting::get($key, 'true');
         $newStatus = $currentStatus === 'true' ? 'false' : 'true';
         
-        Setting::set('candidacy_application_open', $newStatus, 'Whether candidacy applications are open for students');
+        Setting::set($key, $newStatus, 'Whether candidacy applications are open for ' . strtoupper($programType) . ' students');
 
+        $label = strtoupper($programType);
         $message = $newStatus === 'true' 
-            ? 'Candidacy applications are now OPEN for students.' 
-            : 'Candidacy applications are now CLOSED for students.';
+            ? "Candidacy applications are now OPEN for {$label} students." 
+            : "Candidacy applications are now CLOSED for {$label} students.";
 
         return redirect()->route('admin.candidacy.index')
             ->with('success', $message);
@@ -225,5 +215,38 @@ class CandidacyManagementController extends Controller
 
         return redirect()->route('admin.candidacy.index')
             ->with('success', 'Candidacy application has been approved.');
+    }
+
+    /**
+     * Archive a candidacy application.
+     */
+    public function archive(Candidacy $candidacy)
+    {
+        $candidacy->update(['archived_at' => now()]);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', 'Candidacy application has been archived.');
+    }
+
+    /**
+     * Restore an archived candidacy application.
+     */
+    public function restore(Candidacy $candidacy)
+    {
+        $candidacy->update(['archived_at' => null]);
+
+        return redirect()->route('admin.candidacy.index', ['archived' => 1])
+            ->with('success', 'Candidacy application has been restored.');
+    }
+
+    /**
+     * Archive all approved candidacy applications for a given academic year.
+     */
+    public function archiveAll()
+    {
+        $count = Candidacy::notArchived()->update(['archived_at' => now()]);
+
+        return redirect()->route('admin.candidacy.index')
+            ->with('success', "All {$count} candidacy applications have been archived.");
     }
 }

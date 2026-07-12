@@ -130,13 +130,9 @@
                                     <div class="flex-1">
                                         <select name="position" id="position" class="w-full border-0 border-b border-gray-400 bg-transparent focus:ring-0 focus:border-blue-500 px-0 text-sm" required>
                                             <option value="" disabled selected>Select Position</option>
-                                            <option value="president">President</option>
-                                            <option value="vice_president">Vice President</option>
-                                            <option value="secretary">Secretary</option>
-                                            <option value="treasurer">Treasurer</option>
-                                            <option value="auditor">Auditor</option>
-                                            <option value="pio">PIO</option>
-                                            <option value="business_manager">Business Manager</option>
+                                            @foreach($positions as $slug => $name)
+                                                <option value="{{ $slug }}">{{ $name }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>

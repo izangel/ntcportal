@@ -341,12 +341,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
         Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
         Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
-        Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
+        Route::post('/toggle-application/{programType}', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication')->whereIn('programType', ['shs', 'college']);
         Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
         Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
         Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
         Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
         Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
+        Route::patch('/{candidacy}/archive', [CandidacyManagementController::class, 'archive'])->name('archive');
+        Route::patch('/{candidacy}/restore', [CandidacyManagementController::class, 'restore'])->name('restore');
+        Route::post('/archive-all', [CandidacyManagementController::class, 'archiveAll'])->name('archiveAll');
     });
 
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
@@ -380,6 +383,16 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/faculty/reports', [EvaluationReportController::class, 'index'])->name('faculty.reports.index');
     Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
     Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
+
+    // Position Management
+    Route::prefix('admin/positions')->name('admin.positions.')->middleware('role:admin|academic_head|hr|teacher')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\PositionController::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\PositionController::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\PositionController::class, 'store'])->name('store');
+        Route::get('/{position}/edit', [App\Http\Controllers\Admin\PositionController::class, 'edit'])->name('edit');
+        Route::patch('/{position}', [App\Http\Controllers\Admin\PositionController::class, 'update'])->name('update');
+        Route::delete('/{position}', [App\Http\Controllers\Admin\PositionController::class, 'destroy'])->name('destroy');
+    });
 
     // SSG Election Results for Faculty/Staff/Admin
     Route::middleware('role:teacher|staff|academic_head|hr|admin')->group(function () {

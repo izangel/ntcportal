@@ -11,20 +11,31 @@ class FacultyVotingResults extends Component
 {
     use VotingQueries;
 
-    public $electionStatus = 'open';
+    public $electionStatusSHS = 'open';
+    public $electionStatusCollege = 'open';
 
     public function mount()
     {
-        $this->electionStatus = \App\Models\Setting::get('election_status', 'open');
+        $this->electionStatusSHS = \App\Models\Setting::get('election_status_shs', 'open');
+        $this->electionStatusCollege = \App\Models\Setting::get('election_status_college', 'open');
     }
 
-    public function toggleElectionStatus()
+    public function toggleSHS()
     {
-        $newStatus = $this->electionStatus === 'open' ? 'closed' : 'open';
-        \App\Models\Setting::set('election_status', $newStatus, 'Current status of the SSG election');
-        $this->electionStatus = $newStatus;
-        
-        session()->flash('message', 'Election has been ' . $newStatus . '.');
+        $newStatus = $this->electionStatusSHS === 'open' ? 'closed' : 'open';
+        \App\Models\Setting::set('election_status_shs', $newStatus, 'Current status of the SSG election for SHS');
+        $this->electionStatusSHS = $newStatus;
+
+        session()->flash('message', 'SHS election has been ' . $newStatus . '.');
+    }
+
+    public function toggleCollege()
+    {
+        $newStatus = $this->electionStatusCollege === 'open' ? 'closed' : 'open';
+        \App\Models\Setting::set('election_status_college', $newStatus, 'Current status of the SSG election for College');
+        $this->electionStatusCollege = $newStatus;
+
+        session()->flash('message', 'College election has been ' . $newStatus . '.');
     }
 
     public function render()

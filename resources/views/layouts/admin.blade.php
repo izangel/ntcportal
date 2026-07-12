@@ -306,6 +306,10 @@
                             <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                         </button>
                         <div x-show="open" x-collapse.duration.300ms style="display: none;">
+                            <x-nav-link href="{{ route('admin.positions.index') }}" :active="request()->routeIs('admin.positions.*')">
+                                <i class="fas fa-list-ol mr-3 text-lg"></i>
+                                {{ __('Manage Positions') }}
+                            </x-nav-link>
                             <x-nav-link href="{{ route('admin.candidacy.index') }}" :active="request()->routeIs('admin.candidacy.index')">
                                 <i class="fas fa-vote-yea mr-3 text-lg"></i>
                                 {{ __('Candidacy Applications') }}

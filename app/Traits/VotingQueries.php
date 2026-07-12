@@ -5,38 +5,40 @@ namespace App\Traits;
 use App\Models\AcademicYear;
 use App\Models\Candidacy;
 use App\Models\ElectionVote;
+use App\Models\Position;
 
 trait VotingQueries
 {
     /**
      * Get approved candidates scoped appropriately.
      */
-    protected function approvedCandidatesQuery(?AcademicYear $activeAcademicYear)
+    protected function approvedCandidatesQuery(?AcademicYear $activeAcademicYear, ?string $programType = null)
     {
-        return Candidacy::with('student.user')
+        $query = Candidacy::with('student.user')
             ->where('status', 'approved')
-            ->whereIn('position_applied', array_keys($this->positionOrder()))
+            ->whereIn('position_applied', array_keys($this->positionOrder($programType)))
             ->when($activeAcademicYear, function ($query) use ($activeAcademicYear) {
                 $query->where('academic_year_id', $activeAcademicYear->id);
             })
             ->orderByRaw($this->positionOrderCaseStatement())
             ->orderBy('created_at');
+
+        return $query;
     }
 
     /**
      * Canonical position ordering for the ballot.
+     * Fetches from DB positions table, optionally filtered by program type.
      */
-    protected function positionOrder(): array
+    protected function positionOrder(?string $programType = null): array
     {
-        return [
-            'president' => 'President',
-            'vice_president' => 'Vice President',
-            'secretary' => 'Secretary',
-            'treasurer' => 'Treasurer',
-            'auditor' => 'Auditor',
-            'pio' => 'PIO',
-            'business_manager' => 'Business Manager',
-        ];
+        $query = Position::where('is_active', true)->orderBy('sort_order');
+
+        if ($programType) {
+            $query->whereIn('program_type', [$programType, 'both']);
+        }
+
+        return $query->pluck('name', 'slug')->toArray();
     }
 
     /**
@@ -44,16 +46,20 @@ trait VotingQueries
      */
     protected function positionOrderCaseStatement(): string
     {
-        return "CASE position_applied
-            WHEN 'president' THEN 1
-            WHEN 'vice_president' THEN 2
-            WHEN 'secretary' THEN 3
-            WHEN 'treasurer' THEN 4
-            WHEN 'auditor' THEN 5
-            WHEN 'pio' THEN 6
-            WHEN 'business_manager' THEN 7
-            ELSE 99
-        END";
+        $cases = Position::where('is_active', true)
+            ->orderBy('sort_order')
+            ->pluck('slug')
+            ->values();
+
+        $sql = 'CASE position_applied';
+        $index = 1;
+        foreach ($cases as $slug) {
+            $sql .= " WHEN '{$slug}' THEN {$index}";
+            $index++;
+        }
+        $sql .= ' ELSE 99 END';
+
+        return $sql;
     }
 
     /**
@@ -61,7 +67,8 @@ trait VotingQueries
      */
     protected function formatPosition(string $position): string
     {
-        return $this->positionOrder()[$position] ?? ucwords(str_replace('_', ' ', $position));
+        $positionModel = Position::where('slug', $position)->first();
+        return $positionModel ? $positionModel->name : ucwords(str_replace('_', ' ', $position));
     }
 
     /**

@@ -18,4 +18,12 @@ class Program extends Model
     {
         return $this->hasMany(Section::class);
     }
+
+    /**
+     * Determine if this program is SHS or College.
+     */
+    public function getProgramTypeAttribute(): string
+    {
+        return str_starts_with($this->name, 'SHS-') ? 'shs' : 'college';
+    }
 }
