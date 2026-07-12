@@ -14,13 +14,16 @@
                 <p class="text-gray-500 text-xs uppercase font-bold tracking-wider mb-4">Your Ballot Summary</p>
                 <div class="flex flex-wrap gap-3">
                     @foreach($positions as $positionKey => $positionLabel)
-                        @php $myVote = $myVotes[$positionKey] ?? null; @endphp
-                        <div class="px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex flex-col">
-                            <span class="text-[10px] text-gray-400 font-bold uppercase">{{ $positionLabel }}</span>
-                            <span class="text-sm font-bold text-gray-800">
-                                {{ $myVote->candidacy->student->last_name ?? 'No Vote' }}
-                            </span>
-                        </div>
+                        {{-- I-check kung naay kandidato ang posisyon usa i-display sa summary --}}
+                        @if(isset($candidatesByPosition[$positionKey]) && $candidatesByPosition[$positionKey]->isNotEmpty())
+                            @php $myVote = $myVotes[$positionKey] ?? null; @endphp
+                            <div class="px-3 py-2 bg-gray-50 rounded-xl border border-gray-100 flex flex-col">
+                                <span class="text-[10px] text-gray-400 font-bold uppercase">{{ $positionLabel }}</span>
+                                <span class="text-sm font-bold text-gray-800">
+                                    {{ $myVote->candidacy->student->last_name ?? 'No Vote' }}
+                                </span>
+                            </div>
+                        @endif
                     @endforeach
                 </div>
             </div>
@@ -35,23 +38,20 @@
                 $myVoteCandidateId = $myVotes[$positionKey]->candidacy_id ?? null;
             @endphp
 
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-6 py-5 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-2 h-8 bg-indigo-500 rounded-full"></div>
-                        <h4 class="text-xl font-bold text-gray-800">{{ $positionLabel }}</h4>
-                    </div>
-                    <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
-                        {{ number_format($positionTotalVotes) }} Total Votes
-                    </span>
-                </div>
-
-                <div class="p-6">
-                    @if($positionCandidates->isEmpty())
-                        <div class="flex flex-col items-center py-8 text-gray-400">
-                            <p class="italic">No approved candidates for this position.</p>
+            {{-- I-check kung naay kandidato usa i-render ang tibuok card sa posisyon --}}
+            @if($positionCandidates->isNotEmpty())
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-8 bg-indigo-500 rounded-full"></div>
+                            <h4 class="text-xl font-bold text-gray-800">{{ $positionLabel }}</h4>
                         </div>
-                    @else
+                        <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-lg">
+                            {{ number_format($positionTotalVotes) }} Total Votes
+                        </span>
+                    </div>
+
+                    <div class="p-6">
                         <div class="space-y-6">
                             @foreach($positionCandidates as $index => $candidate)
                                 @php
@@ -96,15 +96,15 @@
                                         <div class="h-full rounded-full transition-all duration-1000 
                                             {{ $isWinner ? 'bg-indigo-600' : 'bg-gray-400' }} 
                                             {{ $isMyVote ? 'ring-2 ring-blue-300 ring-inset' : '' }}" 
-                                             style="width: {{ $percentage }}%">
+                                            style="width: {{ $percentage }}%">
                                         </div>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            @endif
         @endforeach
     </div>
 </div>

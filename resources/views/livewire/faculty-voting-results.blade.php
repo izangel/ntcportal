@@ -48,12 +48,19 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             @foreach($positions as $positionKey => $positionLabel)
                 @php
+                    // GI-ADD NGA FILTER PARA MA-HIDE ANG ARCHIVED
                     $positionCandidates = ($candidatesByPosition[$positionKey] ?? collect())
+                        ->filter(function($candidate) {
+                            return empty($candidate->archived_at) && empty($candidate->is_archived);
+                        })
                         ->sortByDesc(fn ($candidate) => $voteCountsByCandidate[$candidate->id] ?? 0)
                         ->values();
+                        
                     $positionTotalVotes = (int) ($totalVotesByPosition[$positionKey] ?? 0);
                 @endphp
 
+                {{-- Kung gusto pud nimo i-hide ang tibuok box kung walay kandidato, i-uncomment kining @if sa ubos ug ang @endif sa pinakaubos --}}
+                {{-- @if($positionCandidates->isNotEmpty()) --}}
                 <div class="flex flex-col h-full"> 
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-full overflow-hidden">
                         <div class="bg-gray-800 border-b border-gray-700 p-4">
@@ -119,6 +126,7 @@
                         </div>
                     </div>
                 </div> 
+                {{-- @endif --}}
             @endforeach
         </div>
     </div>

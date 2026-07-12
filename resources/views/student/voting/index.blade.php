@@ -96,19 +96,16 @@
                             $positionCandidates = $candidatesByPosition[$positionKey] ?? collect();
                         @endphp
 
-                        <div class="relative">
-                            <div class="flex items-center gap-6 mb-8">
-                                <span class="flex-none text-sm font-black text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full uppercase tracking-widest border border-indigo-100">
-                                    {{ $positionLabel }}
-                                </span>
-                                <div class="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent"></div>
-                            </div>
-
-                            @if($positionCandidates->isEmpty())
-                                <div class="bg-gray-50 border-2 border-dashed border-gray-100 rounded-3xl p-8 text-center">
-                                    <p class="text-sm text-gray-400 font-medium italic">Uncontested position: No candidates available.</p>
+                        {{-- I-check kung naay kandidato usa i-render ang posisyon --}}
+                        @if($positionCandidates->isNotEmpty())
+                            <div class="relative">
+                                <div class="flex items-center gap-6 mb-8">
+                                    <span class="flex-none text-sm font-black text-indigo-600 bg-indigo-50 px-4 py-1 rounded-full uppercase tracking-widest border border-indigo-100">
+                                        {{ $positionLabel }}
+                                    </span>
+                                    <div class="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent"></div>
                                 </div>
-                            @else
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     @foreach($positionCandidates as $candidate)
                                         @php
@@ -156,8 +153,8 @@
                                         <span class="text-xs font-bold">{{ $message }}</span>
                                     </div>
                                 @enderror
-                            @endif
-                        </div>
+                            </div>
+                        @endif
                     @endforeach
 
                     {{-- Submit Button Section --}}
