@@ -134,6 +134,7 @@ class CandidacyManagementController extends Controller
     {
         $candidates = Candidacy::with('student.user')
             ->where('status', 'approved')
+            ->notArchived() // <-- Kani nga linya ang mag-filter para di maapil ang gi-archive
             ->orderByRaw($this->positionOrderCaseStatement())
             ->orderByDesc('submitted_at')
             ->orderByDesc('created_at')
