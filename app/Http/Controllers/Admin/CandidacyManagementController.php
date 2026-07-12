@@ -233,10 +233,13 @@ class CandidacyManagementController extends Controller
      */
     public function restore(Candidacy $candidacy)
     {
-        $candidacy->update(['archived_at' => null]);
+        // Explicitly set ang archived properties to null/false
+        $candidacy->archived_at = null;
+        $candidacy->save();
 
-        return redirect()->route('admin.candidacy.index', ['archived' => 1])
-            ->with('success', 'Candidacy application has been restored.');
+        // Mo-redirect diretso sa /admin/candidacy (Active Records)
+        return redirect('/admin/candidacy')
+            ->with('success', 'Candidacy application has been restored and moved to Active Records.');
     }
 
     /**

@@ -20,6 +20,7 @@ class Candidacy extends Model
         'submitted_at',
         'reviewed_at',
         'reviewed_by',
+        'archived_at',
     ];
 
     protected $casts = [
