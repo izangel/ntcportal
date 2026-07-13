@@ -16,6 +16,7 @@ trait VotingQueries
     {
         $query = Candidacy::with('student.user')
             ->where('status', 'approved')
+            ->notArchived()
             ->whereIn('position_id', array_keys($this->positionOrder($programType)))
             ->when($activeAcademicYear, function ($query) use ($activeAcademicYear) {
                 $query->where('academic_year_id', $activeAcademicYear->id);
