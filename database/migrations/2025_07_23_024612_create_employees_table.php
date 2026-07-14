@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('email')->unique()->nullable();
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
-            $table->enum('role', ['teacher', 'staff', 'academic_head', 'hr', 'admin'])->default('staff'); // Define roles
+            $table->enum('role', ['teacher', 'staff', 'academic_head', 'hr', 'admin','SHS','COLLEGE'])->default('staff'); // Define roles
             $table->timestamps();
         });
     }

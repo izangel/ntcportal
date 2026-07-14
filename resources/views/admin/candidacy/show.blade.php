@@ -60,7 +60,7 @@
                     </div>           
                     <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Position Applied</h4>
-                        <p class="text-lg font-lg text-gray-900">{{ ucwords(str_replace('_', ' ', $candidacy->position_applied)) }}</p>
+                        <p class="text-lg font-lg text-gray-900">{{ $candidacy->position->name ?? 'N/A' }}</p>
                     </div>
                     <div>
                         <h4 class="text-sm font-medium text-gray-500 uppercase mb-2">Partylist</h4>

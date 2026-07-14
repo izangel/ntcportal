@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Candidacy;
 use App\Models\AcademicYear;
+use App\Models\Position;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,9 +20,20 @@ class CandidacyController extends Controller
         $existingCandidacy = $student ? Candidacy::where('student_id', $student->id)->latest()->first() : null;
         $activeAcademicYear = AcademicYear::where('is_active', true)->first();
         $googleDriveLink = Setting::get('candidacy_google_drive_link', 'https://drive.google.com/drive/folders/1ll0nBJvq1a4I1rxezkaNCQO5VWSxI5_F');
-        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
+
+        $positions = [];
+        $isApplicationOpen = false;
+        if ($student) {
+            $programType = $student->program_type;
+            $isApplicationOpen = Setting::get('candidacy_application_open_' . $programType, 'true') === 'true';
+            $positions = Position::where('is_active', true)
+                ->whereIn('program_type', [$programType, 'both'])
+                ->orderBy('name')
+                ->pluck('name', 'id')
+                ->toArray();
+        }
         
-        return view('candidacy.index', compact('existingCandidacy', 'activeAcademicYear', 'googleDriveLink', 'isApplicationOpen'));
+        return view('candidacy.index', compact('existingCandidacy', 'activeAcademicYear', 'googleDriveLink', 'isApplicationOpen', 'positions'));
     }
 
     /**
@@ -29,19 +41,21 @@ class CandidacyController extends Controller
      */
     public function store(Request $request)
     {
-        // Check if applications are open
-        $isApplicationOpen = Setting::get('candidacy_application_open', 'true') === 'true';
+        // Check if applications are open for student's program type
+        $student = Auth::user()->student;
+        $programType = $student->program_type;
+        $isApplicationOpen = Setting::get('candidacy_application_open_' . $programType, 'true') === 'true';
         if (!$isApplicationOpen) {
+            $label = $programType === 'shs' ? 'SHS' : 'College';
             return redirect()->route('student.candidacy.index')
-                ->with('error', 'Candidacy applications are currently closed.');
+                ->with('error', "Candidacy applications are currently closed for {$label} students.");
         }
 
+        $allowedPositions = Position::where('is_active', true)->pluck('id')->implode(',');
         $request->validate([
-            'position' => 'required|string|max:255',
+            'position' => 'required|string|in:' . $allowedPositions,
             'partylist' => 'nullable|string|max:255',
         ]);
-
-        $student = Auth::user()->student;
 
         // Check if student already has any candidacy application
         $existingCandidacy = Candidacy::where('student_id', $student->id)->first();
@@ -57,7 +71,7 @@ class CandidacyController extends Controller
         Candidacy::create([
             'student_id' => $student->id,
             'academic_year_id' => $activeAcademicYear?->id,
-            'position_applied' => $request->position,
+            'position_id' => $request->position,
             'partylist' => $request->partylist,
             'is_independent' => $request->has('is_independent'),
             'status' => 'pending',

@@ -12,7 +12,7 @@ class Candidacy extends Model
     protected $fillable = [
         'student_id',
         'academic_year_id',
-        'position_applied',
+        'position_id',
         'partylist',
         'is_independent',
         'status',
@@ -20,11 +20,13 @@ class Candidacy extends Model
         'submitted_at',
         'reviewed_at',
         'reviewed_by',
+        'archived_at',
     ];
 
     protected $casts = [
         'submitted_at' => 'datetime',
         'reviewed_at' => 'datetime',
+        'archived_at' => 'datetime',
         'is_independent' => 'boolean',
     ];
 
@@ -50,6 +52,14 @@ class Candidacy extends Model
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    /**
+     * Get the position for the candidacy.
+     */
+    public function position()
+    {
+        return $this->belongsTo(Position::class);
     }
 
     /**
@@ -82,5 +92,29 @@ class Candidacy extends Model
     public function scopeRejected($query)
     {
         return $query->where('status', 'rejected');
+    }
+
+    /**
+     * Scope to exclude archived records.
+     */
+    public function scopeNotArchived($query)
+    {
+        return $query->whereNull('archived_at');
+    }
+
+    /**
+     * Scope for archived records only.
+     */
+    public function scopeArchived($query)
+    {
+        return $query->whereNotNull('archived_at');
+    }
+
+    /**
+     * Check if this candidacy is archived.
+     */
+    public function getIsArchivedAttribute(): bool
+    {
+        return $this->archived_at !== null;
     }
 }

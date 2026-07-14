@@ -45,19 +45,6 @@
                 </div>
             </div>
 
-            {{-- Important Notes --}}
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                <h4 class="text-lg font-semibold text-yellow-800 mb-2 flex items-center">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    Important Notes
-                </h4>
-                <ul class="text-sm text-yellow-700 space-y-2">
-                    <li>• Applications must be submitted by <span class="text-blue-800 font-bold">March 12, 2026</span>, prior to the graduation ceremony.</li>
-                    <li>• Incomplete applications will not be processed. Please ensure all requirements are met.</li>
-                    <li>• Declaration of Qualified Candidates <span class="text-blue-800 font-bold">March 13, 2026</span>.</li>
-                </ul>
-            </div>
-
             {{-- Action Button --}}
             <div class="text-center">
                 <a href="{{ route('student.candidacy.index') }}" 

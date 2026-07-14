@@ -49,7 +49,7 @@
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Position Applied</p>
-                            <p class="font-medium text-gray-900">{{ ucwords(str_replace('_', ' ', $application->position_applied)) }}</p>
+                            <p class="font-medium text-gray-900">{{ $application->position->name ?? 'N/A' }}</p>
                         </div>
                         <div>
                             <p class="text-sm text-gray-500">Partylist</p>

@@ -23,14 +23,14 @@
             {{-- Candidates Grid --}}
             <div class="p-6">
                 @php
-                    $positions = $candidates->groupBy('position_applied');
+                    $positions = $candidates->groupBy('position_id');
                 @endphp
 
                 @forelse($positions as $position => $positionCandidates)
                     <div class="mb-8">
                         <h4 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
                             <i class="fas fa-star text-yellow-500 mr-2"></i>
-                            {{ ucwords(str_replace('_', ' ', $position)) }}
+                            {{ $positionCandidates->first()->position->name ?? $position }}
                         </h4>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             @foreach($positionCandidates as $candidate)

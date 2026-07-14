@@ -34,6 +34,19 @@ class DashboardController extends Controller
         // 1. Get Active Semester early to use for both Students and Staff
         $activeSemester = Semester::where('is_active', 1)->first();
         $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
+        // Active Academic Year & Semester
+$activeAcademicYear = AcademicYear::where('is_active', 1)->first();
+
+$activeAYCount = $activeAcademicYear ? 1 : 0;
+$activeSemesterCount = $activeSemester ? 1 : 0;
+
+$currentAYName = $activeAcademicYear
+    ? ($activeAcademicYear->name ?? $activeAcademicYear->academic_year ?? 'N/A')
+    : 'N/A';
+
+$currentSemName = $activeSemester
+    ? $activeSemester->name
+    : 'N/A';
 
         
        
@@ -173,22 +186,27 @@ class DashboardController extends Controller
             $staffData['pendingApplications'] = $pendingApplications;
         }
 
-        $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 
-            'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
-        $staffData, 
-        $studentData
-    );
+      $viewData = array_merge(
+    compact(
+        'user',
+        'notifications',
+        'recentDates',
+        'leavesByDay',
+        'daysOfWeek',
+        'activeAYCount',
+        'activeSemesterCount',
+        'currentAYName',
+        'currentSemName'
+    ),
+    $staffData,
+    $studentData
+);
 
-    return view('dashboard', $viewData);
-}
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
-            $staffData,
-            $studentData
-        );
+return view('dashboard', $viewData);
 
-        return view('dashboard', $viewData);
+    
     }
+    
 
     // Helper to map semester names
     private function getSemesterName($name) {
@@ -197,7 +215,9 @@ class DashboardController extends Controller
             str_contains($name, 'Second') => '2nd',
             default                       => 'Summer',
         };
+       
     }
+    
 
     protected function calculateGPA(Collection $enrollments): float {
         $totalPoints = 0; $totalCredits = 0;

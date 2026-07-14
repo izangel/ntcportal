@@ -137,4 +137,13 @@ public function courseBlocks() {
     {
         return $this->hasMany(ElectionVote::class);
     }
+
+    /**
+     * Get the student's program type (shs or college).
+     */
+    public function getProgramTypeAttribute(): string
+    {
+        $program = $this->program();
+        return $program ? $program->program_type : 'college';
+    }
 }

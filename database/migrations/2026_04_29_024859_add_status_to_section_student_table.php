@@ -11,16 +11,45 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('section_student', function (Blueprint $table) {
-            // This is the column the error is complaining about
-            $table->string('status')->nullable()->default('New')->after('semester');
-        });
+        // 1. Safe check for your actual 'sections' table layout
+        if (Schema::hasTable('sections')) {
+            if (!Schema::hasColumn('sections', 'status')) {
+                Schema::table('sections', function (Blueprint $table) {
+                    // Removed ->after() so MySQL places it safely at the end of the table
+                    $table->string('status')->nullable()->default('New');
+                });
+            }
+        }
+        
+        // 2. Safe check fallback in case 'section_student' is created elsewhere
+        if (Schema::hasTable('section_student')) {
+            if (!Schema::hasColumn('section_student', 'status')) {
+                Schema::table('section_student', function (Blueprint $table) {
+                    $table->string('status')->nullable()->default('New');
+                });
+            }
+        }
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::table('section_student', function (Blueprint $table) {
-            $table->dropColumn('status');
-        });
+        if (Schema::hasTable('sections')) {
+            if (Schema::hasColumn('sections', 'status')) {
+                Schema::table('sections', function (Blueprint $table) {
+                    $table->dropColumn('status');
+                });
+            }
+        }
+
+        if (Schema::hasTable('section_student')) {
+            if (Schema::hasColumn('section_student', 'status')) {
+                Schema::table('section_student', function (Blueprint $table) {
+                    $table->dropColumn('status');
+                });
+            }
+        }
     }
 };
