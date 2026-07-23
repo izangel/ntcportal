@@ -16,7 +16,6 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\LeaveApplicationController;
 use App\Livewire\SectionAssignment;
 use App\Livewire\AssignStudentCourseBlock;
-use App\Http\Controllers\LeaveApplicationController; // For employee-side leave application management
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\AcademicHeadLeaveApplicationController;
 use App\Http\Controllers\HrLeaveApplicationController;
@@ -55,14 +54,6 @@ use App\Livewire\Admin\FacultyCourseListView;
 use App\Livewire\CourseBlockBulkUploader;
 use App\Livewire\FacultyCourseLoad;
 
-// Livewire Components
-use App\Livewire\AssignCourses;
-use App\Livewire\AssignCoursesIndividual;
-use App\Livewire\CourseBlockManager;
-use App\Livewire\FacultyCourseBlockView;
-use App\Livewire\Admin\FacultyCourseListView;
-use App\Livewire\CourseBlockBulkUploader;
-use App\Livewire\FacultyCourseLoad;
 
 use App\Http\Controllers\Admin\CandidacyManagementController;
 
@@ -138,7 +129,7 @@ Route::middleware([
         'destroy' => 'important_dates.destroy',
     ]);
 
-    // Admin and Teacher specific routes (apply roles middleware)
+    // --- REGISTRAR/ADMIN/HR/PROGRAM HEADS/ACADMIC HEAD
     Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs'])->group(function () {
         
         Route::resource('courses', CourseController::class);
@@ -167,27 +158,16 @@ Route::middleware([
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
 
         Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
-    });
 
-        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
-        Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
-       //Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
-       Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
-        Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
+         Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
                 ->name('assign.courseblocks');
-        
-       Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
-        Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
-        Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
 
-    // List View
+         // List View
         Route::get('/course-blocks', [CourseBlockController::class, 'index'])->name('course_blocks.index');
         
         // Create & Store (Existing)
         Route::get('/course-blocks/create', [CourseBlockController::class, 'create'])->name('course_blocks.create');
         Route::post('/course-blocks', [CourseBlockController::class, 'store'])->name('course_blocks.store');
-
-
 
         Route::get('/studentsportal', [StudentPortalController::class, 'index'])->name('students.studentportal');
         Route::put('/students/{student}/update-section', [StudentPortalController::class, 'updateSection'])->name('students.updateSection');
@@ -198,89 +178,69 @@ Route::middleware([
         Route::get('/reports/student-compliance', [EvaluationReportController::class, 'studentCompliance'])
             ->name('faculty.reports.student_compliance');
 
-        // routes/web.php
+        
         Route::get('/students/{student}/cor', [StudentController::class, 'printCOR'])->name('students.cor');
 
-     
-        // Route::get('/reports/class-list/{course_block}/{academic_year?}/{semester?}', [ReportController::class, 'classListPerSubj'])
-        //     ->name('reports.class-list');
+        // Reports Routes /Not Working yet
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
+        Route::get('/reports/student-types', [ReportController::class, 'studentTypes'])->name('reports.studentTypes');
 
+        // API route for dynamic semester loading
+        Route::get('/reports/class-list/{section_id}/{academic_year_id}/{semester}', [ReportController::class, 'classList'])
+        ->name('admin.reports.class-list');
+
+        // API route for dynamic semester loading (for reports filter)
+        Route::get('/api/semesters-by-academic-year', function (Request $request) {
+            $academicYearId = $request->input('academic_year_id');
+            if ($academicYearId) {
+                return response()->json(
+                    \App\Models\Semester::where('academic_year_id', $academicYearId)
+                                        ->orderBy('name')
+                                        ->get(['id', 'name'])
+                );
+            }
+            return response()->json([]);
+        })->name('api.semestersByAcademicYear');
+
+        Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
+
+         Route::get('/course-blocks/{courseBlock}/edit', [CourseBlockController::class, 'edit'])
+            ->name('course_blocks.edit');
+        Route::put('/course-blocks/{courseBlock}', [CourseBlockController::class, 'update'])
+            ->name('course_blocks.update');
+        Route::delete('/course-blocks/{courseBlock}', [CourseBlockController::class, 'destroy'])
+            ->name('course_blocks.destroy');
+
+
+    }); //REGISTRAR/PROGRAM HEADS
+
+    //----ADMIN/HR/ACADEMIC HEAD ONLY-----
+    Route::middleware(['role:academic_head|hr|admin'])->group(function () {
          
-// 1. The main management page (The list in your screenshot)
-    Route::get('/admin/roles', [RoleAssignmentController::class, 'index'])
-        ->name('roles.index');
+        // 1. The main management page (The list in your screenshot)
+        Route::get('/admin/roles', [RoleAssignmentController::class, 'index'])
+            ->name('roles.index');
 
-    // 2. Creating a brand new role (The "Add Role" form)
-    Route::post('/admin/roles/store', [RoleAssignmentController::class, 'store'])
-        ->name('roles.store');
+        // 2. Creating a brand new role (The "Add Role" form)
+        Route::post('/admin/roles/store', [RoleAssignmentController::class, 'store'])
+            ->name('roles.store');
 
-    // 3. Updating an employee's roles (The "Save" button on each row)
-    // We use PUT/PATCH because we are updating an existing user's relationships
-    Route::put('/admin/roles/{user}', [RoleAssignmentController::class, 'update'])
-        ->name('roles.update');
+        // 3. Updating an employee's roles (The "Save" button on each row)
+        // We use PUT/PATCH because we are updating an existing user's relationships
+        Route::put('/admin/roles/{user}', [RoleAssignmentController::class, 'update'])
+            ->name('roles.update');
 
         // The view to see the list and checkboxes
 
         Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
-    });
 
-
-     // Admin and Teacher specific routes (apply roles middleware)
-    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
-              // The main tracker view
-                // The main Tracker page
-        Route::get('/evaluation/tracker', [EvaluationWorkflowController::class, 'index'])
-            ->name('evaluation.tracker');
-
-        // STEP 1: Registrar confirms the current SY/Semester
-        Route::post('/evaluation/verify-period', [EvaluationWorkflowController::class, 'verifyPeriod'])
-            ->name('evaluation.verifyPeriod');
-
-        // STEP 2: Program Head verifies the blocks
-        Route::post('/evaluation/verify-blocks', [EvaluationWorkflowController::class, 'verifyBlocks'])
-    ->name('evaluation.verifyBlocks');
-
-    Route::post('/evaluation/verify-students', [EvaluationWorkflowController::class, 'verifyStudents'])
-    ->name('evaluation.verifyStudents');
-
-    Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
-Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
-
-
-   });
-
-     // Admin and Teacher specific routes (apply roles middleware)
-    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
-              // The main tracker view
-                // The main Tracker page
-        Route::get('/evaluation/tracker', [EvaluationWorkflowController::class, 'index'])
-            ->name('evaluation.tracker');
-
-        // STEP 1: Registrar confirms the current SY/Semester
-        Route::post('/evaluation/verify-period', [EvaluationWorkflowController::class, 'verifyPeriod'])
-            ->name('evaluation.verifyPeriod');
-
-        // STEP 2: Program Head verifies the blocks
-        Route::post('/evaluation/verify-blocks', [EvaluationWorkflowController::class, 'verifyBlocks'])
-    ->name('evaluation.verifyBlocks');
-
-    Route::post('/evaluation/verify-students', [EvaluationWorkflowController::class, 'verifyStudents'])
-    ->name('evaluation.verifyStudents');
-
-    Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
-Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
-
-
-   });
-
-    // -- HR specific routes --
-    Route::middleware(['role:hr|admin|academic_head'])->group(function () {
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);
         
          Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
          Route::post('/leave_applications/{leaveApplication}/cancel', [LeaveApplicationController::class, 'cancel'])
-    ->name('leave_applications.cancel');
+            ->name('leave_applications.cancel');
        // This route will handle the HR view of pending applications
         Route::get('/hr/pending-applications', [LeaveApplicationController::class, 'pending'])->name('hr.leave_applications.pending');
         Route::get('/hr/all-applications', [LeaveApplicationController::class, 'all'])->name('hr.leave_applications.all');
@@ -324,13 +284,12 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
         // View student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
 
-    Route::resource('leave_applications', LeaveApplicationController::class);
+        Route::resource('leave_applications', LeaveApplicationController::class);
 
-    // -- Reports Routes --
 
-    // -- Reports Routes --
+        // -- Reports Routes --
         Route::get('/admin/assign-courses', CourseAssignment::class)
-        ->name('courses.assign');
+            ->name('courses.assign');
 
         Route::get('/leave-applications/hr-file', [LeaveApplicationController::class, 'createByHr'])->name('leave_applications.hr_create');
         Route::post('/leave-applications/hr-file', [LeaveApplicationController::class, 'storeByHr'])->name('leave_applications.hr_store');
@@ -338,55 +297,47 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
         Route::get('/leave-credits/summary', [LeaveApplicationManager::class, 'creditsSummary'])->name('leave_credits.summary');
         Route::get('/leave-applications/export', [LeaveApplicationController::class, 'exportExcel'])
-    ->name('leave_applications.export');
+            ->name('leave_applications.export');
 
         Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
         Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
 
         //PES Tracker
         Route::get('/pes-tracker', PesTracker::class)->name('admin.pes-tracker');
-    });
 
-        Route::get('/leave-applications/hr-file', [LeaveApplicationController::class, 'createByHr'])->name('leave_applications.hr_create');
-        Route::post('/leave-applications/hr-file', [LeaveApplicationController::class, 'storeByHr'])->name('leave_applications.hr_store');
-        Route::get('/api/employee-credits/{id}', [LeaveApplicationController::class, 'getEmployeeCredits']);
+        //PES Tracker
+        Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
+        Route::get('/pes-tracker/settings', PesDashboardSettings::class)
+                ->name('pes-tracker.settings');
+    }); // END OF ADMIN/HR/ACADEMIC HEAD
 
-        Route::get('/leave-credits/summary', [LeaveApplicationManager::class, 'creditsSummary'])->name('leave_credits.summary');
-        Route::get('/leave-applications/export', [LeaveApplicationController::class, 'exportExcel'])
-    ->name('leave_applications.export');
 
-        Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
-        Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
-    });
+    // ---GUIDANCE ONLY----
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
+        // The main tracker view
+        // The main Tracker page
+        Route::get('/evaluation/tracker', [EvaluationWorkflowController::class, 'index'])
+            ->name('evaluation.tracker');
+
+        // STEP 1: Registrar confirms the current SY/Semester
+        Route::post('/evaluation/verify-period', [EvaluationWorkflowController::class, 'verifyPeriod'])
+            ->name('evaluation.verifyPeriod');
+
+        // STEP 2: Program Head verifies the blocks
+        Route::post('/evaluation/verify-blocks', [EvaluationWorkflowController::class, 'verifyBlocks'])
+            ->name('evaluation.verifyBlocks');
+
+        Route::post('/evaluation/verify-students', [EvaluationWorkflowController::class, 'verifyStudents'])
+        ->name('evaluation.verifyStudents');
+
+        Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
+        Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
+
+   });
 
     
-   
     
     
-    // Reports Routes
-    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/reports/students-per-course', [ReportController::class, 'studentsPerCourse'])->name('reports.studentsPerCourse');
-    Route::get('/reports/student-types', [ReportController::class, 'studentTypes'])->name('reports.studentTypes');
-
-    // API route for dynamic semester loading
-    Route::get('/reports/class-list/{section_id}/{academic_year_id}/{semester}', [ReportController::class, 'classList'])
-    ->name('admin.reports.class-list');
-
-    // API route for dynamic semester loading (for reports filter)
-    Route::get('/api/semesters-by-academic-year', function (Request $request) {
-        $academicYearId = $request->input('academic_year_id');
-        if ($academicYearId) {
-            return response()->json(
-                \App\Models\Semester::where('academic_year_id', $academicYearId)
-                                    ->orderBy('name')
-                                    ->get(['id', 'name'])
-            );
-        }
-        return response()->json([]);
-    })->name('api.semestersByAcademicYear');
-
-    Route::get('/admin/faculty-courses', FacultyCourseListView::class)->name('admin.faculty.courses');
-
     // -- Substitute Teacher routes --
     Route::get('/substitute/acknowledge/{classId}', [SubstituteAcknowledgementController::class, 'showAcknowledgementForm'])
         ->name('substitute.acknowledge')
@@ -443,31 +394,11 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
     Route::post('/notifications/{notification}', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/test/markall', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
 
-    //Route::post('/students/bulk-promote', [StudentController::class, 'bulkPromote'])->name('students.bulkPromote');
 
-    
-    // Route::get('/test', [TestController::class, 'index'])->name('test.index');
-    // Route::post('/test/call', [TestController::class, 'call'])->name('test.call');
-
-    //PES Tracker
-    Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
-    Route::get('/pes-tracker/settings', PesDashboardSettings::class)
-            ->name('pes-tracker.settings');
-
-    
-});
-
-Route::middleware('auth')->group(function () {
     Route::get('/profile/password', [ChangePasswordController::class, 'edit'])->name('password.edit');
     Route::put('/profile/password', [ChangePasswordController::class, 'update'])->name('profile.password.update');
-    Route::middleware('auth')->group(function () {
-    Route::get('/course-blocks/{courseBlock}/edit', [CourseBlockController::class, 'edit'])
-        ->name('course_blocks.edit');
-    Route::put('/course-blocks/{courseBlock}', [CourseBlockController::class, 'update'])
-        ->name('course_blocks.update');
-    Route::delete('/course-blocks/{courseBlock}', [CourseBlockController::class, 'destroy'])
-        ->name('course_blocks.destroy');
-
+    
+   
     Route::get('/profile/personal-information', [ProfileController::class, 'personalInformation'])
         ->name('profile.personal-information');
 
@@ -492,7 +423,6 @@ Route::middleware('auth')->group(function () {
     // Faculty Course Load
     Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])->name('faculty.course_load');
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])->name('faculty.course_load.show');
-    Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
     // 1. Route to show the initial page with filters (No results yet)
     Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])
@@ -502,7 +432,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
         ->name('faculty.course_load.show');
 
-      Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
+    Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
 
       // NEW My Course Load Page
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
@@ -534,7 +464,7 @@ Route::middleware('auth')->group(function () {
 
     // Faculty Peer evaluations
     // Results page (The 360 Consolidated View)
-   Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
+    Route::get('/faculty/reports/view', [EvaluationReportController::class, 'show360Report'])->name('faculty.reports.view');
     Route::get('/faculty/reports/summary', [EvaluationReportController::class, 'summary'])->name('faculty.reports.summary');
 
     // SSG Election Results for Faculty/Staff/Admin
@@ -605,36 +535,10 @@ Route::middleware('auth')->group(function () {
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
     });
-});
 
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
 
-    });
-});
 
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
 
-    });
-});
-
-Route::view('profile', 'profile')
-    ->middleware(['auth'])
-    ->name('profile');
-
-            
-            Route::get('/evaluations', [StudentEvaluationController::class, 'index'])
-                ->name('evaluations.index'); // Actual name: student.evaluations.index
-
-            Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])
-                ->name('evaluations.create');
-
-            Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])
-                ->name('evaluations.store');
-           
 
             // Candidacy Routes
             Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
@@ -646,7 +550,7 @@ Route::view('profile', 'profile')
             Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
             Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
             Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
-    });
+    
 });
 
 Livewire::setUpdateRoute(function ($handle) {
