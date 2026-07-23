@@ -56,7 +56,7 @@
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-blue-50/70">Vacation</th>
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-green-50/70">Sick</th>
                             <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-orange-50/70">Service Inc.</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                            
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -76,10 +76,7 @@
                                 {{ $item['credits']['service_incentive_leave'] ?? 0 }}
                             </td>
 
-                            <td class="px-6 py-4 text-right text-sm font-medium">
-                                <a href="{{ route('leave_applications.hr_create', ['employee_id' => $item['id']]) }}" 
-                                   class="text-indigo-600 hover:text-indigo-900 font-semibold">Record Leave</a>
-                            </td>
+                            
                         </tr>
                         @endforeach
                     </tbody>

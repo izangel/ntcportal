@@ -127,4 +127,6 @@ public function hasRole(string $role): bool
     // Adjust this logic to match how your roles are stored (e.g., a 'role' string or a relationship)
     return in_array($this->role, $roles);
 }
+
+
 }

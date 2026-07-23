@@ -56,8 +56,11 @@
                                 </a>
                             @endif
 
+                          
+
                             @if(Auth::user()->employee && Auth::user()->employee->role === 'teacher')
-                                <a href="{{ route('faculty.course-load') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
+                                
+                            <a href="{{ route('faculty.course-load') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
                                     View Detailed Load
                                 </a>
                             @endif
@@ -87,6 +90,26 @@
                 </div>
             </div>
         </div>
+
+          {{-- PES Submission Tracker Notice Block --}}
+                @if(Auth::user()->employee && in_array(Auth::user()->employee->role, ['teacher', 'admin', 'hr', 'academic_head']))
+                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="mb-8">
+                        <h4 class="text-xs font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                            ⚠️ Important Administrative Clearance Notice
+                        </h4>
+                        
+                        @if(Auth::user()->hasRole('admin'))
+                            <!-- If Admin: Embed the control list layout tracking tool directly -->
+                            @livewire('admin.pes-tracker')
+                        @else
+                            <!-- If Faculty/Staff/Head: Embed the read-only peer scoreboard tracking tool -->
+                            @livewire('faculty.pes-dashboard')
+                        @endif
+                    </div>
+</div>
+                @endif
 
         {{-- 2. Important Dates Widget --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -175,6 +198,7 @@
 
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}
+            
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {{-- 🔑 My Course Load Table (Half Width) --}}

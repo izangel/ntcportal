@@ -276,7 +276,13 @@
                         <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
                         {{ __('Grade Submission Tracking') }}
                     </x-nav-link>
-                    
+
+                    <x-nav-link href="{{ route('faculty.pes-clearance') }}" :active="request()->routeIs('pes.submissions')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('My PES Submission') }}
+                    </x-nav-link>
+
+                   
                     
                     
                     
@@ -480,7 +486,7 @@
                             <i class="fas fa-hourglass-half mr-3 text-lg"></i>
                             {{ __('Pending Leave Applications') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('leave_applications.hr_create') }}" :active="request()->routeIs('leave_applications.hr_create')">
+                        <x-nav-link href="{{ route('hr.leave_applications.create_retroactive') }}" :active="request()->routeIs('hr.leave_applications.create_retroactive')">
                             <i class="fas fa-file-upload mr-3 text-lg"></i>
                             {{ __('Unfiled Leave Applications') }}
                         </x-nav-link>
@@ -528,6 +534,17 @@
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('PES Result') }}
                     </x-nav-link>
+
+                     <x-nav-link href="{{ route('admin.pes-tracker') }}" :active="request()->routeIs('admin.pes-tracker')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('PES Submission Tracker') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('pes-tracker.settings') }}" :active="request()->routeIs('pes-tracker.settings')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('PES Tracker Default Period') }}
+                    </x-nav-link>
+
+                   
                    
                 </div>
             </div>

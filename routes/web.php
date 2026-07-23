@@ -88,6 +88,11 @@ use App\Http\Controllers\RoleAssignmentController;
 use App\Livewire\Hr\LeaveCreditsTable;
 use App\Livewire\LeaveApplicationManager;
 
+use App\Livewire\Admin\PesTracker;
+use App\Livewire\Faculty\PesDashboard;
+use App\Livewire\Admin\PesDashboardSettings;
+use App\Livewire\CreateRetroactiveLeave;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -331,6 +336,9 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
         Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
         Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
+
+        //PES Tracker
+        Route::get('/pes-tracker', PesTracker::class)->name('admin.pes-tracker');
     });
 
 
@@ -382,12 +390,12 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
 
      // HR Leave Application Management Routes (Assuming HrLeaveApplicationController exists)
-    Route::middleware(['role:hr'])->prefix('hr/leave-applications')->name('hr.leave_applications.')->group(function () {
+    Route::middleware(['role:hr|academic_head'])->prefix('hr/leave-applications')->name('hr.leave_applications.')->group(function () {
         Route::get('/', [HrLeaveApplicationController::class, 'index'])->name('index'); // HR Dashboard / Pending review list
         Route::get('/review/{leaveApplication}', [HrLeaveApplicationController::class, 'review'])->name('review')->middleware('signed'); // View/Review specific application
         Route::post('/decide/{leaveApplication}', [HrLeaveApplicationController::class, 'decide'])->name('decide'); // Process decision
-        Route::get('/retroactive', [HrLeaveApplicationController::class, 'showRetroactiveForm'])->name('retroactive_form'); // Show retroactive leave form
-        Route::post('/retroactive', [HrLeaveApplicationController::class, 'storeRetroactive'])->name('store_retroactive'); // Store retroactive leave
+        Route::get('/create-retroactive', CreateRetroactiveLeave::class)
+        ->name('create_retroactive');
         // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
     });
 
@@ -427,6 +435,13 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
     
     // Route::get('/test', [TestController::class, 'index'])->name('test.index');
     // Route::post('/test/call', [TestController::class, 'call'])->name('test.call');
+
+    //PES Tracker
+    Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
+    Route::get('/pes-tracker/settings', PesDashboardSettings::class)
+            ->name('pes-tracker.settings');
+
+    
 });
 
     Route::middleware('auth')->group(function () {
@@ -470,7 +485,7 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
       // NEW My Course Load Page
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
 
-// Student Dashboard/Courses Route
+    // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])
         ->name('student.courses');
     
@@ -546,6 +561,10 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
     // Admin/Academic Head routes (add your admin middleware here)
     Route::get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
+
+   
+    
+
     
     //Students
    // --- STUDENT ROUTES ---
