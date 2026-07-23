@@ -84,6 +84,11 @@ use App\Http\Controllers\RoleAssignmentController;
 use App\Livewire\Hr\LeaveCreditsTable;
 use App\Livewire\LeaveApplicationManager;
 
+use App\Livewire\Admin\PesTracker;
+use App\Livewire\Faculty\PesDashboard;
+use App\Livewire\Admin\PesDashboardSettings;
+use App\Livewire\CreateRetroactiveLeave;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -244,6 +249,30 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
    });
 
+     // Admin and Teacher specific routes (apply roles middleware)
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
+              // The main tracker view
+                // The main Tracker page
+        Route::get('/evaluation/tracker', [EvaluationWorkflowController::class, 'index'])
+            ->name('evaluation.tracker');
+
+        // STEP 1: Registrar confirms the current SY/Semester
+        Route::post('/evaluation/verify-period', [EvaluationWorkflowController::class, 'verifyPeriod'])
+            ->name('evaluation.verifyPeriod');
+
+        // STEP 2: Program Head verifies the blocks
+        Route::post('/evaluation/verify-blocks', [EvaluationWorkflowController::class, 'verifyBlocks'])
+    ->name('evaluation.verifyBlocks');
+
+    Route::post('/evaluation/verify-students', [EvaluationWorkflowController::class, 'verifyStudents'])
+    ->name('evaluation.verifyStudents');
+
+    Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
+Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
+
+
+   });
+
     // -- HR specific routes --
     Route::middleware(['role:hr|admin|academic_head'])->group(function () {
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])->name('hr.leave_credits.all');
@@ -313,6 +342,21 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
 
         Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
         Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
+
+        //PES Tracker
+        Route::get('/pes-tracker', PesTracker::class)->name('admin.pes-tracker');
+    });
+
+        Route::get('/leave-applications/hr-file', [LeaveApplicationController::class, 'createByHr'])->name('leave_applications.hr_create');
+        Route::post('/leave-applications/hr-file', [LeaveApplicationController::class, 'storeByHr'])->name('leave_applications.hr_store');
+        Route::get('/api/employee-credits/{id}', [LeaveApplicationController::class, 'getEmployeeCredits']);
+
+        Route::get('/leave-credits/summary', [LeaveApplicationManager::class, 'creditsSummary'])->name('leave_credits.summary');
+        Route::get('/leave-applications/export', [LeaveApplicationController::class, 'exportExcel'])
+    ->name('leave_applications.export');
+
+        Route::get('employees/archive', [EmployeeController::class, 'archive'])->name('employees.archive');
+        Route::post('employees/{id}/restore', [EmployeeController::class, 'restore'])->name('employees.restore');
     });
 
     
@@ -359,13 +403,15 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
         Route::get('/all', [AcademicHeadLeaveApplicationController::class, 'allLeaveApplications'])->name('all');
     });
 
-    // -- HR Leave Application Management --
-    Route::middleware(['role:hr'])->prefix('hr/leave-applications')->name('hr.leave_applications.')->group(function () {
-        Route::get('/', [HrLeaveApplicationController::class, 'index'])->name('index');
-        Route::get('/review/{leaveApplication}', [HrLeaveApplicationController::class, 'review'])->name('review')->middleware('signed');
-        Route::post('/decide/{leaveApplication}', [HrLeaveApplicationController::class, 'decide'])->name('decide');
-        Route::get('/retroactive', [HrLeaveApplicationController::class, 'showRetroactiveForm'])->name('retroactive_form');
-        Route::post('/retroactive', [HrLeaveApplicationController::class, 'storeRetroactive'])->name('store_retroactive');
+
+     // HR Leave Application Management Routes (Assuming HrLeaveApplicationController exists)
+    Route::middleware(['role:hr|academic_head'])->prefix('hr/leave-applications')->name('hr.leave_applications.')->group(function () {
+        Route::get('/', [HrLeaveApplicationController::class, 'index'])->name('index'); // HR Dashboard / Pending review list
+        Route::get('/review/{leaveApplication}', [HrLeaveApplicationController::class, 'review'])->name('review')->middleware('signed'); // View/Review specific application
+        Route::post('/decide/{leaveApplication}', [HrLeaveApplicationController::class, 'decide'])->name('decide'); // Process decision
+        Route::get('/create-retroactive', CreateRetroactiveLeave::class)
+        ->name('create_retroactive');
+        // Consider adding a Route::get('/all', [HrLeaveApplicationController::class, 'allLeaveApplications'])->name('all'); for HR too
     });
 
     Route::middleware(['role:hr'])->get('/hr/employee-leave-credits/{employeeId}', [HrLeaveApplicationController::class, 'getEmployeeLeaveCredits'])->name('hr.employee_leave_credits');
@@ -402,6 +448,13 @@ Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class
     
     // Route::get('/test', [TestController::class, 'index'])->name('test.index');
     // Route::post('/test/call', [TestController::class, 'call'])->name('test.call');
+
+    //PES Tracker
+    Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
+    Route::get('/pes-tracker/settings', PesDashboardSettings::class)
+            ->name('pes-tracker.settings');
+
+    
 });
 
 Route::middleware('auth')->group(function () {
@@ -454,7 +507,7 @@ Route::middleware('auth')->group(function () {
       // NEW My Course Load Page
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
 
-// Student Dashboard/Courses Route
+    // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])
         ->name('student.courses');
     

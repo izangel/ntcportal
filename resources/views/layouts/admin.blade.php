@@ -418,6 +418,16 @@
                         {{ __('Grade Submission Tracking') }}
                     </x-nav-link>
 
+                    <x-nav-link href="{{ route('faculty.pes-clearance') }}" :active="request()->routeIs('pes.submissions')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('My PES Submission') }}
+                    </x-nav-link>
+
+                   
+                    
+                    
+                    
+
 
 
                     <div class="mt-4 space-y-1" x-data="{ open: false }">
@@ -563,6 +573,26 @@
                     GUIDANCE OFFICE
                 </h3>
             </div>
+
+            
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">Teachers Evaluation</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('evaluation.tracker') }}" :active="request()->routeIs('admin.candidacy.index')">
+                        <i class="fas fa-clipboard-check mr-3 text-lg"></i>
+                        {{ __('Start Evaluation') }}
+                    </x-nav-link>
+                    <x-nav-link href="#" :active="request()->routeIs('admin.candidacy.index')">
+                        <i class="fas fa-chart-bar mr-3 text-lg"></i>
+                        {{ __('Evaluation Results') }}
+                    </x-nav-link>
+                   
+                </div>
+            </div>
+
 
             
             <div class="mt-4 space-y-1" x-data="{ open: false }">
@@ -815,7 +845,7 @@
                             <i class="fas fa-hourglass-half mr-3 text-lg"></i>
                             {{ __('Pending Leave Applications') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('leave_applications.hr_create') }}" :active="request()->routeIs('leave_applications.hr_create')">
+                        <x-nav-link href="{{ route('hr.leave_applications.create_retroactive') }}" :active="request()->routeIs('hr.leave_applications.create_retroactive')">
                             <i class="fas fa-file-upload mr-3 text-lg"></i>
                             {{ __('Unfiled Leave Applications') }}
                         </x-nav-link>
@@ -864,6 +894,17 @@
                         <i class="fas fa-calendar-minus mr-3 text-lg"></i>
                         {{ __('PES Result') }}
                     </x-nav-link>
+
+                     <x-nav-link href="{{ route('admin.pes-tracker') }}" :active="request()->routeIs('admin.pes-tracker')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('PES Submission Tracker') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('pes-tracker.settings') }}" :active="request()->routeIs('pes-tracker.settings')">
+                        <i class="fas fa-solid fa-magnifying-glass-chart mr-3 text-lg"></i>
+                        {{ __('PES Tracker Default Period') }}
+                    </x-nav-link>
+
+                   
                    
                 </div>
             </div>

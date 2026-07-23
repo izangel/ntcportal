@@ -20,7 +20,7 @@ public function index()
     'program_head_college', 
     'academic_head', 
     'faculty'
-];
+    ];
 
     // 1. Ensure core system roles always exist
    
@@ -37,6 +37,7 @@ public function index()
         ->with(['employee', 'roles'])
         ->orderBy('employees.last_name', 'asc')
         ->get();
+    
 
     return view('admin.roles.index', compact('users', 'roles'));
 }

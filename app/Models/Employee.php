@@ -150,4 +150,18 @@ public function CourseBlock() {
     return $this->belongsTo(CourseBlock::class, 'course_session_id');
 }
 
+/**
+     * Get all of the PES submissions for the faculty member.
+     */
+    public function pesSubmissions()
+    {
+        return $this->hasMany(PesSubmission::class);
+    }
+
+    // Helper scope to get specific period status
+    public function pesStatusForPeriod($period)
+    {
+        return $this->pesSubmissions()->where('academic_period', $period)->first();
+    }
+
 }

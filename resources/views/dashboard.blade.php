@@ -77,13 +77,18 @@
                                 </a>
                             @endif
 
-            {{-- 1. Welcome & Notifications Section --}}
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-2">
-                    <div
-                        class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 h-full flex flex-col justify-center">
-                        <h3 class="text-3xl font-extrabold text-gray-900">Welcome back, {{ Auth::user()->name }}!</h3>
-                        <p class="mt-2 text-gray-600">Here is what's happening in the portal today.</p>
+                          
+
+                            @if(Auth::user()->employee && Auth::user()->employee->role === 'teacher')
+                                
+                            <a href="{{ route('faculty.course-load') }}" class="inline-flex items-center px-4 py-2 bg-white border border-indigo-600 text-indigo-600 text-xs font-bold uppercase tracking-widest rounded-md hover:bg-indigo-50 transition">
+                                    View Detailed Load
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
 
                         @if (!Auth::user()->hasRole('student'))
                             <div class="mt-6 flex gap-4">
@@ -144,32 +149,36 @@
                 $selectedDate = now()->startOfMonth();
             }
 
-            $firstDay = $selectedDate->copy()->firstOfMonth();
-            $startOfWeek = $firstDay->dayOfWeek;
-            $daysInMonth = $selectedDate->daysInMonth;
-        @endphp
-
-        <div class="mb-8">
-            {{-- Bagong Header Layout (Kagaya ng nasa Leave Summary) --}}
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4 px-1">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800 tracking-tight">{{ $selectedDate->format('F Y') }}</h1>
-                    <div class="flex items-center gap-2 mt-1">
-                        <p class="text-sm text-gray-500">School Calendar & Events</p>
-                        <span class="text-gray-300">|</span>
-                        <a href="{{ route('important_dates.index') }}" class="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider">
-                            View Full Schedule
-                        </a>
+          {{-- PES Submission Tracker Notice Block --}}
+                @if(Auth::user()->employee && in_array(Auth::user()->employee->role, ['teacher', 'admin', 'hr', 'academic_head']))
+                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div class="mb-8">
+                        <h4 class="text-xs font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                            <span class="inline-block w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                            ⚠️ Important Administrative Clearance Notice
+                        </h4>
+                        
+                        @if(Auth::user()->hasRole('admin'))
+                            <!-- If Admin: Embed the control list layout tracking tool directly -->
+                            @livewire('admin.pes-tracker')
+                        @else
+                            <!-- If Faculty/Staff/Head: Embed the read-only peer scoreboard tracking tool -->
+                            @livewire('faculty.pes-dashboard')
+                        @endif
                     </div>
-                </div>
+</div>
+                @endif
 
-                <form action="{{ route('dashboard') }}" method="GET" class="flex items-center gap-2">
-                    <label for="calendar_month" class="text-sm font-medium text-gray-700">Select Month:</label>
-                    <input type="month" name="calendar_month" id="calendar_month"
-                           value="{{ $selectedDate->format('Y-m') }}"
-                           onchange="this.form.submit()"
-                           class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                </form>
+        {{-- 2. Important Dates Widget --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                    <span class="p-2 bg-indigo-100 rounded-lg mr-3">
+                        <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    </span>
+                    School Calendar & Events
+                </h4>
+                <a href="{{ route('important_dates.index') }}" class="text-xs font-bold text-indigo-600 hover:underline uppercase">View Full Schedule</a>
             </div>
 
             {{-- Kalendaryo Mismo --}}
@@ -284,7 +293,8 @@
 
         @else
             {{-- STAFF / ADMIN / TEACHER VIEW --}}
-
+            
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 {{-- 🔑 My Course Load Table (Half Width) --}}
                 @if(isset($myCourses) && count($myCourses) > 0)

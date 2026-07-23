@@ -70,6 +70,7 @@
                     @error('employee_id') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
                 </div>
             @endif
+            
 
             <div>
                 <label class="block text-sm font-medium text-gray-700">Leave Type</label>
