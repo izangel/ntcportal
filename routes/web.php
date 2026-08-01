@@ -572,6 +572,9 @@ Route::middleware([
     Route::get('/attendance/reports', \App\Livewire\Attendance\AttendanceReports::class)->name('attendance.reports');
     Route::get('/attendance/checkin/{token}', StudentCheckIn::class)->name('attendance.checkin');
     Route::get('/attendance/print-roster', [AttendanceReportController::class, 'printRoster'])->name('attendance.print');
+
+    // Course Materials
+    Route::get('/course-materials', \App\Livewire\CourseMaterials\CourseMaterialsManager::class)->name('course-materials.index');
     
     //Students
    // --- STUDENT ROUTES ---
@@ -584,6 +587,7 @@ Route::middleware([
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
             Route::get('my-attendance', StudentAttendanceHistory::class)->name('attendance.my');
+            Route::get('course-materials', \App\Livewire\CourseMaterials\StudentCourseMaterials::class)->name('course-materials');
     });
 
 

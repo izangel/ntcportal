@@ -110,6 +110,21 @@
                 </div>
             </div>
 
+            {{-- My Course Materials (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">MY COURSE MATERIALS</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.course-materials') }}" :active="request()->routeIs('student.course-materials')">
+                        <i class="fas fa-folder-open mr-3 text-lg"></i>
+                        {{ __('Course Materials') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
             {{-- Apply for Candidacy (COLLAPSIBLE) - Student Only --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -228,7 +243,7 @@
                         <i class="fas fa-users mr-3 text-lg"></i>
                         {{ __('My Students / Class Details') }}
                     </x-nav-link>
-                    <x-nav-link href="#">
+                    <x-nav-link href="{{ route('course-materials.index') }}" :active="request()->routeIs('course-materials.index')">
                         <i class="fas fa-folder-open mr-3 text-lg"></i>
                         {{ __('Course Materials') }}
                     </x-nav-link>
