@@ -569,6 +569,7 @@ Route::middleware([
 
     //Attendance
     Route::get('/attendance', AttendanceManager::class)->name('attendance.index');
+    Route::get('/attendance/reports', \App\Livewire\Attendance\AttendanceReports::class)->name('attendance.reports');
     Route::get('/attendance/checkin/{token}', StudentCheckIn::class)->name('attendance.checkin');
     Route::get('/attendance/print-roster', [AttendanceReportController::class, 'printRoster'])->name('attendance.print');
     

@@ -212,9 +212,13 @@
                         <i class="fas fa-layer-group mr-3 text-lg"></i>
                         {{ __('My Course Load') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('attendance.index') }}" :active="request()->routeIs('attendance.*')">
+                    <x-nav-link href="{{ route('attendance.index') }}" :active="request()->routeIs('attendance.index')">
                         <i class="fas fa-qrcode mr-3 text-lg"></i>
                         {{ __('Attendance (QR)') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('attendance.reports') }}" :active="request()->routeIs('attendance.reports')">
+                        <i class="fas fa-chart-column mr-3 text-lg"></i>
+                        {{ __('Attendance Reports') }}
                     </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-clock mr-3 text-lg"></i>
