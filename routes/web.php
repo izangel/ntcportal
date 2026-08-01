@@ -575,6 +575,18 @@ Route::middleware([
 
     // Course Materials
     Route::get('/course-materials', \App\Livewire\CourseMaterials\CourseMaterialsManager::class)->name('course-materials.index');
+
+    // Class Management
+    Route::get('/my-students', \App\Livewire\ClassManagement\ClassStudents::class)->name('faculty.students');
+    Route::get('/my-schedule', \App\Livewire\ClassManagement\ClassScheduleView::class)->name('faculty.schedule');
+    Route::get('/class-record', \App\Livewire\ClassManagement\ClassRecord::class)->name('faculty.class-record');
+    Route::get('/class-analytics', \App\Livewire\ClassManagement\ClassAnalytics::class)->name('faculty.class-analytics');
+    Route::get('/contact-sheet', \App\Livewire\ClassManagement\StudentContactSheet::class)->name('faculty.contact-sheet');
+
+    // Institutional Analytics (Admin / Program Heads)
+    Route::middleware('role:admin|academic_head|program_head|program_head_shs|program_head_college|registrar')
+        ->get('/institutional-analytics', \App\Livewire\Admin\InstitutionalAnalytics::class)
+        ->name('admin.analytics');
     
     //Students
    // --- STUDENT ROUTES ---
