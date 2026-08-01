@@ -318,54 +318,175 @@
             </div>
             @endif
 
-            {{-- General Statistics --}}
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                @php
-                    $stats = [
-                        ['label' => 'Students', 'val' => $totalStudents, 'color' => 'bg-blue-500'],
-                        ['label' => 'Teachers', 'val' => $totalTeachers, 'color' => 'bg-green-500'],
-                        ['label' => 'Courses', 'val' => $totalCourses, 'color' => 'bg-purple-500'],
-                        ['label' => 'Programs', 'val' => $totalPrograms, 'color' => 'bg-yellow-500'],
-                        ['label' => 'Enrollments', 'val' => $totalEnrollments, 'color' => 'bg-indigo-500'],
-                        ['label' => 'Users', 'val' => $totalUsers, 'color' => 'bg-gray-800'],
-                    ];
-                @endphp
-                @foreach($stats as $stat)
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 text-center">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $stat['label'] }}</p>
-                        <p class="text-2xl font-black text-gray-900 mt-1">{{ $stat['val'] }}</p>
-                        <div class="h-1 w-8 {{ $stat['color'] }} mx-auto mt-2 rounded-full"></div>
-                    </div>
-                @endforeach
-            </div>
+            {{-- Enrollment Analytics --}}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                        <span class="p-2 bg-indigo-100 rounded-lg mr-3">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                        </span>
+                        Enrollment Analytics
+                    </h4>
+                </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h4 class="text-lg font-bold text-gray-800 mb-4">Recently Enrolled Students</h4>
-                    <div class="space-y-3">
-                        @foreach($recentStudents as $student)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <div class="flex items-center">
-                                    <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs mr-3">
-                                        {{ substr($student->name, 0, 1) }}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    @php
+                        $enrollTiles = [
+                            ['label' => 'Total Enrollments', 'val' => number_format($enrollmentTotals['enrollments']), 'color' => 'bg-indigo-500'],
+                            ['label' => 'Enrolled Students', 'val' => number_format($enrollmentTotals['students']), 'color' => 'bg-blue-500'],
+                            ['label' => 'Classes', 'val' => number_format($enrollmentTotals['classes']), 'color' => 'bg-purple-500'],
+                            ['label' => 'Programs', 'val' => number_format($enrollmentTotals['programs']), 'color' => 'bg-green-500'],
+                        ];
+                    @endphp
+                    @foreach($enrollTiles as $tile)
+                        <div class="bg-gray-50 rounded-xl border border-gray-100 p-4 text-center">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ $tile['label'] }}</p>
+                            <p class="text-2xl font-black text-gray-900 mt-1">{{ $tile['val'] }}</p>
+                            <div class="h-1 w-8 {{ $tile['color'] }} mx-auto mt-2 rounded-full"></div>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-5">
+                        <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest mb-6">Enrollments per School Year</h5>
+                        <div class="flex items-end justify-around gap-4 h-44">
+                            @php $semColors = ['1st' => 'bg-indigo-500', '2nd' => 'bg-blue-500', 'Summer' => 'bg-green-500']; @endphp
+                            @forelse($enrollmentsByAY as $ay)
+                                <div class="flex flex-col items-center justify-end h-full flex-1">
+                                    <span class="text-[10px] font-black text-gray-500 mb-1">{{ number_format($ay['total']) }}</span>
+                                    <div class="w-full max-w-[52px] flex flex-col justify-end rounded-t-lg overflow-hidden" style="height: {{ round($ay['total'] / $enrollmentMaxAY * 100) }}%">
+                                        @foreach($ay['semesters'] as $sem)
+                                            <div class="w-full {{ $semColors[$sem['semester']] ?? 'bg-indigo-500' }}" style="height: {{ round($sem['total'] / $ay['total'] * 100) }}%"></div>
+                                        @endforeach
                                     </div>
-                                    <span class="text-sm font-bold text-gray-700">{{ $student->name }}</span>
+                                    <span class="mt-2 text-[10px] font-bold text-gray-600">{{ $ay['label'] }}</span>
+                                    <span class="text-center text-[9px] text-gray-400 leading-tight">
+                                        @foreach($ay['semesters'] as $sem)
+                                            {{ $sem['semester'] }}: {{ number_format($sem['total']) }}{{ $loop->last ? '' : ' · ' }}
+                                        @endforeach
+                                    </span>
                                 </div>
-                                <span class="text-[10px] text-gray-400">{{ $student->created_at->diffForHumans() }}</span>
-                            </div>
-                        @endforeach
+                            @empty
+                                <p class="text-gray-400 italic text-sm">No enrollment data yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-5">
+                        <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest mb-6">Enrollments per Program</h5>
+                        <div class="space-y-3 max-h-56 overflow-y-auto pr-1">
+                            @forelse($enrollmentsByProgram as $prog)
+                                <div>
+                                    <div class="flex items-center justify-between text-[11px] mb-1">
+                                        <span class="font-bold text-gray-700 truncate pr-2">{{ $prog['name'] }}</span>
+                                        <span class="font-black text-indigo-600">{{ number_format($prog['enrollments']) }}</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
+                                        <div class="h-full bg-indigo-500 rounded-full" style="width: {{ round($prog['enrollments'] / $enrollmentMaxProgram * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-400 italic text-sm">No program data yet.</p>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    <h4 class="text-lg font-bold text-gray-800 mb-4">Latest Courses</h4>
-                    <div class="space-y-3">
-                        @foreach($recentCourses as $course)
-                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                <span class="text-sm font-bold text-gray-700">{{ $course->code }}</span>
-                                <span class="text-[10px] text-gray-400">{{ $course->credits }} Credits</span>
-                            </div>
-                        @endforeach
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-5">
+                        <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest mb-6">Students per Program</h5>
+                        <div class="space-y-3 max-h-56 overflow-y-auto pr-1">
+                            @forelse($enrollmentsByProgram as $prog)
+                                <div>
+                                    <div class="flex items-center justify-between text-[11px] mb-1">
+                                        <span class="font-bold text-gray-700 truncate pr-2">{{ $prog['name'] }}</span>
+                                        <span class="font-black text-blue-600">{{ number_format($prog['students']) }}</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
+                                        <div class="h-full bg-blue-500 rounded-full" style="width: {{ round($prog['students'] / $enrollmentMaxStudents * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-400 italic text-sm">No student data yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50/50 border border-gray-100 rounded-xl p-5">
+                        <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest mb-6">Faculty Teaching Load</h5>
+                        <div class="space-y-3 max-h-56 overflow-y-auto pr-1">
+                            @forelse($facultyLoad as $fac)
+                                <div>
+                                    <div class="flex items-center justify-between text-[11px] mb-1">
+                                        <span class="font-bold text-gray-700 truncate pr-2">{{ $fac['name'] }}</span>
+                                        <span class="font-black text-purple-600">{{ $fac['classes'] }} classes · {{ $fac['students'] }} students</span>
+                                    </div>
+                                    <div class="h-2 rounded-full bg-gray-200 overflow-hidden">
+                                        <div class="h-full bg-purple-500 rounded-full" style="width: {{ round($fac['classes'] / $facultyMaxClasses * 100) }}%"></div>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-gray-400 italic text-sm">No faculty data yet.</p>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-gray-50/50 border border-gray-100 rounded-xl p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest">Grade Submission Status</h5>
+                        @php
+                            $gsTotal = $gradeSubmission['finalized'] + $gradeSubmission['inProgress'];
+                            $gsPct = $gsTotal > 0 ? round($gradeSubmission['finalized'] / $gsTotal * 100) : 0;
+                        @endphp
+                        <span class="text-[10px] font-bold text-gray-500">{{ $gradeSubmission['finalized'] }} of {{ $gsTotal }} classes finalized</span>
+                    </div>
+                    <div class="h-3 rounded-full bg-gray-200 overflow-hidden mb-3">
+                        <div class="h-full bg-green-500 rounded-full transition-all" style="width: {{ $gsPct }}%"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-bold">
+                        <span class="text-green-600">{{ $gsPct }}% Submitted</span>
+                        <span class="text-amber-600">{{ $gradeSubmission['inProgress'] }} In Progress</span>
+                    </div>
+                </div>
+
+                <div class="mt-8">
+                    <h5 class="text-sm font-black text-gray-700 uppercase tracking-widest mb-4">Program Breakdown</h5>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-100">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-[10px] font-bold text-gray-400 uppercase">Program</th>
+                                    <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Enrollments</th>
+                                    <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Students</th>
+                                    <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Courses</th>
+                                    <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Sections</th>
+                                    <th class="px-4 py-3 text-center text-[10px] font-bold text-gray-400 uppercase">Share</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-50">
+                                @foreach($enrollmentsByProgram as $prog)
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="px-4 py-3 text-xs font-bold text-gray-900">{{ $prog['name'] }}</td>
+                                        <td class="px-4 py-3 text-center text-xs font-bold text-gray-700">{{ number_format($prog['enrollments']) }}</td>
+                                        <td class="px-4 py-3 text-center text-xs text-gray-600">{{ number_format($prog['students']) }}</td>
+                                        <td class="px-4 py-3 text-center text-xs text-gray-600">{{ number_format($prog['courses']) }}</td>
+                                        <td class="px-4 py-3 text-center text-xs text-gray-600">{{ number_format($prog['sections']) }}</td>
+                                        <td class="px-4 py-3 text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <div class="w-24 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                                    <div class="h-full bg-green-500 rounded-full" style="width: {{ $prog['share'] }}%"></div>
+                                                </div>
+                                                <span class="text-[10px] font-bold text-gray-500">{{ $prog['share'] }}%</span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
