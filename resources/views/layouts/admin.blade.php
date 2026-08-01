@@ -95,6 +95,21 @@
                 </div>
             </div>
 
+            {{-- My Attendance (COLLAPSIBLE) - Student Only --}}
+            <div class="mt-4 space-y-1" x-data="{ open: false }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">MY ATTENDANCE</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.attendance.my') }}" :active="request()->routeIs('student.attendance.my')">
+                        <i class="fas fa-calendar-check mr-3 text-lg"></i>
+                        {{ __('My Attendance') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
             {{-- Apply for Candidacy (COLLAPSIBLE) - Student Only --}}
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
@@ -196,6 +211,14 @@
                     <x-nav-link href="{{ route('faculty.course-load') }}" :active="request()->routeIs('faculty.course-load')">
                         <i class="fas fa-layer-group mr-3 text-lg"></i>
                         {{ __('My Course Load') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('attendance.index') }}" :active="request()->routeIs('attendance.index')">
+                        <i class="fas fa-qrcode mr-3 text-lg"></i>
+                        {{ __('Attendance (QR)') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('attendance.reports') }}" :active="request()->routeIs('attendance.reports')">
+                        <i class="fas fa-chart-column mr-3 text-lg"></i>
+                        {{ __('Attendance Reports') }}
                     </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-clock mr-3 text-lg"></i>

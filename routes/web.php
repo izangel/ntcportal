@@ -69,6 +69,8 @@ use App\Livewire\CourseAssignment;
 use App\Livewire\ViewCourseBlockStudents;
 use App\Http\Controllers\CourseAttainmentController;
 
+use App\Http\Controllers\AttendanceReportController;
+
 use App\Http\Controllers\EvaluationWorkflowController;
 
 use App\Http\Controllers\RoleAssignmentController;
@@ -94,6 +96,11 @@ use App\Livewire\Faculty\AssessmentTaskSetup;
 use App\Livewire\Faculty\AssessmentScoreEntry;
 use App\Livewire\Teacher\ScoreEntryMatrix;
 use App\Livewire\Admin\BatchAssignment;
+
+//Attendance
+use App\Livewire\Attendance\AttendanceManager;
+use App\Livewire\Attendance\StudentCheckIn;
+use App\Livewire\Attendance\StudentAttendanceHistory;
 
 /*
 |--------------------------------------------------------------------------
@@ -559,6 +566,12 @@ Route::middleware([
     Route::get('/faculty/assessment-scores', AssessmentScoreEntry::class)->name('faculty.assessment-scores');
     Route::get('/faculty/obe/course-dashboard', ObeCourseDashboard::class)->name('faculty.obe.course-dashboard');
     Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
+
+    //Attendance
+    Route::get('/attendance', AttendanceManager::class)->name('attendance.index');
+    Route::get('/attendance/reports', \App\Livewire\Attendance\AttendanceReports::class)->name('attendance.reports');
+    Route::get('/attendance/checkin/{token}', StudentCheckIn::class)->name('attendance.checkin');
+    Route::get('/attendance/print-roster', [AttendanceReportController::class, 'printRoster'])->name('attendance.print');
     
     //Students
    // --- STUDENT ROUTES ---
@@ -570,6 +583,7 @@ Route::middleware([
             Route::get('/evaluations/{courseBlock}/create', [StudentEvaluationController::class, 'create'])->name('evaluations.create');
             Route::post('/evaluations/{courseBlock}', [StudentEvaluationController::class, 'store'])->name('evaluations.store');
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
+            Route::get('my-attendance', StudentAttendanceHistory::class)->name('attendance.my');
     });
 
 
@@ -577,15 +591,15 @@ Route::middleware([
 
 
             // Candidacy Routes
-            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('candidacy.index');
-            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('candidacy.store');
-            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('candidacy.status');
-            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('candidacy.requirements');
+            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('student.candidacy.index');
+            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('student.candidacy.store');
+            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('student.candidacy.status');
+            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('student.candidacy.requirements');
 
             // Voting Routes
-            Route::get('/voting', [StudentVotingController::class, 'index'])->name('voting.index');
-            Route::post('/voting', [StudentVotingController::class, 'store'])->name('voting.store');
-            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('voting.results');
+            Route::get('/voting', [StudentVotingController::class, 'index'])->name('student.voting.index');
+            Route::post('/voting', [StudentVotingController::class, 'store'])->name('student.voting.store');
+            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('student.voting.results');
     
 });
 
