@@ -123,8 +123,11 @@
                     </h2>
 
                     <div class="flex flex-wrap items-center gap-2">
-                        <button wire:click="exportCsv" class="inline-flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100">
-                            <i class="fas fa-file-csv mr-1.5"></i> Export CSV
+                        <button wire:click="openAddStudent" class="inline-flex items-center px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg hover:bg-indigo-100">
+                            <i class="fas fa-user-plus mr-1.5"></i> Add Student
+                        </button>
+                        <button wire:click="exportExcel" class="inline-flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-lg hover:bg-emerald-100">
+                            <i class="fas fa-file-excel mr-1.5"></i> Export Excel
                         </button>
                         <button wire:click="printRoster" class="inline-flex items-center px-3 py-1.5 bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-100">
                             <i class="fas fa-print mr-1.5"></i> Print / PDF
@@ -215,6 +218,71 @@
         <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-10 text-center">
             <i class="fas fa-qrcode text-4xl text-gray-300 mb-3"></i>
             <p class="text-sm text-gray-500">Click <span class="font-semibold text-indigo-600">Show QR Code</span> to start an attendance session for this class.</p>
+        </div>
+    @endif
+
+    @if($showAddStudent)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50" wire:click.self="closeAddStudent">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-base font-bold text-gray-900">Add Attendance for a Student</h3>
+                    <button wire:click="closeAddStudent" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="px-6 py-5 space-y-4">
+                    <p class="text-xs text-gray-500">
+                        Search for a student and record their attendance for
+                        <span class="font-semibold text-indigo-600">{{ $attendanceDate }}</span>.
+                    </p>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1.5">Search student</label>
+                        <input type="text" wire:model.live.debounce.300ms="studentSearch" placeholder="Type name or ID number..." class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                    </div>
+
+                    @if($studentSearch !== '' && count($searchResults) === 0)
+                        <p class="text-xs text-gray-400 italic">No students found. Try a different search.</p>
+                    @endif
+
+                    @if(count($searchResults))
+                        <ul class="max-h-64 overflow-y-auto divide-y divide-gray-100 border border-gray-200 rounded-lg">
+                            @foreach($searchResults as $result)
+                                <li class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-medium text-gray-800 truncate">{{ $result['name'] }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $result['student_number'] }}
+                                            @if($result['has_record'])
+                                                <span class="text-amber-600 font-semibold">(already has a record)</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                    <button wire:click="selectStudent({{ $result['id'] }})" class="shrink-0 ml-3 px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700">
+                                        Select
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    @if($addStudentId)
+                        <div class="p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                            <p class="text-sm font-semibold text-gray-800 mb-1">Selected: {{ $addStudentName }}</p>
+                            <p class="text-xs text-gray-500 mb-3">Record this student as...</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button wire:click="addAttendance('present')" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700">Present</button>
+                                <button wire:click="addAttendance('late')" class="px-3 py-1.5 bg-amber-500 text-white text-xs font-bold rounded-lg hover:bg-amber-600">Late</button>
+                                <button wire:click="addAttendance('absent')" class="px-3 py-1.5 bg-rose-600 text-white text-xs font-bold rounded-lg hover:bg-rose-700">Absent</button>
+                                <button wire:click="addAttendance('excused')" class="px-3 py-1.5 bg-gray-500 text-white text-xs font-bold rounded-lg hover:bg-gray-600">Excused</button>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+                <div class="flex justify-end px-6 py-4 border-t border-gray-200">
+                    <button wire:click="closeAddStudent" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-200">Close</button>
+                </div>
+            </div>
         </div>
     @endif
 </div>

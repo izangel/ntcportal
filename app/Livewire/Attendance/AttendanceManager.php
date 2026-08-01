@@ -5,9 +5,11 @@ namespace App\Livewire\Attendance;
 use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Exports\AttendanceRosterExport;
 use App\Models\AcademicYear;
 use App\Models\AttendanceRecord;
 use App\Models\CourseBlock;
+use App\Models\Student;
 use App\Support\AttendanceToken;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
@@ -32,6 +34,12 @@ class AttendanceManager extends Component
     public $assignedBlocks = [];
     public $roster = [];
     public $summary = [];
+
+    public $showAddStudent = false;
+    public $studentSearch = '';
+    public $searchResults = [];
+    public $addStudentId = null;
+    public $addStudentName = '';
 
     public function mount()
     {
@@ -213,6 +221,13 @@ class AttendanceManager extends Component
         $this->summary = $data['summary'];
     }
 
+    private function verifyOwnership(): bool
+    {
+        return (bool) CourseBlock::whereKey((int) $this->selectedBlockId)
+            ->where('faculty_id', $this->facultyId)
+            ->exists();
+    }
+
     private function buildRosterData(): array
     {
         $roster = [];
@@ -233,7 +248,23 @@ class AttendanceManager extends Component
             ->get()
             ->keyBy('student_id');
 
-        $roster = $block->students
+        $students = $block->students()->get();
+
+        $rosterStudentIds = $students->pluck('id')->all();
+
+        $extraRecords = AttendanceRecord::where('course_block_id', $block->id)
+            ->where('attendance_date', $this->attendanceDate)
+            ->whereNotIn('student_id', $rosterStudentIds)
+            ->with('student')
+            ->get();
+
+        foreach ($extraRecords as $record) {
+            if ($record->student) {
+                $students->push($record->student);
+            }
+        }
+
+        $roster = $students
             ->map(function ($student) use ($records) {
                 $record = $records->get($student->id);
 
@@ -261,14 +292,119 @@ class AttendanceManager extends Component
         return compact('roster', 'summary');
     }
 
-    public function exportCsv()
+    public function updatedStudentSearch()
+    {
+        $this->searchStudents();
+    }
+
+    public function openAddStudent()
+    {
+        $this->showAddStudent = true;
+        $this->studentSearch = '';
+        $this->searchResults = [];
+        $this->addStudentId = null;
+        $this->addStudentName = '';
+    }
+
+    public function closeAddStudent()
+    {
+        $this->showAddStudent = false;
+        $this->studentSearch = '';
+        $this->searchResults = [];
+        $this->addStudentId = null;
+        $this->addStudentName = '';
+    }
+
+    public function searchStudents()
+    {
+        $this->searchResults = [];
+
+        if (!$this->selectedBlockId || mb_strlen(trim($this->studentSearch)) < 2) {
+            return;
+        }
+
+        $term = trim($this->studentSearch);
+
+        $results = Student::where(function ($q) use ($term) {
+            $q->where('student_id', 'like', "%{$term}%")
+                ->orWhere('first_name', 'like', "%{$term}%")
+                ->orWhere('middle_name', 'like', "%{$term}%")
+                ->orWhere('last_name', 'like', "%{$term}%")
+                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$term}%"])
+                ->orWhereRaw("CONCAT(last_name, ', ', first_name) LIKE ?", ["%{$term}%"]);
+        })
+            ->orderBy('last_name')
+            ->limit(15)
+            ->get(['id', 'student_id', 'first_name', 'middle_name', 'last_name']);
+
+        $this->searchResults = $results->map(function ($student) {
+            return [
+                'id' => $student->id,
+                'student_number' => $student->student_id,
+                'name' => trim($student->last_name . ', ' . $student->first_name . ($student->middle_name ? ' ' . $student->middle_name : '')),
+                'has_record' => AttendanceRecord::where('course_block_id', (int) $this->selectedBlockId)
+                    ->where('student_id', $student->id)
+                    ->where('attendance_date', $this->attendanceDate)
+                    ->exists(),
+            ];
+        })->toArray();
+    }
+
+    public function selectStudent($studentId)
+    {
+        $student = Student::find((int) $studentId);
+
+        if (!$student) {
+            return;
+        }
+
+        $this->addStudentId = (int) $student->id;
+        $this->addStudentName = trim($student->last_name . ', ' . $student->first_name . ($student->middle_name ? ' ' . $student->middle_name : ''));
+    }
+
+    public function addAttendance($status)
+    {
+        $allowed = [
+            AttendanceRecord::STATUS_PRESENT,
+            AttendanceRecord::STATUS_LATE,
+            AttendanceRecord::STATUS_ABSENT,
+            AttendanceRecord::STATUS_EXCUSED,
+        ];
+
+        if (!$this->selectedBlockId || !$this->attendanceDate || !$this->addStudentId || !in_array($status, $allowed, true)) {
+            return;
+        }
+
+        if (!$this->verifyOwnership()) {
+            session()->flash('error', 'You are not assigned to this class.');
+            return;
+        }
+
+        $name = $this->addStudentName;
+
+        AttendanceRecord::updateOrCreate(
+            [
+                'course_block_id' => (int) $this->selectedBlockId,
+                'student_id' => (int) $this->addStudentId,
+                'attendance_date' => $this->attendanceDate,
+            ],
+            ['status' => $status, 'checked_in_at' => now(), 'remarks' => 'Added manually by faculty.']
+        );
+
+        $this->closeAddStudent();
+        $this->loadRoster();
+
+        session()->flash('message', "Attendance recorded for {$name} on {$this->attendanceDate}.");
+    }
+
+    public function exportExcel()
     {
         if (!$this->selectedBlockId || !$this->attendanceDate) {
             session()->flash('error', 'Please select a class and date first.');
             return;
         }
 
-        $block = CourseBlock::with('course')->find($this->selectedBlockId);
+        $block = CourseBlock::with(['course', 'academicYear', 'faculty'])->find($this->selectedBlockId);
 
         if (!$block) {
             session()->flash('error', 'Class not found.');
@@ -276,32 +412,8 @@ class AttendanceManager extends Component
         }
 
         $data = $this->buildRosterData();
-        $filename = 'attendance_' . preg_replace('/[^A-Za-z0-9_-]/', '', $block->course?->code ?? 'class')
-            . '_' . $this->attendanceDate . '.csv';
 
-        return response()->streamDownload(function () use ($data, $block) {
-            $out = fopen('php://output', 'w');
-
-            fputcsv($out, ['Attendance Roster']);
-            fputcsv($out, ['Course', ($block->course?->code ?? '') . ' - ' . ($block->course?->name ?? '')]);
-            fputcsv($out, ['Schedule', $block->schedule_string]);
-            fputcsv($out, ['Date', $this->attendanceDate]);
-            fputcsv($out, ['']);
-            fputcsv($out, ['#', 'Student Name', 'ID Number', 'Status', 'Checked In At', 'Remarks']);
-
-            foreach ($data['roster'] as $index => $student) {
-                fputcsv($out, [
-                    $index + 1,
-                    $student['name'],
-                    $student['student_number'],
-                    $student['status'] ?? '',
-                    $student['checked_in_at'] ? \Carbon\Carbon::parse($student['checked_in_at'])->format('Y-m-d h:i A') : '',
-                    $student['remarks'] ?? '',
-                ]);
-            }
-
-            fclose($out);
-        }, $filename);
+        return (new AttendanceRosterExport($data['roster'], $block, $this->attendanceDate))->download();
     }
 
     public function printRoster()
