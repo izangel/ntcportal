@@ -89,6 +89,7 @@ class CourseBlock extends Model
     // Pivot table mapping from student_courseblock
     public function students(): BelongsToMany
     {
-        return $this->belongsToMany(Student::class, 'student_courseblock', 'course_block_id', 'student_id');
+        return $this->belongsToMany(Student::class, 'student_courseblock', 'course_block_id', 'student_id')
+                    ->withPivot('grade', 'remarks');
     }
 }
