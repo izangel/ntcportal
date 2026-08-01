@@ -137,7 +137,7 @@ class DashboardController extends Controller
             $staffData['recentStudents'] = Student::latest()->take(5)->get();
             $staffData['recentCourses'] = Course::latest()->take(5)->get();
 
-            $staffData['recentUpdates'] = SystemUpdate::latest()->take(5)->get();
+            //$staffData['recentUpdates'] = SystemUpdate::latest()->take(5)->get();
 
             $staffData['myCourses'] = collect();
             if ($user->employee && $activeSemester) {
@@ -174,21 +174,15 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 
-            'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
+       //     'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
         $staffData, 
         $studentData
     );
 
     return view('dashboard', $viewData);
 }
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
-            $staffData,
-            $studentData
-        );
-
-        return view('dashboard', $viewData);
-    }
+            
 
     // Helper to map semester names
     private function getSemesterName($name) {

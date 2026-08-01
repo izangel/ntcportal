@@ -54,4 +54,6 @@ class AcademicYear extends Model
     public function getLabelAttribute() {
         return "{$this->start_year} - {$this->end_year}";
     }
+
+    
 }

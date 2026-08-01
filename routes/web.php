@@ -80,6 +80,20 @@ use App\Livewire\Faculty\PesDashboard;
 use App\Livewire\Admin\PesDashboardSettings;
 use App\Livewire\CreateRetroactiveLeave;
 
+//OBE
+use App\Livewire\Admin\ObeSetup;
+use App\Livewire\Admin\CloSetup;
+use App\Livewire\Admin\CurriculumMatrix;
+use App\Livewire\Admin\AssessmentSetup;
+use App\Livewire\Admin\ProgramCourseManager;
+use App\Livewire\Admin\ProgramBatchReport;
+
+use App\Livewire\Admin\ObeCourseDashboard;
+use App\Livewire\Admin\ProgramOverviewMatrix;
+use App\Livewire\Faculty\AssessmentTaskSetup;
+use App\Livewire\Faculty\AssessmentScoreEntry;
+use App\Livewire\Teacher\ScoreEntryMatrix;
+use App\Livewire\Admin\BatchAssignment;
 
 /*
 |--------------------------------------------------------------------------
@@ -212,6 +226,8 @@ Route::middleware([
         Route::delete('/course-blocks/{courseBlock}', [CourseBlockController::class, 'destroy'])
             ->name('course_blocks.destroy');
 
+        
+
 
     }); //REGISTRAR/PROGRAM HEADS
 
@@ -309,10 +325,22 @@ Route::middleware([
         Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
         Route::get('/pes-tracker/settings', PesDashboardSettings::class)
                 ->name('pes-tracker.settings');
-    }); // END OF ADMIN/HR/ACADEMIC HEAD
+        Route::get('/admin/obe/setup', ObeSetup::class)->name('admin.obe.setup');
+     
+        //OBE
+        Route::get('/admin/obe/program-courses', ProgramCourseManager::class)->name('admin.obe.program-courses');
+        Route::get('/admin/obe/program-report', ProgramBatchReport::class)->name('admin.obe.program-report');
+        Route::get('/admin/obe/course-dashboard', ObeCourseDashboard::class)->name('admin.obe.course-dashboard');
+        Route::get('/admin/obe/program-matrix', ProgramOverviewMatrix::class)->name('admin.obe.program-matrix');
+         }); // END OF ADMIN/HR/ACADEMIC HEAD
 
 
+
+
+
+    //+++++++++++++++++++++++++++++++++++++++++++++++++
     // ---GUIDANCE ONLY----
+    //+++++++++++++++++++++++++++++++++++++++++++++++++
     Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs|guidance'])->group(function () {
         // The main tracker view
         // The main Tracker page
@@ -332,6 +360,8 @@ Route::middleware([
 
         Route::post('/evaluation/verify-loading', [EvaluationWorkflowController::class, 'verifyLoading'])->name('evaluation.verifyLoading');
         Route::post('/evaluation/open-evaluations', [EvaluationWorkflowController::class, 'openEvaluations'])->name('evaluation.openEvaluations');
+        
+     
 
    });
 
@@ -523,6 +553,12 @@ Route::middleware([
 
     // Admin/Academic Head routes (add your admin middleware here)
     Route::get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
+
+    //OBE
+    Route::get('/faculty/assessment-tasks', AssessmentTaskSetup::class)->name('faculty.assessment-tasks');
+    Route::get('/faculty/assessment-scores', AssessmentScoreEntry::class)->name('faculty.assessment-scores');
+    Route::get('/faculty/obe/course-dashboard', ObeCourseDashboard::class)->name('faculty.obe.course-dashboard');
+    Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
     
     //Students
    // --- STUDENT ROUTES ---

@@ -176,6 +176,7 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sections</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Faculty</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
@@ -188,7 +189,14 @@
                                                 <p class="text-sm font-medium text-gray-900">{{ $block->course->code }}</p>
                                                 <p class="text-xs text-gray-500">{{ $block->course->name }}</p>
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty->last_name }}, {{ $block->faculty->first_name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                @forelse($block->sections as $section)
+                                                    <span class="inline-block rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700 mr-1">{{ $section->name }}</span>
+                                                @empty
+                                                    <span class="text-xs text-gray-400 italic">No section</span>
+                                                @endforelse
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->faculty ? $block->faculty->last_name . ', ' . $block->faculty->first_name : 'Unassigned' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">{{ $block->schedule_string }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $block->room_name }}</td>
                                         </tr>
@@ -245,6 +253,25 @@
                         <input type="text" wire:model.defer="newCourseBlock.schedule_string" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" placeholder="e.g., MW 10:00-11:30AM">
                         @error('newCourseBlock.schedule_string') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                     </div>
+                </div>
+
+                <div class="mt-6">
+                    <label class="block text-sm font-medium text-gray-700">Sections (assigned via course_block_section)</label>
+                    <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-64 overflow-y-auto rounded-md border border-gray-200 p-3">
+                        @foreach ($sections as $section)
+                            <label class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-indigo-50 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    wire:model.defer="newCourseBlock.section_ids"
+                                    value="{{ $section['id'] }}"
+                                    @checked(in_array($section['id'], $newCourseBlock['section_ids'] ?? []))
+                                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                >
+                                <span>{{ $section['program_name'] }}-{{ $section['name'] }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('newCourseBlock.section_ids') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                 </div>
                 
                 <div class="mt-6 text-right flex justify-end items-center space-x-4">

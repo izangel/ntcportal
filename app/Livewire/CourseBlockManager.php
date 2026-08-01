@@ -43,7 +43,8 @@ class CourseBlockManager extends Component
         'course_id' => null,
         'faculty_id' => null,
         'room_name' => null,
-        'schedule_string' => null
+        'schedule_string' => null,
+        'section_ids' => [],
     ];
 
     /**
@@ -139,15 +140,22 @@ class CourseBlockManager extends Component
         ->orderBy('last_name')
         ->get();
         // 5. Load Course Blocks for the selected context
-        // This shows which courses the student will be auto-enrolled into
-        $this->courseBlocks = CourseBlock::where('section_id', $this->sectionId)
+        // Sections are linked to blocks through the course_block_section pivot table
+        $this->courseBlocks = CourseBlock::with(['course', 'faculty', 'sections'])
                                         ->where('academic_year_id', $this->academicYearId)
                                         ->where('semester', $this->semester)
-                                        ->with(['course', 'faculty'])
+                                        ->whereHas('sections', function ($query) {
+                                            $query->where('course_block_section.section_id', $this->sectionId)
+                                                ->where('course_block_section.academic_year_id', $this->academicYearId)
+                                                ->where('course_block_section.semester', $this->semester);
+                                        })
                                         ->get();
         
         // 6. Reset the selection dropdown state
         $this->selectedStudentId = null;
+
+        // 7. Default the new-block form to the currently selected section
+        $this->newCourseBlock['section_ids'] = [(string) $this->sectionId];
     }
 
     /**
@@ -203,6 +211,7 @@ class CourseBlockManager extends Component
 
     /**
      * Handles saving the new course block to the database.
+     * Sections are attached through the course_block_section pivot table.
      */
     public function saveCourseBlock()
     {
@@ -210,32 +219,43 @@ class CourseBlockManager extends Component
         $this->validate([
             'academicYearId' => 'required',
             'semester' => 'required',
-            'sectionId' => 'required|exists:sections,id',
             'newCourseBlock.course_id' => 'required|exists:courses,id',
             'newCourseBlock.faculty_id' => 'required|exists:employees,id',
             'newCourseBlock.room_name' => 'required|string|max:100',
             'newCourseBlock.schedule_string' => 'required|string|max:150',
+            'newCourseBlock.section_ids' => 'required|array|min:1',
+            'newCourseBlock.section_ids.*' => 'exists:sections,id',
         ]);
 
+        $sectionIds = array_map('intval', $this->newCourseBlock['section_ids']);
+
         // --- 2. Conflict Check ---
-        $existingBlock = CourseBlock::where('course_id', $this->newCourseBlock['course_id'])
-                                            ->where('section_id', $this->sectionId)
+        // Is the course already assigned to any of the chosen sections for this term?
+        $existingBlockIds = CourseBlock::where('course_id', $this->newCourseBlock['course_id'])
                                             ->where('academic_year_id', $this->academicYearId)
                                             ->where('semester', $this->semester)
-                                            ->first();
+                                            ->pluck('id');
 
-        if ($existingBlock) {
-            $courseCode = Course::find($this->newCourseBlock['course_id'])->code;
+        if ($existingBlockIds->isNotEmpty()) {
+            $conflict = DB::table('course_block_section')
+                ->whereIn('course_block_id', $existingBlockIds)
+                ->whereIn('section_id', $sectionIds)
+                ->where('academic_year_id', $this->academicYearId)
+                ->where('semester', $this->semester)
+                ->exists();
 
-            session()->flash('error', 
-                "The course **{$courseCode}** is already assigned to this section for the selected academic period. Cannot create a duplicate block."
-            );
-            return;
+            if ($conflict) {
+                $courseCode = Course::find($this->newCourseBlock['course_id'])->code;
+
+                session()->flash('error', 
+                    "The course **{$courseCode}** is already assigned to one of the selected sections for the selected academic period. Cannot create a duplicate block."
+                );
+                return;
+            }
         }
 
-        // 3. Create the CourseBlock record 
-        CourseBlock::create([
-            'section_id' => $this->sectionId,
+        // 3. Create the CourseBlock record (sections are attached via the pivot below)
+        $block = CourseBlock::create([
             'course_id' => $this->newCourseBlock['course_id'],
             'faculty_id' => $this->newCourseBlock['faculty_id'],
             'academic_year_id' => $this->academicYearId,
@@ -244,10 +264,46 @@ class CourseBlockManager extends Component
             'schedule_string' => $this->newCourseBlock['schedule_string'],
         ]);
 
-        // 4. Reset form and refresh data
+        // 4. Attach the selected sections through course_block_section
+        foreach ($sectionIds as $sectionId) {
+            DB::table('course_block_section')->insert([
+                'course_block_id' => $block->id,
+                'section_id' => $sectionId,
+                'academic_year_id' => $this->academicYearId,
+                'semester' => $this->semester,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // 5. Auto-enroll students from the attached sections (mirrors the old section_id behavior)
+        $enrolled = 0;
+        foreach ($sectionIds as $sectionId) {
+            $studentIds = SectionStudent::where('section_id', $sectionId)
+                ->where('academic_year_id', $this->academicYearId)
+                ->where('semester', $this->semester)
+                ->pluck('student_id');
+
+            foreach ($studentIds as $studentId) {
+                $enrollment = Enrollment::firstOrCreate([
+                    'student_id'       => $studentId,
+                    'course_id'        => $block->course_id,
+                    'section_id'       => $sectionId,
+                    'academic_year_id' => $this->academicYearId,
+                    'semester'         => $this->semester,
+                ]);
+
+                if ($enrollment->wasRecentlyCreated) {
+                    $enrolled++;
+                }
+            }
+        }
+
+        // 6. Reset form and refresh data
         $this->reset('newCourseBlock');
+        $this->newCourseBlock['section_ids'] = [(string) $this->sectionId];
         $this->loadSectionData();
-        session()->flash('message', 'Course block added successfully!');
+        session()->flash('message', 'Course block added successfully!' . ($enrolled ? " **{$enrolled}** student(s) auto-enrolled." : ''));
     }
 
     /**
