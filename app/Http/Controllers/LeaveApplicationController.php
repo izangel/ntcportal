@@ -121,18 +121,6 @@ class LeaveApplicationController extends Controller
     }
 
     public function create()
-    {
-        $leaveTypes = LeaveType::orderBy('name')->get(); 
-        $employees = Employee::orderBy('name')->get();
-        $teachers = Employee::where('role', '!=', 'staff')
-                     ->where('user_id', '!=', Auth::id())
-                     ->orderBy('name')->get();
-        $staffPersonnel = Employee::where('user_id', '!=', Auth::id())->orderBy('name')->get();
-
-    /**
-     * Show the form for creating a new leave application.
-     */
-   public function create()
 {
     $leaveTypes = LeaveType::orderBy('name')->get();
     
@@ -464,72 +452,20 @@ public function edit(LeaveApplication $leaveApplication)
                 $currentClass = $leaveApplication->classesToMiss()->create($classData);
             } else if (isset($classData['id']) && !$isDataPresent) {
                 LeaveApplicationClass::destroy($classData['id']);
-{
-    $rules = [
-        'employee_id' => 'required|exists:employees,id',
-        'reason' => 'required|string|max:1000',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-        'tasks_endorsed' => 'nullable|string|max:1000',
-        'personnel_to_take_over_id' => 'nullable|exists:employees,id',
-        'acknowledgement_personnel_take_over_signature' => 'nullable|string|max:255',
-    ];
-
-    $rules['classes_data'] = 'nullable|array';
-    $rules['classes_data.*.id'] = 'nullable|exists:leave_application_classes,id';
-    $rules['classes_data.*.course_code'] = 'nullable|string|max:255';
-    $rules['classes_data.*.title'] = 'nullable|string|max:255';
-    $rules['classes_data.*.day_time_room'] = 'nullable|string|max:255';
-    $rules['classes_data.*.topics'] = 'nullable|string|max:1000';
-    $rules['classes_data.*.substitute_teacher_id'] = 'nullable|exists:employees,id';
-    $rules['classes_data.*.acknowledgement_signature'] = 'nullable|string|max:255';
-
-    $validatedData = $request->validate($rules);
-
-    // Use the helper method
-    $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
-
-    $classesToProcess = $validatedData['classes_data'] ?? [];
-    unset($validatedData['classes_data']);
-
-    $leaveApplication->update($validatedData);
-
-    $existingClassIds = $leaveApplication->classesToMiss->pluck('id')->toArray();
-    $submittedClassIds = collect($classesToProcess)->pluck('id')->filter()->toArray();
-    $classesToDelete = array_diff($existingClassIds, $submittedClassIds);
-    LeaveApplicationClass::destroy($classesToDelete);
-
-    foreach ($classesToProcess as $classData) {
-        $currentClass = null;
-        $isDataPresent = array_filter($classData, function($value, $key) {
-            return $key !== 'id' && ($value !== null && $value !== '');
-        }, ARRAY_FILTER_USE_BOTH);
-
-        if (isset($classData['id']) && in_array($classData['id'], $existingClassIds)) {
-            $currentClass = LeaveApplicationClass::find($classData['id']);
-            if ($currentClass) {
-                if ($currentClass->sub_ack_at) {
-                    unset($classData['substitute_teacher_id']);
-                    unset($classData['acknowledgement_signature']);
-                }
-                $currentClass->update($classData);
             }
-        } else if ($isDataPresent) {
-            $currentClass = $leaveApplication->classesToMiss()->create($classData);
-        }
 
             if ($currentClass && $currentClass->substitute_teacher_id) {
                 $shouldNotify = false;
                 if ($currentClass->wasRecentlyCreated) {
                     $shouldNotify = true;
                 } elseif ($currentClass->isDirty('substitute_teacher_id') && !$currentClass->sub_ack_at) {
-                    $shouldNotify = true; 
+                    $shouldNotify = true;
                 }
 
                 if ($shouldNotify) {
                     $substituteTeacher = $currentClass->substituteTeacher;
                     if ($substituteTeacher && $substituteTeacher->user) {
-                         $substituteTeacher->user->notify(new SubstituteTeacherAssignment(
+                        $substituteTeacher->user->notify(new SubstituteTeacherAssignment(
                             $currentClass,
                             $leaveApplication->employee->name
                         ));
@@ -537,24 +473,9 @@ public function edit(LeaveApplication $leaveApplication)
                 }
             }
         }
+
         return redirect()->route('leave_applications.index')->with('success', 'Leave application updated successfully.');
     }
-
-        if ($currentClass && $currentClass->substitute_teacher_id) {
-            $shouldNotify = $currentClass->wasRecentlyCreated || ($currentClass->isDirty('substitute_teacher_id') && !$currentClass->sub_ack_at);
-            if ($shouldNotify) {
-                $substituteTeacher = $currentClass->substituteTeacher;
-                if ($substituteTeacher && $substituteTeacher->user) {
-                     $substituteTeacher->user->notify(new SubstituteTeacherAssignment($currentClass, $leaveApplication->employee->name));
-                }
-            }
-        }
-    }
-
-    return redirect()->route('leave_applications.index')->with('success', 'Leave application updated successfully.');
-} // end of update
-
-   
 
     /**
      * Display the specified leave application.
@@ -683,6 +604,7 @@ public function exportExcel(Request $request)
     return Excel::download(new LeaveApplicationsExport($start, $end), $fileName);
 }
 
+    /**
      * Cancel the application and refund credits.
      * LOGIC: Checks if the leave application is approved, then updates status to 'cancelled'.
      * Refunds the leave credits back to the employee for sick leave, incentive leave, and vacation leave.

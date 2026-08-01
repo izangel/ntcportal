@@ -249,8 +249,8 @@
                                     </td>
                                    
                                     <td class="px-2 py-0.5 text-[11px] truncate">
-                                        <span class="font-bold text-gray-900 uppercase">{{ $block->faculty->last_name }}</span>, 
-                                        <span class="text-gray-600 capitalize">{{ $block->faculty->first_name }}</span>
+                                        <span class="font-bold text-gray-900 uppercase">{{ $block->faculty->last_name ?? 'N/A'}}</span>, 
+                                        <span class="text-gray-600 capitalize">{{ $block->faculty->first_name ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-2 py-0.5 text-[11px]">
                                         <span class="font-bold text-blue-700">{{ $block->course->code }}</span>

@@ -137,4 +137,41 @@ public function courseBlocks() {
     {
         return $this->hasMany(ElectionVote::class);
     }
+
+    /**
+     * Compute batch string dynamically from section name and academic year.
+     */
+    public function getCalculatedBatchAttribute()
+    {
+        // 1. Fallback to direct batch_year database column if already set
+        if (!empty($this->batch_year)) {
+            return $this->batch_year;
+        }
+
+        // 2. Fetch latest enrolled section via section_student pivot
+        $latestSection = $this->sections()->latest('section_student.created_at')->first();
+
+        if (!$latestSection) {
+            return null;
+        }
+
+        // Fetch academic year using pivot academic_year_id or section default
+        $academicYearId = $latestSection->pivot->academic_year_id ?? $latestSection->academic_year_id;
+        $academicYear = AcademicYear::find($academicYearId);
+
+        if (!$academicYear || !$academicYear->start_year || !$academicYear->end_year) {
+            return null;
+        }
+
+        // Extract leading numeric digit from section name (e.g. "1A" -> 1, "2" -> 2)
+        preg_match('/\d+/', $latestSection->name, $matches);
+        $yearLevel = isset($matches[0]) ? (int)$matches[0] : 1;
+
+        // Calculate start and end years offset by (Year Level - 1)
+        $offset = max(0, $yearLevel - 1);
+        $startYear = $academicYear->start_year - $offset;
+        $endYear = $academicYear->end_year - $offset;
+
+        return "{$startYear}-{$endYear}";
+    }
 }

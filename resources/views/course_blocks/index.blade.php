@@ -80,7 +80,7 @@
                             <td class="px-3 py-0.5 font-semibold text-[#4A5568] whitespace-nowrap">{{ $block->schedule_string }}</td>
                             <td class="px-3 py-0.5 text-[#3182CE] font-bold uppercase">{{ $block->room_name }}</td>
                             <td class="px-3 py-0.5 text-slate-700 font-semibold">
-                                {{ $block->faculty->last_name }}, {{ substr($block->faculty->first_name, 0, 1) }}.
+                                {{ $block->faculty->last_name ?? 'N/A' }}, {{ substr($block->faculty->first_name ?? 'N/A', 0, 1) }}.
                             </td>
                             <td class="px-3 py-0.5 text-slate-400 whitespace-nowrap">
                                 {{ $block->semester }} | {{ $block->academicYear->start_year }}-{{ $block->academicYear->end_year }}
