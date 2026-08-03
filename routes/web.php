@@ -125,6 +125,7 @@ Route::middleware([
     // Primary Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/portal-updates', \App\Livewire\User\SystemUpdateList::class)->name('portal-updates.list');
+    Route::get('/notifications', \App\Livewire\NotificationsPage::class)->name('notifications.index');
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
