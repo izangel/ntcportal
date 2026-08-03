@@ -3,7 +3,8 @@
         <div>
             <h1 class="text-2xl font-bold text-gray-900 tracking-tight">OBE Submission Overview</h1>
             <p class="text-sm text-gray-600">
-                Your pending OBE submissions and the submission status of other faculty.
+                Your pending OBE submissions and the submission status of other faculty for
+                {{ \App\Services\ObeDataCompleteness::SUBMISSION_ACADEMIC_YEAR_START }} - {{ \App\Services\ObeDataCompleteness::SUBMISSION_ACADEMIC_YEAR_START + 1 }} (2nd Semester).
             </p>
         </div>
     </div>
@@ -24,7 +25,7 @@
             <label class="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">Semester</label>
             <select wire:model.live="selectedSemester" class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 <option value="">-- All Semesters --</option>
-                @foreach($semesters as $semester)
+                @foreach($storedSemesters as $semester)
                     <option value="{{ $semester }}">{{ $semester }}</option>
                 @endforeach
             </select>
