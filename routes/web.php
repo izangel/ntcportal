@@ -92,6 +92,7 @@ use App\Livewire\Admin\ProgramBatchReport;
 
 use App\Livewire\Admin\ObeCourseDashboard;
 use App\Livewire\Admin\ProgramOverviewMatrix;
+use App\Livewire\Admin\ObeDataReminderManager;
 use App\Livewire\Faculty\AssessmentTaskSetup;
 use App\Livewire\Faculty\AssessmentScoreEntry;
 use App\Livewire\Teacher\ScoreEntryMatrix;
@@ -339,6 +340,7 @@ Route::middleware([
         Route::get('/admin/obe/program-report', ProgramBatchReport::class)->name('admin.obe.program-report');
         Route::get('/admin/obe/course-dashboard', ObeCourseDashboard::class)->name('admin.obe.course-dashboard');
         Route::get('/admin/obe/program-matrix', ProgramOverviewMatrix::class)->name('admin.obe.program-matrix');
+        Route::get('/admin/obe/reminders', ObeDataReminderManager::class)->name('admin.obe.reminders');
          }); // END OF ADMIN/HR/ACADEMIC HEAD
 
 
@@ -566,6 +568,7 @@ Route::middleware([
     Route::get('/faculty/assessment-scores', AssessmentScoreEntry::class)->name('faculty.assessment-scores');
     Route::get('/faculty/obe/course-dashboard', ObeCourseDashboard::class)->name('faculty.obe.course-dashboard');
     Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
+    Route::get('/faculty/obe/reminders', ObeDataReminderManager::class)->name('faculty.obe.reminders');
 
     //Attendance
     Route::get('/attendance', AttendanceManager::class)->name('attendance.index');

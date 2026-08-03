@@ -28,4 +28,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
+    })
+    ->withSchedule(function (Illuminate\Console\Scheduling\Schedule $schedule): void {
+        $schedule->command('obe:send-reminders')->weekdays()->at('07:00')->withoutOverlapping();
     })->create();

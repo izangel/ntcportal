@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,
             LeaveTypesSeeder::class,
             CategorySeeder::class,
-             
+            CourseDashboardSeeder::class,
         ]);
     }
 }

@@ -656,6 +656,10 @@
                         <i class="fas fa-gauge-high mr-3 text-lg"></i>
                         {{ __('6-OBE Course Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.reminders') : route('faculty.obe.reminders') }}" :active="request()->routeIs('admin.obe.reminders') || request()->routeIs('faculty.obe.reminders')">
+                        <i class="fas fa-bell mr-3 text-lg"></i>
+                        {{ __('7-OBE Data Reminders') }}
+                    </x-nav-link>
                     @endif
                     @endif
                                     
