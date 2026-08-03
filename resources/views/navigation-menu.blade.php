@@ -51,7 +51,7 @@
                                 @forelse($notifications as $notification)
                                     @php
                                         $data = $notification->data;
-                                        $actionUrl = $data['action_url'] ?? null;
+                                        $actionUrl = $data['action_url'] ?? $data['review_url'] ?? null;
                                         $isUnread = is_null($notification->read_at);
                                         $isObe = ($data['type'] ?? '') === 'obe_data_reminder';
                                     @endphp
@@ -95,7 +95,7 @@
                             </div>
 
                             <div class="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-                                <a href="{{ route('dashboard') }}" class="text-[11px] font-bold text-indigo-600 hover:underline">View all</a>
+                                <a href="{{ route('notifications.index') }}" class="text-[11px] font-bold text-indigo-600 hover:underline">View all</a>
                                 @if($unreadNotificationsCount > 0)
                                     <form method="POST" action="{{ route('notifications.markAllAsRead') }}">
                                         @csrf
