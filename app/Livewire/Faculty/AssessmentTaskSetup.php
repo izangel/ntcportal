@@ -17,6 +17,7 @@ class AssessmentTaskSetup extends Component
     public $selectedCourseBlockId = null;
     public $selectedTaskId = null;
 
+    public $editingTaskId = null;
     public $taskTitle = '';
     public $taskType = 'Exam';
     public $taskWeight = '';
@@ -36,12 +37,14 @@ class AssessmentTaskSetup extends Component
     {
         $this->selectedCourseBlockId = null;
         $this->selectedTaskId = null;
+        $this->resetTaskForm();
     }
 
     public function updatedSemester(): void
     {
         $this->selectedCourseBlockId = null;
         $this->selectedTaskId = null;
+        $this->resetTaskForm();
     }
 
     private function facultyId(): ?int
@@ -86,12 +89,19 @@ class AssessmentTaskSetup extends Component
             return null;
         }
 
-        return CourseBlock::with('academicYear')
+        return CourseBlock::with(['sections', 'academicYear'])
             ->whereKey($this->selectedCourseBlockId)
             ->where('faculty_id', $this->facultyId())
             ->where('academic_year_id', $this->academicYearId)
             ->tap(fn ($query) => $this->applySemesterFilter($query))
             ->first();
+    }
+
+    private function blockBatchYear(CourseBlock $block): ?string
+    {
+        $batch = $block->batchYear();
+
+        return $batch !== null ? (string) $batch : null;
     }
 
     public function saveTask(): void
@@ -102,6 +112,8 @@ class AssessmentTaskSetup extends Component
             return;
         }
 
+        $batchYear = $this->blockBatchYear($block);
+
         $this->validate([
             'taskTitle' => 'required|string|max:100',
             'taskType' => 'required|in:Exam,Quiz,Assignment,Project,Practical',
@@ -109,17 +121,60 @@ class AssessmentTaskSetup extends Component
             'taskTotalMarks' => 'required|numeric|min:0.01',
         ]);
 
-        AssessmentTask::create([
+        $data = [
             'course_id' => $block->course_id,
             'title' => $this->taskTitle,
             'type' => $this->taskType,
             'weight_percentage' => $this->taskWeight,
             'total_marks' => $this->taskTotalMarks,
-            'effective_batch_year' => (string) $block->academicYear->start_year,
-        ]);
+            'effective_batch_year' => $batchYear,
+        ];
 
-        $this->reset(['taskTitle', 'taskType', 'taskWeight', 'taskTotalMarks']);
-        session()->flash('success', 'Assessment task created for the selected course and batch.');
+        if ($this->editingTaskId) {
+            AssessmentTask::whereKey($this->editingTaskId)
+                ->where('course_id', $block->course_id)
+                ->where('effective_batch_year', $batchYear)
+                ->firstOrFail()
+                ->update($data);
+            $this->resetTaskForm();
+            session()->flash('success', 'Assessment task updated.');
+        } else {
+            AssessmentTask::create($data);
+            $this->reset(['taskTitle']);
+            session()->flash('success', 'Assessment task created for the selected course and batch.');
+        }
+    }
+
+    public function editTask(int $taskId): void
+    {
+        $block = $this->selectedBlock();
+        if (!$block) {
+            return;
+        }
+
+        $task = AssessmentTask::whereKey($taskId)
+            ->where('course_id', $block->course_id)
+            ->where('effective_batch_year', $this->blockBatchYear($block))
+            ->firstOrFail();
+
+        $this->editingTaskId = $task->id;
+        $this->selectedTaskId = (string) $task->id;
+        $this->taskTitle = $task->title;
+        $this->taskType = $task->type;
+        $this->taskWeight = (string) $task->weight_percentage;
+        $this->taskTotalMarks = (string) $task->total_marks;
+        $this->resetErrorBag();
+    }
+
+    public function cancelEditTask(): void
+    {
+        $this->resetTaskForm();
+    }
+
+    private function resetTaskForm(): void
+    {
+        $this->reset(['editingTaskId', 'taskTitle', 'taskType', 'taskWeight', 'taskTotalMarks']);
+        $this->resetErrorBag();
     }
 
     public function saveItem(): void
@@ -130,6 +185,8 @@ class AssessmentTaskSetup extends Component
             return;
         }
 
+        $batchYear = $this->blockBatchYear($block);
+
         $this->validate([
             'selectedTaskId' => 'required|exists:assessment_tasks,id',
             'itemName' => 'required|string|max:100',
@@ -139,12 +196,12 @@ class AssessmentTaskSetup extends Component
 
         $task = AssessmentTask::whereKey($this->selectedTaskId)
             ->where('course_id', $block->course_id)
-            ->where('effective_batch_year', (string) $block->academicYear->start_year)
+            ->where('effective_batch_year', $batchYear)
             ->firstOrFail();
 
         $clo = CourseLearningOutcome::whereKey($this->itemCloId)
             ->where('course_id', $block->course_id)
-            ->where('effective_batch_year', (string) $block->academicYear->start_year)
+            ->where('effective_batch_year', $batchYear)
             ->firstOrFail();
 
         AssessmentItem::create([
@@ -152,7 +209,7 @@ class AssessmentTaskSetup extends Component
             'course_learning_outcome_id' => $clo->id,
             'item_name' => $this->itemName,
             'max_marks' => $this->itemMarks,
-            'effective_batch_year' => (string) $block->academicYear->start_year,
+            'effective_batch_year' => $batchYear,
         ]);
 
         $this->reset(['itemName', 'itemCloId', 'itemMarks']);
@@ -167,9 +224,11 @@ class AssessmentTaskSetup extends Component
             return;
         }
 
+        $batchYear = $this->blockBatchYear($block);
+
         $task = AssessmentTask::whereKey($taskId)
             ->where('course_id', $block->course_id)
-            ->where('effective_batch_year', (string) $block->academicYear->start_year)
+            ->where('effective_batch_year', $batchYear)
             ->firstOrFail();
 
         $task->delete();
@@ -190,7 +249,7 @@ class AssessmentTaskSetup extends Component
         $selectedBlock = $this->selectedBlock();
 
         if ($this->facultyId() && $this->academicYearId) {
-            $blocks = CourseBlock::with(['course', 'section'])
+            $blocks = CourseBlock::with(['course', 'sections'])
                 ->where('faculty_id', $this->facultyId())
                 ->where('academic_year_id', $this->academicYearId)
                 ->tap(fn ($query) => $this->applySemesterFilter($query))
@@ -199,7 +258,7 @@ class AssessmentTaskSetup extends Component
         }
 
         if ($selectedBlock) {
-            $batchYear = (string) $selectedBlock->academicYear->start_year;
+            $batchYear = $this->blockBatchYear($selectedBlock);
             $clos = CourseLearningOutcome::where('course_id', $selectedBlock->course_id)
                 ->where('effective_batch_year', $batchYear)
                 ->orderBy('code')

@@ -232,7 +232,7 @@
                                                     <span class="text-xs italic text-gray-400">No CLOs assigned</span>
                                                 @endforelse
 
-                                                <button type="button" wire:click="$set('cloCourseId', {{ $course->id }})" class="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+                                                <button type="button" wire:click="assignClo({{ $course->id }})" class="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
                                                     + Assign CLO
                                                 </button>
                                             </td>
@@ -388,7 +388,7 @@
             @endif
 
             @if($cloCourseId)
-                <div class="mb-6 rounded-lg border border-indigo-200 bg-indigo-50/40 p-4">
+                <div x-data x-on:scroll-to-clo-form.window="$nextTick(() => $el.scrollIntoView({ behavior: 'smooth', block: 'center' }))" id="clo-form" class="mb-6 rounded-lg border border-indigo-200 bg-indigo-50/40 p-4">
                     <div class="flex items-center justify-between mb-3">
                         <h3 class="text-sm font-semibold text-indigo-900">
                             {{ $editingCloId ? 'Edit CLO' : 'Assign CLO to Course' }}

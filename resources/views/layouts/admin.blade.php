@@ -661,6 +661,10 @@
                         {{ __('7-OBE Data Reminders') }}
                     </x-nav-link>
                     @endif
+                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.submissions') : route('faculty.obe.submissions') }}" :active="request()->routeIs('admin.obe.submissions') || request()->routeIs('faculty.obe.submissions')">
+                        <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                        {{ __('8-OBE Submission Overview') }}
+                    </x-nav-link>
                     @endif
                                     
                 </div>

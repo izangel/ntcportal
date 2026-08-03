@@ -95,6 +95,17 @@ class ProgramCourseManager extends Component
         session()->flash('success', $message);
     }
 
+    public function assignClo($courseId): void
+    {
+        $this->editingCloId = null;
+        $this->cloCourseId = $courseId;
+        $this->cloCode = '';
+        $this->cloDescription = '';
+        $this->cloTaxonomyId = null;
+        $this->resetErrorBag();
+        $this->dispatch('scroll-to-clo-form');
+    }
+
     public function editClo($id): void
     {
         $clo = CourseLearningOutcome::query()
@@ -108,6 +119,7 @@ class ProgramCourseManager extends Component
         $this->cloDescription = (string) $clo->description;
         $this->cloTaxonomyId = $clo->blooms_taxonomy_id;
         $this->resetErrorBag();
+        $this->dispatch('scroll-to-clo-form');
     }
 
     public function resetCloForm(): void
