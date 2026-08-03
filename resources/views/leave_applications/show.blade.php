@@ -23,7 +23,7 @@
                         <p><strong class="text-gray-900">Leave Type:</strong> {{ $leaveApplication->leaveType->name }}</p>
                         <p><strong class="text-gray-900">Reason:</strong> {{ $leaveApplication->reason }}</p>
                         <p><strong class="text-gray-900">Leave Dates:</strong> {{ $leaveApplication->start_date->format('M d, Y') }} - {{ $leaveApplication->end_date->format('M d, Y') }}</p>
-                        <p><strong class="text-gray-900">Total Days:</strong> {{ $leaveApplication->total_days }}</p>
+                        <p><strong class="text-gray-900">Total Days:</strong> {{ $leaveApplication->total_days }} @if($leaveApplication->is_half_day)<span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>@endif</p>
                         <p><strong class="text-gray-900">Date Filed:</strong> {{ $leaveApplication->date_filed->format('M d, Y h:i A') }}</p>
                     </div>
                     <div>

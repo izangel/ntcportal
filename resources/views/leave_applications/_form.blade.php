@@ -100,6 +100,15 @@
             <x-input id="end_date" type="date" name="end_date" class="mt-1 block w-full" :value="old('end_date', $leaveApplication?->end_date?->format('Y-m-d'))" required />
         </div>
     </div>
+
+    <div class="mt-4">
+        <label class="inline-flex items-center">
+            <input type="checkbox" id="is_half_day" name="is_half_day" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                {{ old('is_half_day', $leaveApplication?->is_half_day ?? false) ? 'checked' : '' }}>
+            <span class="ml-2 text-sm font-medium text-gray-700">Half Day (single date only)</span>
+        </label>
+        <p class="mt-1 text-xs text-gray-500">Half-day leave applies to a single day; start and end dates must match.</p>
+    </div>
 </div>
 
 {{-- 5. Conditional Sections (Hidden for HR) --}}

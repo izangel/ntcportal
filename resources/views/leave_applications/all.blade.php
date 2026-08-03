@@ -108,8 +108,8 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $application->employee->mid_name ?? 'N/A' }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ ucwords(str_replace('_', ' ', $application->leaveType->name)) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ Str::limit($application->reason, 30) }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ max(0, (int) $application->total_days) }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }} @if($application->is_half_day)<span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>@endif</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ max(0, $application->total_days) }}</td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                             @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800

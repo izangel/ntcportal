@@ -27,7 +27,7 @@
                 <div class="p-6 text-gray-900 border-b border-gray-200">
                     <h3 class="font-semibold text-lg">{{ $leaveApplication->employee->first_name.' '.$leaveApplication->employee->last_name  }}'s Leave Application</h3>
                     <p class="text-sm text-gray-600">Type: {{ $leaveApplication->leaveType->name }}</p>
-                    <p class="text-sm text-gray-600">Period: {{ $leaveApplication->start_date->format('M d, Y') }} - {{ $leaveApplication->end_date->format('M d, Y') }}</p>
+                    <p class="text-sm text-gray-600">Period: {{ $leaveApplication->start_date->format('M d, Y') }} - {{ $leaveApplication->end_date->format('M d, Y') }} @if($leaveApplication->is_half_day)<span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>@endif</p>
                     <p class="text-sm text-gray-600">Reason: {{ $leaveApplication->reason }}</p>
                     <p class="text-sm text-gray-600">Date Filed: {{ $leaveApplication->date_filed->format('M d, Y') }}</p>
                     <p class="text-sm text-gray-600 mt-2 font-semibold">Academic Head Status: <span class="uppercase {{ $leaveApplication->ah_status === 'approved' ? 'text-green-700' : ($leaveApplication->ah_status === 'rejected' ? 'text-red-700' : 'text-gray-700') }}">{{ $leaveApplication->ah_status }}</span></p>

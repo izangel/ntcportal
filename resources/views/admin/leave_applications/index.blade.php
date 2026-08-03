@@ -18,7 +18,7 @@
                                 <li class="bg-gray-50 p-4 rounded-lg shadow-sm flex items-center justify-between">
                                     <div>
                                         <p class="font-semibold text-lg text-gray-800">{{ $application->employee->first_name.' '.$application->employee->last_name }}</p>
-                                        <p class="text-sm text-gray-600">{{ $application->leaveType->name }} from {{ $application->start_date->format('M d, Y') }} to {{ $application->end_date->format('M d, Y') }}</p>
+                                        <p class="text-sm text-gray-600">{{ $application->leaveType->name }} from {{ $application->start_date->format('M d, Y') }} to {{ $application->end_date->format('M d, Y') }} @if($application->is_half_day)<span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>@endif</p>
                                         <p class="text-xs text-gray-500 mt-1">Status: <span class="uppercase">{{ $application->admin_status }}</span></p>
                                     </div>
                                     <div>

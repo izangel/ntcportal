@@ -187,13 +187,30 @@ class HrLeaveApplicationController extends Controller
             'leave_type_id' => 'required|exists:leave_types,id',
             'start_date' => 'required|date|before_or_equal:today',
             'end_date' => 'required|date|before_or_equal:today|after_or_equal:start_date',
+            'is_half_day' => 'boolean',
             'reason' => 'required|string|max:1000',
             'approval_status' => 'required|in:approved_with_pay,approved_without_pay',
             'hr_remarks' => 'nullable|string|max:500',
         ]);
 
+        if ($request->boolean('is_half_day')) {
+            $validatedData = $request->validate([
+                'employee_id' => 'required|exists:employees,id',
+                'leave_type_id' => 'required|exists:leave_types,id',
+                'start_date' => 'required|date|before_or_equal:today|same:end_date',
+                'end_date' => 'required|date|before_or_equal:today',
+                'is_half_day' => 'boolean',
+                'reason' => 'required|string|max:1000',
+                'approval_status' => 'required|in:approved_with_pay,approved_without_pay',
+                'hr_remarks' => 'nullable|string|max:500',
+            ]);
+        }
+
         // Calculate total working days (exclude weekends/holidays)
-        $totalDays = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
+        $isHalfDay = $request->boolean('is_half_day');
+        $totalDays = $isHalfDay
+            ? 0.5
+            : $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
         if ($totalDays <= 0) {
             return back()
                 ->with('error', 'Selected dates contain no working days (weekends/holidays excluded).')
@@ -227,6 +244,7 @@ class HrLeaveApplicationController extends Controller
             'start_date' => $validatedData['start_date'],
             'end_date' => $validatedData['end_date'],
             'total_days' => $totalDays,
+            'is_half_day' => $isHalfDay,
             'date_filed' => Carbon::now(),
             
             // Set it as already approved by HR since HR is filing it directly
@@ -299,8 +317,8 @@ class HrLeaveApplicationController extends Controller
         $key = strtolower(str_replace(' ', '_', $leaveType->name));
         
         // Deduct the days safely: never add, never go below zero
-        $currentBalance = (int) ($leaveCredit->{$key} ?? 0);
-        $days = max(0, (int) $totalDays);
+        $currentBalance = (float) ($leaveCredit->{$key} ?? 0);
+        $days = max(0, (float) $totalDays);
         $deduct = min($currentBalance, $days);
         $leaveCredit->{$key} = $currentBalance - $deduct;
         $leaveCredit->save();

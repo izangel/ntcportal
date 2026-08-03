@@ -78,6 +78,15 @@
                         <p class="text-xs text-gray-500 mt-1">Must be on or after start date and in the past</p>
                     </div>
 
+                    <!-- Half Day -->
+                    <div class="mt-4">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" id="is_half_day" name="is_half_day" value="1" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" {{ old('is_half_day') ? 'checked' : '' }}>
+                            <span class="ml-2 text-sm font-medium text-gray-700">Half Day (single date only)</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">Half-day leave applies to a single day; start and end dates must match.</p>
+                    </div>
+
                     <!-- Total Days (Auto-calculated) -->
                     <div class="mt-4">
                         <x-label for="total_days" value="{{ __('Total Days') }}" />
@@ -165,10 +174,16 @@
         function calculateTotalDays() {
             const startVal = document.getElementById('start_date').value;
             const endVal = document.getElementById('end_date').value;
+            const isHalfDay = document.getElementById('is_half_day').checked;
             const startDate = parseDateInput(startVal);
             const endDate = parseDateInput(endVal);
 
             if (startDate && endDate && endDate >= startDate) {
+                if (isHalfDay) {
+                    document.getElementById('total_days').value = (startVal === endVal) ? 0.5 : 0;
+                    checkExceedsCredits();
+                    return;
+                }
                 let workDays = 0;
                 const current = new Date(startDate);
                 current.setHours(12, 0, 0, 0);
@@ -189,6 +204,7 @@
 
         document.getElementById('start_date').addEventListener('change', calculateTotalDays);
         document.getElementById('end_date').addEventListener('change', calculateTotalDays);
+        document.getElementById('is_half_day').addEventListener('change', calculateTotalDays);
         calculateTotalDays();
 
         function validateLeaveTypeSelection() {
@@ -209,7 +225,7 @@
             const leaveTypeError = document.getElementById('leave_type_error');
             const totalDaysEl = document.getElementById('total_days');
             const leaveTypeId = leaveTypeSelect.value;
-            const totalDays = parseInt(totalDaysEl.value || '0', 10);
+            const totalDays = parseFloat(totalDaysEl.value || '0');
             
             // Check if leave type is selected
             if (leaveTypeSelect.value === '') {
@@ -222,7 +238,7 @@
             
             // Client-side validation: ensure credits are sufficient
             const available = employeeCredits && employeeCredits[leaveTypeId] !== undefined
-                ? parseInt(employeeCredits[leaveTypeId], 10)
+                ? parseFloat(employeeCredits[leaveTypeId])
                 : null;
             if (available === null) {
                 alert('Unable to verify remaining leave credits for the selected employee.');
@@ -329,9 +345,9 @@
 
         function checkExceedsCredits() {
             const leaveTypeId = document.getElementById('leave_type_id').value;
-            const totalDays = parseInt(document.getElementById('total_days').value || '0', 10);
+            const totalDays = parseFloat(document.getElementById('total_days').value || '0');
             const available = employeeCredits && employeeCredits[leaveTypeId] !== undefined
-                ? parseInt(employeeCredits[leaveTypeId], 10)
+                ? parseFloat(employeeCredits[leaveTypeId])
                 : null;
             const c = document.getElementById('retro_exceeds_container');
             const m = document.getElementById('retro_exceeds_message');

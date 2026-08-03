@@ -36,6 +36,7 @@ class LeaveApplicationManager extends Component
     public $reason;
     public $start_date;
     public $end_date;
+    public $is_half_day = false;
     public $approval_status = 'pending'; 
     public $hr_remarks;
     public $tasks_endorsed;
@@ -96,9 +97,10 @@ class LeaveApplicationManager extends Component
             'employee_id', 'leave_type_id', 'reason', 'start_date', 'end_date',
             'approval_status', 'hr_remarks', 'tasks_endorsed', 
             'personnel_to_take_over_id', 'classes_data', 'total_days', 'availableCredits',
-            'editingApplicationId' // <-- ADD THIS TO RESET ARRAY
+            'is_half_day', 'editingApplicationId' // <-- ADD THIS TO RESET ARRAY
         ]);
         $this->approval_status = 'pending';
+        $this->is_half_day = false;
     }
 
     // --- INDEX INTERACTION HOOKS ---
@@ -119,11 +121,21 @@ class LeaveApplicationManager extends Component
     public function updatedLeaveTypeId() { $this->calculateLiveCredits(); }
     public function updatedStartDate() { $this->calculateDays(); }
     public function updatedEndDate() { $this->calculateDays(); }
+    public function updatedIsHalfDay() { $this->calculateDays(); }
 
     public function calculateDays()
     {
         if ($this->start_date && $this->end_date && $this->start_date <= $this->end_date) {
             $this->total_days = $this->calculateWorkDays($this->start_date, $this->end_date);
+
+            if ($this->is_half_day) {
+                if ($this->start_date === $this->end_date) {
+                    $this->total_days = 0.5;
+                } else {
+                    $this->total_days = 0;
+                    $this->is_half_day = false;
+                }
+            }
         } else {
             $this->total_days = 0;
         }
@@ -177,7 +189,13 @@ class LeaveApplicationManager extends Component
             'reason'        => 'required|string|max:1000',
             'start_date'    => 'required|date',
             'end_date'      => 'required|date|after_or_equal:start_date',
+            'is_half_day'   => 'boolean',
         ];
+
+        if ($this->is_half_day) {
+            $rules['start_date'] = 'required|date|same:end_date';
+            $rules['end_date']   = 'required|date';
+        }
 
         if ($this->isHrRecordingMode) {
             $rules['approval_status'] = 'required|in:pending,approved_with_pay,approved_without_pay,rejected';
@@ -237,6 +255,7 @@ class LeaveApplicationManager extends Component
             'start_date'     => $this->start_date,
             'end_date'       => $this->end_date,
             'total_days'     => $this->total_days,
+            'is_half_day'    => (bool) $this->is_half_day,
         ];
 
         if ($this->isHrRecordingMode) {
@@ -400,6 +419,7 @@ class LeaveApplicationManager extends Component
         $this->end_date = $application->end_date;
         $this->reason = $application->reason;
         $this->total_days = $application->total_days;
+        $this->is_half_day = (bool) $application->is_half_day;
         $this->approval_status = $application->approval_status;
         $this->hr_remarks = $application->hr_remarks;
         $this->tasks_endorsed = $application->tasks_endorsed;

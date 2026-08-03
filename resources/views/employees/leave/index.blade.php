@@ -40,7 +40,7 @@
                                 <td>{{ $transaction->leaveType->name }}</td>
                                 <td>{{ $transaction->start_date }}</td>
                                 <td>{{ $transaction->end_date }}</td>
-                                <td>{{ $transaction->total_days }}</td>
+                                <td>{{ $transaction->total_days }} @if($transaction->is_half_day) (Half Day) @endif</td>
                                 <td>{{ $transaction->approval_status }}</td>
                             </tr>
                         @endforeach
