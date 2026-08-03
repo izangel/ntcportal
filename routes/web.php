@@ -335,16 +335,18 @@ Route::middleware([
         Route::get('/pes-clearance', PesDashboard::class)->name('faculty.pes-clearance');
         Route::get('/pes-tracker/settings', PesDashboardSettings::class)
                 ->name('pes-tracker.settings');
+         }); // END OF ADMIN/HR/ACADEMIC HEAD
+
+    // Admin OBE (matches nav: admin OBE section shown to these roles)
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs'])->group(function () {
         Route::get('/admin/obe/setup', ObeSetup::class)->name('admin.obe.setup');
-     
-        //OBE
         Route::get('/admin/obe/program-courses', ProgramCourseManager::class)->name('admin.obe.program-courses');
         Route::get('/admin/obe/program-report', ProgramBatchReport::class)->name('admin.obe.program-report');
         Route::get('/admin/obe/course-dashboard', ObeCourseDashboard::class)->name('admin.obe.course-dashboard');
         Route::get('/admin/obe/program-matrix', ProgramOverviewMatrix::class)->name('admin.obe.program-matrix');
         Route::get('/admin/obe/reminders', ObeDataReminderManager::class)->name('admin.obe.reminders');
         Route::get('/admin/obe/submissions', ObeSubmissionOverview::class)->name('admin.obe.submissions');
-         }); // END OF ADMIN/HR/ACADEMIC HEAD
+    });
 
 
 
@@ -416,20 +418,21 @@ Route::middleware([
         Route::post('/decide/{leaveApplication}', [AdminLeaveApplicationController::class, 'decide'])->name('decide');
     });
 
-    // -- Global Notifications routes --
-    // OSA - Candidacy Management Routes (for teachers/staff/admin)
-    Route::delete('/admin/candidacy/{application}', [CandidacyController::class, 'destroy'])
-    ->name('admin.candidacy.destroy');
-    Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
-        Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
-        Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
-        Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
-        Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
-        Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
-        Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
-        Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
-        Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
-        Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
+    // OSA - Candidacy Management Routes (admin/registrar/academic head only)
+    Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs'])->group(function () {
+        Route::delete('/admin/candidacy/{application}', [CandidacyController::class, 'destroy'])
+        ->name('admin.candidacy.destroy');
+        Route::prefix('admin/candidacy')->name('admin.candidacy.')->group(function () {
+            Route::get('/', [CandidacyManagementController::class, 'index'])->name('index');
+            Route::get('/candidates', [CandidacyManagementController::class, 'candidates'])->name('candidates');
+            Route::post('/update-drive-link', [CandidacyManagementController::class, 'updateGoogleDriveLink'])->name('updateDriveLink');
+            Route::post('/toggle-application', [CandidacyManagementController::class, 'toggleApplicationStatus'])->name('toggleApplication');
+            Route::get('/{candidacy}', [CandidacyManagementController::class, 'show'])->name('show');
+            Route::get('/{candidacy}/edit', [CandidacyManagementController::class, 'edit'])->name('edit');
+            Route::patch('/{candidacy}', [CandidacyManagementController::class, 'update'])->name('update');
+            Route::patch('/{candidacy}/approve', [CandidacyManagementController::class, 'approve'])->name('approve');
+            Route::patch('/{candidacy}/reject', [CandidacyManagementController::class, 'reject'])->name('reject');
+        });
     });
 
     // -- Global Notifications routes --
@@ -457,27 +460,15 @@ Route::middleware([
         ->name('profile.password.update');
 
     Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])
-    ->name('faculty-loadings.delete');
-
-    Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])->name('faculty-loadings.delete');
+        ->name('faculty-loadings.delete');
     Route::resource('faculty-loadings', FacultyLoadingController::class);
 
     // Faculty Course Load
     Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])->name('faculty.course_load');
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])->name('faculty.course_load.show');
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
-    // 1. Route to show the initial page with filters (No results yet)
-    Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])
-        ->name('faculty.course_load');
-        
-    // 2. Route to show the filtered results
-    Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])
-        ->name('faculty.course_load.show');
 
     Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
-
-      // NEW My Course Load Page
-    Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
 
     // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])
@@ -560,19 +551,24 @@ Route::middleware([
     Route::post('/evaluations/{assignment}', [SupervisorEvaluationController::class, 'store'])->name('supervisor.evaluations.store');
 
     // Faculty routes
-    Route::get('/my-attainments', [CourseAttainmentController::class, 'index'])->name('attainment.index');
-    Route::post('/attainment/store', [CourseAttainmentController::class, 'store'])->name('attainment.store');
+    Route::middleware('role:teacher|faculty|staff')->group(function () {
+        Route::get('/my-attainments', [CourseAttainmentController::class, 'index'])->name('attainment.index');
+        Route::post('/attainment/store', [CourseAttainmentController::class, 'store'])->name('attainment.store');
+    });
 
-    // Admin/Academic Head routes (add your admin middleware here)
-    Route::get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
+    // Admin/Academic Head routes
+    Route::middleware('role:academic_head|registrar|hr|admin|program_head_shs')
+        ->get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
 
     //OBE
-    Route::get('/faculty/assessment-tasks', AssessmentTaskSetup::class)->name('faculty.assessment-tasks');
-    Route::get('/faculty/assessment-scores', AssessmentScoreEntry::class)->name('faculty.assessment-scores');
-    Route::get('/faculty/obe/course-dashboard', ObeCourseDashboard::class)->name('faculty.obe.course-dashboard');
-    Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
-    Route::get('/faculty/obe/reminders', ObeDataReminderManager::class)->name('faculty.obe.reminders');
-    Route::get('/faculty/obe/submissions', ObeSubmissionOverview::class)->name('faculty.obe.submissions');
+    Route::middleware('role:teacher|faculty|staff')->group(function () {
+        Route::get('/faculty/assessment-tasks', AssessmentTaskSetup::class)->name('faculty.assessment-tasks');
+        Route::get('/faculty/assessment-scores', AssessmentScoreEntry::class)->name('faculty.assessment-scores');
+        Route::get('/faculty/obe/course-dashboard', ObeCourseDashboard::class)->name('faculty.obe.course-dashboard');
+        Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
+        Route::get('/faculty/obe/reminders', ObeDataReminderManager::class)->name('faculty.obe.reminders');
+        Route::get('/faculty/obe/submissions', ObeSubmissionOverview::class)->name('faculty.obe.submissions');
+    });
 
     //Attendance
     Route::get('/attendance', AttendanceManager::class)->name('attendance.index');
@@ -595,8 +591,7 @@ Route::middleware([
         ->get('/institutional-analytics', \App\Livewire\Admin\InstitutionalAnalytics::class)
         ->name('admin.analytics');
     
-    //Students
-   // --- STUDENT ROUTES ---
+    // --- STUDENT ROUTES ---
     Route::middleware(['auth', 'role:student'])
         ->prefix('student')    // URLs start with /student/...
         ->name('student.')     // Names start with student....
@@ -607,23 +602,19 @@ Route::middleware([
             Route::get('course-blocks', \App\Livewire\StudentCourseBlock::class)->name('course-blocks');
             Route::get('my-attendance', StudentAttendanceHistory::class)->name('attendance.my');
             Route::get('course-materials', \App\Livewire\CourseMaterials\StudentCourseMaterials::class)->name('course-materials');
+        });
+
+    // Student Candidacy & Voting (student-only, previously missing role:student)
+    Route::middleware(['auth', 'role:student'])->group(function () {
+        Route::get('/candidacy', [CandidacyController::class, 'index'])->name('student.candidacy.index');
+        Route::post('/candidacy', [CandidacyController::class, 'store'])->name('student.candidacy.store');
+        Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('student.candidacy.status');
+        Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('student.candidacy.requirements');
+
+        Route::get('/voting', [StudentVotingController::class, 'index'])->name('student.voting.index');
+        Route::post('/voting', [StudentVotingController::class, 'store'])->name('student.voting.store');
+        Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('student.voting.results');
     });
-
-
-
-
-
-            // Candidacy Routes
-            Route::get('/candidacy', [CandidacyController::class, 'index'])->name('student.candidacy.index');
-            Route::post('/candidacy', [CandidacyController::class, 'store'])->name('student.candidacy.store');
-            Route::get('/candidacy/status', [CandidacyController::class, 'status'])->name('student.candidacy.status');
-            Route::get('/candidacy/requirements', [CandidacyController::class, 'requirements'])->name('student.candidacy.requirements');
-
-            // Voting Routes
-            Route::get('/voting', [StudentVotingController::class, 'index'])->name('student.voting.index');
-            Route::post('/voting', [StudentVotingController::class, 'store'])->name('student.voting.store');
-            Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('student.voting.results');
-    
 });
 
 Livewire::setUpdateRoute(function ($handle) {
