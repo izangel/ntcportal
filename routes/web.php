@@ -280,6 +280,7 @@ Route::middleware([
 
         Route::get('/course-blocks/bulk-upload', CourseBlockBulkUploader::class)->name('course-blocks.bulk-uploader');
         Route::get('/admin/leave-summary', [LeaveApplicationController::class, 'leaveSummary'])->name('admin.leave.summary');
+        Route::get('/admin/leave-analytics', \App\Livewire\Admin\LeaveAnalytics::class)->name('admin.leave.analytics');
         // New Admin Faculty Course View
         Route::get('/assign-students-to-blocks', AssignStudentCourseBlock::class)
         ->name('student.assign.courseblocks');

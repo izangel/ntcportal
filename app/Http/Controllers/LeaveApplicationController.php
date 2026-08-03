@@ -17,7 +17,6 @@ use App\Models\LeaveType;
 use App\Models\LeaveApplicationClass; 
 
 use App\Exports\LeaveApplicationsExport;
-use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveApplicationController extends Controller
 {
@@ -625,13 +624,7 @@ public function exportExcel(Request $request)
     $start = $request->query('start_date');
     $end = $request->query('end_date');
 
-    $fileName = 'Leave_Report';
-    if ($start && $end) {
-        $fileName .= "_{$start}_to_{$end}";
-    }
-    $fileName .= '.xlsx';
-
-    return Excel::download(new LeaveApplicationsExport($start, $end), $fileName);
+    return (new LeaveApplicationsExport($start, $end))->download();
 }
 
     /**
