@@ -67,6 +67,17 @@
                     </div>
                 </div>
 
+                <!-- Half Day -->
+                <div class="mt-4">
+                    <label class="inline-flex items-center">
+                        <input type="checkbox" wire:model.live="is_half_day" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <span class="ml-2 text-sm font-medium text-gray-700">Half Day (single date only)</span>
+                    </label>
+                    @if($is_half_day)
+                        <p class="mt-1 text-xs text-gray-500">Half-day leave applies to a single day; start and end dates must match.</p>
+                    @endif
+                </div>
+
                 <!-- Exceeds Credits Notification -->
                 @if($total_days > $availableCredits && $employee_id && $leave_type_id)
                     <div class="mt-4 rounded-md border border-red-200 bg-red-50 p-3">

@@ -129,6 +129,11 @@ Route::middleware([
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
+    // My Leave Applications (self-service for all authenticated employees)
+    Route::resource('leave_applications', LeaveApplicationController::class);
+    Route::post('/leave_applications/{leaveApplication}/cancel', [LeaveApplicationController::class, 'cancel'])
+        ->name('leave_applications.cancel');
+
     // -- Announcements --
     Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
@@ -264,10 +269,7 @@ Route::middleware([
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);
         
-         Route::resource('leave_applications', LeaveApplicationController::class); // Admin/Teacher view of ALL leave applications?
-         Route::post('/leave_applications/{leaveApplication}/cancel', [LeaveApplicationController::class, 'cancel'])
-            ->name('leave_applications.cancel');
-       // This route will handle the HR view of pending applications
+        // This route will handle the HR view of pending applications
         Route::get('/hr/pending-applications', [LeaveApplicationController::class, 'pending'])->name('hr.leave_applications.pending');
         Route::get('/hr/all-applications', [LeaveApplicationController::class, 'all'])->name('hr.leave_applications.all');
 
@@ -309,8 +311,6 @@ Route::middleware([
 
         // View student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
-
-        Route::resource('leave_applications', LeaveApplicationController::class);
 
 
         // -- Reports Routes --

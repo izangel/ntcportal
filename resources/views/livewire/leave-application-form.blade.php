@@ -105,6 +105,17 @@
             </div>
         </div>
 
+        <div class="mt-4">
+            <label class="inline-flex items-center">
+                <input type="checkbox" wire:model.live="is_half_day" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                <span class="ml-2 text-sm font-medium text-gray-700">Half Day (single date only)</span>
+            </label>
+            @if($is_half_day)
+                <p class="mt-1 text-xs text-gray-500">Half-day leave applies to a single day; start and end dates must match.</p>
+            @endif
+            @error('is_half_day') <span class="text-xs text-red-600 mt-1 block">{{ $message }}</span> @enderror
+        </div>
+
         <div class="mt-6">
             <label class="block text-sm font-medium text-gray-700">Reason for Leave</label>
             <textarea wire:model="reason" rows="3" class="mt-1 block w-full rounded-md @error('reason') border-red-300 focus:border-red-500 focus:ring-red-500 @enderror border-gray-300 shadow-sm"></textarea>

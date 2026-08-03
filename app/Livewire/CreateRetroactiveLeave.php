@@ -17,6 +17,7 @@ class CreateRetroactiveLeave extends Component
     public $leave_type_id;
     public $start_date;
     public $end_date;
+    public $is_half_day = false;
     public $reason;
     public $approval_status = 'approved_with_pay';
     public $hr_remarks = 'Filed by HR';
@@ -52,6 +53,11 @@ class CreateRetroactiveLeave extends Component
         $this->calculateDays();
     }
 
+    public function updatedIsHalfDay()
+    {
+        $this->calculateDays();
+    }
+
     /**
      * Identical calculation engine as View 1
      */
@@ -78,6 +84,15 @@ class CreateRetroactiveLeave extends Component
     {
         if ($this->start_date && $this->end_date && $this->start_date <= $this->end_date) {
             $this->total_days = $this->calculateWorkDays($this->start_date, $this->end_date);
+
+            if ($this->is_half_day) {
+                if ($this->start_date === $this->end_date) {
+                    $this->total_days = 0.5;
+                } else {
+                    $this->total_days = 0;
+                    $this->is_half_day = false;
+                }
+            }
         } else {
             $this->total_days = 0;
         }
@@ -110,10 +125,18 @@ class CreateRetroactiveLeave extends Component
             'leave_type_id'   => 'required|exists:leave_types,id',
             'start_date'      => "required|date|before_or_equal:{$today}",
             'end_date'        => "required|date|before_or_equal:{$today}|after_or_equal:start_date",
+            'is_half_day'     => 'boolean',
             'reason'          => 'required|string|max:1000',
             'approval_status' => 'required|in:approved_with_pay,approved_without_pay',
             'hr_remarks'      => 'nullable|string|max:500',
         ]);
+
+        if ($this->is_half_day) {
+            $this->validate([
+                'start_date' => "required|date|before_or_equal:{$today}|same:end_date",
+                'end_date'   => "required|date|before_or_equal:{$today}",
+            ]);
+        }
 
         if ($this->total_days <= 0) {
             session()->flash('error', 'Selected dates contain no working days (weekends/holidays excluded).');
@@ -135,6 +158,7 @@ class CreateRetroactiveLeave extends Component
             'start_date'        => $this->start_date,
             'end_date'          => $this->end_date,
             'total_days'        => $this->total_days,
+            'is_half_day'       => (bool) $this->is_half_day,
             'date_filed'        => Carbon::now(),
             'ah_status'         => 'approved',
             'hr_status'         => 'approved',

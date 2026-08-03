@@ -18,6 +18,7 @@ class LeaveApplication extends Model
         'start_date',
         'end_date',
         'total_days',
+        'is_half_day',
         'date_filed',
         'academic_head_noted_at',
         'hr_recommended_at',
@@ -53,6 +54,8 @@ class LeaveApplication extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'total_days' => 'float',
+        'is_half_day' => 'boolean',
         'date_filed' => 'datetime',
         'academic_head_noted_at' => 'datetime',
         'hr_recommended_at' => 'datetime',

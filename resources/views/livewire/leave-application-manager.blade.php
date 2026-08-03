@@ -100,8 +100,11 @@
                             <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title="{{ $application->reason }}">{{ $application->reason }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ Carbon\Carbon::parse($application->start_date)->format('M d, Y') }} - {{ Carbon\Carbon::parse($application->end_date)->format('M d, Y') }}
+                                @if($application->is_half_day)
+                                    <span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>
+                                @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{{ max(0, (int) $application->total_days) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">{{ $application->total_days }}</td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
                                     @if ($application->approval_status === 'pending') bg-yellow-100 text-yellow-800
@@ -210,6 +213,16 @@
                     <label class="block text-sm font-medium text-gray-700">End Date</label>
                     <input type="date" wire:model.live="end_date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                 </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" wire:model.live="is_half_day" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    <span class="ml-2 text-sm font-medium text-gray-700">Half Day (single date only)</span>
+                </label>
+                @if($is_half_day)
+                    <p class="mt-1 text-xs text-gray-500">Half-day leave applies to a single day; start and end dates must match.</p>
+                @endif
             </div>
 
             <div class="mt-6">

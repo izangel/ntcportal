@@ -221,7 +221,13 @@ private function calculateWorkDays($startDate, $endDate)
         'reason'        => 'required|string|max:1000',
         'start_date'    => 'required|date',
         'end_date'      => 'required|date|after_or_equal:start_date',
+        'is_half_day'   => 'boolean',
     ];
+
+    if ($request->boolean('is_half_day')) {
+        $rules['start_date'] = 'required|date|same:end_date';
+        $rules['end_date']   = 'required|date';
+    }
 
     if ($isHrDirectRecording) {
         // HR Admin Mode: Approval Status is mandatory
@@ -237,7 +243,11 @@ private function calculateWorkDays($startDate, $endDate)
     $validatedData = $request->validate($rules);
 
     // 3. System Calculations
-    $validatedData['total_days'] = $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
+    $isHalfDay = $request->boolean('is_half_day');
+    $validatedData['total_days'] = $isHalfDay
+        ? 0.5
+        : $this->calculateWorkDays($validatedData['start_date'], $validatedData['end_date']);
+    $validatedData['is_half_day'] = $isHalfDay;
     $validatedData['date_filed'] = now();
 
     // 4. Employee Credit Validation
@@ -403,10 +413,16 @@ public function edit(LeaveApplication $leaveApplication)
             'reason' => 'required|string|max:1000',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'is_half_day' => 'boolean',
             'tasks_endorsed' => 'nullable|string|max:1000',
             'personnel_to_take_over_id' => 'nullable|exists:employees,id',
             'acknowledgement_personnel_take_over_signature' => 'nullable|string|max:255',
         ];
+
+        if ($request->boolean('is_half_day')) {
+            $rules['start_date'] = 'required|date|same:end_date';
+            $rules['end_date']   = 'required|date';
+        }
 
         $rules['classes_data'] = 'nullable|array';
         $rules['classes_data.*.id'] = 'nullable|exists:leave_application_classes,id';
@@ -420,7 +436,11 @@ public function edit(LeaveApplication $leaveApplication)
         $validatedData = $request->validate($rules);
         $startDate = Carbon::parse($validatedData['start_date']);
         $endDate = Carbon::parse($validatedData['end_date']);
-        $validatedData['total_days'] = $startDate->diffInDays($endDate) + 1;
+        $isHalfDay = $request->boolean('is_half_day');
+        $validatedData['total_days'] = $isHalfDay
+            ? 0.5
+            : $startDate->diffInDays($endDate) + 1;
+        $validatedData['is_half_day'] = $isHalfDay;
 
         $classesToProcess = $validatedData['classes_data'] ?? [];
         unset($validatedData['classes_data']);
@@ -534,12 +554,22 @@ public function storeByHr(Request $request)
         'reason' => 'required|string|max:1000',
         'start_date' => 'required|date',
         'end_date' => 'required|date|after_or_equal:start_date',
+        'is_half_day' => 'boolean',
     ];
+
+    if ($request->boolean('is_half_day')) {
+        $rules['start_date'] = 'required|date|same:end_date';
+        $rules['end_date']   = 'required|date';
+    }
 
     $validatedData = $request->validate($rules);
     
     // Calculate days using your existing private method
-    $validatedData['total_days'] = $this->calculateWorkDays($request->start_date, $request->end_date);
+    $isHalfDay = $request->boolean('is_half_day');
+    $validatedData['total_days'] = $isHalfDay
+        ? 0.5
+        : $this->calculateWorkDays($request->start_date, $request->end_date);
+    $validatedData['is_half_day'] = $isHalfDay;
     $validatedData['date_filed'] = Carbon::now();
     
     // HR Specific logic: Auto-approve HR stage

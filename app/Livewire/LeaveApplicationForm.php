@@ -22,6 +22,7 @@ class LeaveApplicationForm extends Component
     public $reason;
     public $start_date;
     public $end_date;
+    public $is_half_day = false;
     
     // Mode-specific fields
     public $approval_status = 'pending';
@@ -97,11 +98,21 @@ class LeaveApplicationForm extends Component
      */
     public function updatedStartDate() { $this->calculateDays(); }
     public function updatedEndDate() { $this->calculateDays(); }
+    public function updatedIsHalfDay() { $this->calculateDays(); }
 
     public function calculateDays()
     {
         if ($this->start_date && $this->end_date && $this->start_date <= $this->end_date) {
             $this->total_days = $this->calculateWorkDays($this->start_date, $this->end_date);
+
+            if ($this->is_half_day) {
+                if ($this->start_date === $this->end_date) {
+                    $this->total_days = 0.5;
+                } else {
+                    $this->total_days = 0;
+                    $this->is_half_day = false;
+                }
+            }
         } else {
             $this->total_days = 0;
         }
@@ -158,7 +169,13 @@ class LeaveApplicationForm extends Component
             'reason'        => 'required|string|max:1000',
             'start_date'    => 'required|date',
             'end_date'      => 'required|date|after_or_equal:start_date',
+            'is_half_day'   => 'boolean',
         ];
+
+        if ($this->is_half_day) {
+            $rules['start_date'] = 'required|date|same:end_date';
+            $rules['end_date']   = 'required|date';
+        }
 
         if ($this->isHrRecordingMode) {
             $rules['approval_status'] = 'required|in:pending,approved_with_pay,approved_without_pay,rejected';
@@ -188,6 +205,7 @@ class LeaveApplicationForm extends Component
             'start_date'     => $this->start_date,
             'end_date'       => $this->end_date,
             'total_days'     => $this->total_days,
+            'is_half_day'    => (bool) $this->is_half_day,
             'date_filed'     => now(),
         ];
 

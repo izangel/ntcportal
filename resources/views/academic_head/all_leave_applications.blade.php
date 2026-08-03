@@ -54,8 +54,8 @@
                                                 <div class="text-sm text-gray-900">{{ $application->leaveType->name }}</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }}</div>
-                                                <div class="text-sm text-gray-500">({{ max(0, (int) $application->total_days) }} days)</div>
+                                                <div class="text-sm text-gray-900">{{ $application->start_date->format('M d, Y') }} - {{ $application->end_date->format('M d, Y') }} @if($application->is_half_day)<span class="ml-1 inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-amber-100 text-amber-700">Half Day</span>@endif</div>
+                                                <div class="text-sm text-gray-500">({{ max(0, $application->total_days) }} days)</div>
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
