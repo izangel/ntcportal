@@ -21,23 +21,90 @@
 
             <div class="hidden sm:flex sm:items-center sm:ml-6">
 
-                 {{-- Notification Icon with Count --}}
+                 {{-- Notification Icon with Count + Dropdown --}}
                 @if(Auth::check())
-                    <a href="{{ route('dashboard') }}" class="relative mr-4 text-gray-600 hover:text-gray-900">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.007 2.007 0 0118 14.595V10a6 6 0 00-12 0v4.595a2.007 2.007 0 01-1.405 1.405L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"></path>
-                        </svg>
+                    @php
+                        $notifications = Auth::user()->notifications()->latest()->take(8)->get();
+                        $unreadNotificationsCount = Auth::user()->unreadNotifications->count();
+                    @endphp
+                    <div class="relative mr-4" x-data="{ notifOpen: false }">
+                        <button type="button" @click="notifOpen = !notifOpen" class="relative text-gray-600 hover:text-gray-900 focus:outline-none" aria-label="Notifications">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.007 2.007 0 0118 14.595V10a6 6 0 00-12 0v4.595a2.007 2.007 0 01-1.405 1.405L4 17h5m6 0v1a3 3 0 01-6 0v-1m6 0H9"></path>
+                            </svg>
 
-                        @php
-                            $unreadNotificationsCount = Auth::user()->unreadNotifications->count();
-                        @endphp
+                            @if($unreadNotificationsCount > 0)
+                                <span class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                                    {{ $unreadNotificationsCount }}
+                                </span>
+                            @endif
+                        </button>
 
-                        @if($unreadNotificationsCount > 0)
-                            <span class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
-                                {{ $unreadNotificationsCount }}
-                            </span>
-                        @endif
-                    </a>
+                        <div x-show="notifOpen" x-cloak x-transition x-on:click.outside="notifOpen = false"
+                            class="absolute right-0 mt-3 w-96 max-w-[90vw] rounded-xl bg-white shadow-xl ring-1 ring-black/5 border border-gray-100 overflow-hidden z-50">
+                            <div class="px-4 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider">🔔 Notifications</h4>
+                                <span class="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{{ $unreadNotificationsCount }} new</span>
+                            </div>
+
+                            <div class="max-h-96 overflow-y-auto divide-y divide-gray-50">
+                                @forelse($notifications as $notification)
+                                    @php
+                                        $data = $notification->data;
+                                        $actionUrl = $data['action_url'] ?? null;
+                                        $isUnread = is_null($notification->read_at);
+                                        $isObe = ($data['type'] ?? '') === 'obe_data_reminder';
+                                    @endphp
+                                    <div class="p-3 {{ $isUnread ? 'bg-indigo-50/40' : 'bg-white' }} hover:bg-gray-50 transition relative group">
+                                        @if($isUnread)
+                                            <span class="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500"></span>
+                                        @endif
+                                        <div class="flex items-start justify-between gap-2 pl-1">
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-bold text-gray-900 truncate">
+                                                    @if($isObe)
+                                                        <i class="fas fa-clipboard-check text-amber-500 mr-1"></i>
+                                                    @endif
+                                                    {{ $data['title'] ?? 'Update' }}
+                                                </p>
+                                                <p class="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{{ $data['message'] ?? '' }}</p>
+                                                <p class="text-[9px] text-gray-400 mt-1">{{ $notification->created_at->diffForHumans() }}</p>
+                                            </div>
+                                        </div>
+                                        @if($actionUrl || $isUnread)
+                                            <div class="mt-2 flex items-center gap-2 pl-1">
+                                                @if($actionUrl)
+                                                    <a href="{{ $actionUrl }}" class="inline-flex items-center gap-1 rounded-md bg-indigo-600 text-white px-2 py-1 text-[10px] font-bold hover:bg-indigo-700">
+                                                        <i class="fas fa-arrow-right"></i> Open
+                                                    </a>
+                                                @endif
+                                                @if($isUnread)
+                                                    <form method="POST" action="{{ route('notifications.markAsRead', $notification->id) }}">
+                                                        @csrf
+                                                        <button type="submit" class="inline-flex items-center gap-1 rounded-md border border-gray-300 text-gray-600 px-2 py-1 text-[10px] font-bold hover:bg-gray-100">
+                                                            <i class="fas fa-check"></i> Mark read
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-gray-400 text-center py-8 italic">All caught up!</p>
+                                @endforelse
+                            </div>
+
+                            <div class="px-4 py-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                                <a href="{{ route('dashboard') }}" class="text-[11px] font-bold text-indigo-600 hover:underline">View all</a>
+                                @if($unreadNotificationsCount > 0)
+                                    <form method="POST" action="{{ route('notifications.markAllAsRead') }}">
+                                        @csrf
+                                        <button type="submit" class="text-[11px] font-bold text-gray-500 hover:text-gray-800">Mark all as read</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
                 @endif
 
                 <x-dropdown align="right" width="48">
