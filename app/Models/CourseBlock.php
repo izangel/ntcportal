@@ -49,6 +49,32 @@ class CourseBlock extends Model
         return $this->belongsTo(AcademicYear::class);
     }
 
+    public function batchYear(): ?int
+    {
+        $startYear = $this->academicYear?->start_year;
+        if (!$startYear) {
+            return null;
+        }
+
+        $sections = $this->sections()->get();
+
+        $grade = $sections->pluck('name')
+            ->map(function ($name) {
+                preg_match('/\d+/', (string) $name, $matches);
+                return isset($matches[0]) ? (int) $matches[0] : null;
+            })
+            ->filter()
+            ->min();
+
+        if (!$grade) {
+            return (int) $startYear;
+        }
+
+        $firstGrade = $grade >= 11 ? 11 : 1;
+
+        return (int) $startYear - ($grade - $firstGrade);
+    }
+
     protected static function booted()
     {
         static::created(function ($courseBlock) {

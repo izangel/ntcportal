@@ -35,15 +35,7 @@ class ObeDataReminder extends Notification
             ? "{$academicYear->start_year}-{$academicYear->end_year} / {$this->block->semester}"
             : $this->block->semester;
 
-        $actionUrl = route('faculty.assessment-scores');
-
-        if (in_array(ObeDataCompleteness::MISSING_ATTAINMENT, $this->missing, true)
-            && !in_array(ObeDataCompleteness::MISSING_SCORES, $this->missing, true)
-            && !in_array(ObeDataCompleteness::MISSING_ASSESSMENT, $this->missing, true)) {
-            $actionUrl = route('attainment.index');
-        } elseif (in_array(ObeDataCompleteness::MISSING_ASSESSMENT, $this->missing, true)) {
-            $actionUrl = route('faculty.assessment-tasks');
-        }
+        $actionUrl = route('faculty.obe.submissions');
 
         return [
             'type' => 'obe_data_reminder',

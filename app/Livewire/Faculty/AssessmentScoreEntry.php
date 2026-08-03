@@ -86,6 +86,13 @@ class AssessmentScoreEntry extends Component
             ->first();
     }
 
+    private function blockBatchYear(CourseBlock $block): ?string
+    {
+        $batch = $block->batchYear();
+
+        return $batch !== null ? (string) $batch : null;
+    }
+
     private function selectedTask(): ?AssessmentTask
     {
         $block = $this->selectedBlock();
@@ -96,7 +103,7 @@ class AssessmentScoreEntry extends Component
         return AssessmentTask::with('items.clo')
             ->whereKey($this->selectedTaskId)
             ->where('course_id', $block->course_id)
-            ->where('effective_batch_year', (string) $block->academicYear->start_year)
+            ->where('effective_batch_year', $this->blockBatchYear($block))
             ->first();
     }
 
@@ -183,7 +190,7 @@ class AssessmentScoreEntry extends Component
         }
 
         if ($selectedBlock) {
-            $batchYear = (string) $selectedBlock->academicYear->start_year;
+            $batchYear = $this->blockBatchYear($selectedBlock);
             $tasks = AssessmentTask::where('course_id', $selectedBlock->course_id)
                 ->where('effective_batch_year', $batchYear)
                 ->with('items.clo')
