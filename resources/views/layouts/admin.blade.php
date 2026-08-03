@@ -570,6 +570,10 @@
                         <i class="fas fa-calendar-day mr-3 text-lg"></i>
                         {{ __('Leave Summary') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('admin.leave.analytics') }}" :active="request()->routeIs('admin.leave.analytics')">
+                        <i class="fas fa-chart-column mr-3 text-lg"></i>
+                        {{ __('Leave Analytics') }}
+                    </x-nav-link>
                 </div>
             </div>
             <div class="mt-4 space-y-1" x-data="{ open: false }">
