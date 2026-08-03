@@ -13,7 +13,6 @@ use App\Services\ObeDataCompleteness;
 class SendObeDataReminders extends Command
 {
     protected $signature = 'obe:send-reminders
-        {--ay= : Only remind for this academic year start year (e.g. 2025)}
         {--faculty= : Only remind for this employee (faculty) id}
         {--dry-run : Report what would be sent without sending}';
 
@@ -21,13 +20,11 @@ class SendObeDataReminders extends Command
 
     public function handle(): int
     {
-        $query = CourseBlock::query()
-            ->with(['course', 'academicYear', 'faculty.user', 'students'])
-            ->whereNotNull('faculty_id');
-
-        if ($ay = $this->option('ay')) {
-            $query->whereHas('academicYear', fn ($q) => $q->where('start_year', (int) $ay));
-        }
+        $query = ObeDataCompleteness::scopeQuery(
+            CourseBlock::query()
+                ->with(['course', 'academicYear', 'faculty.user', 'students'])
+                ->whereNotNull('faculty_id')
+        );
 
         if ($faculty = $this->option('faculty')) {
             $query->where('faculty_id', (int) $faculty);

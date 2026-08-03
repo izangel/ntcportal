@@ -12,8 +12,6 @@ class ObeSubmissionOverview extends Component
 {
     public $selectedAcademicYearId = null;
     public $selectedSemester = '';
-    public $semesters = ['1st', '2nd', 'Summer'];
-
     public $academicYears = [];
     public $myBlocks = [];
     public $statusByFaculty = [];
@@ -28,13 +26,8 @@ class ObeSubmissionOverview extends Component
     {
         $this->academicYears = AcademicYear::orderByDesc('start_year')->get();
 
-        $latestAyWithBlocks = AcademicYear::whereIn('id', CourseBlock::pluck('academic_year_id')->filter())
-            ->orderByDesc('start_year')
-            ->value('id');
-
-        $this->selectedAcademicYearId = $latestAyWithBlocks
-            ? (string) $latestAyWithBlocks
-            : ($this->academicYears->first()?->id ?? null);
+        $this->selectedAcademicYearId = (string) (AcademicYear::where('start_year', ObeDataCompleteness::SUBMISSION_ACADEMIC_YEAR_START)->value('id') ?? '');
+        $this->selectedSemester = '2nd';
 
         $this->loadData();
     }
@@ -64,12 +57,12 @@ class ObeSubmissionOverview extends Component
     {
         $this->reset('myBlocks', 'statusByFaculty', 'stats');
 
-        $blocks = CourseBlock::query()
-            ->with(['course', 'academicYear', 'faculty', 'students', 'sections'])
-            ->whereNotNull('faculty_id')
-            ->when($this->selectedAcademicYearId, fn ($q) => $q->where('academic_year_id', $this->selectedAcademicYearId))
-            ->when($this->selectedSemester, fn ($q) => $q->where('semester', $this->selectedSemester))
-            ->get();
+        $blocks = ObeDataCompleteness::scopeQuery(
+            CourseBlock::query()
+                ->with(['course', 'academicYear', 'faculty', 'students', 'sections'])
+                ->whereNotNull('faculty_id')
+                ->when($this->selectedAcademicYearId, fn ($q) => $q->where('academic_year_id', $this->selectedAcademicYearId))
+        )->get();
 
         $missingByBlock = ObeDataCompleteness::evaluateMany($blocks);
 
@@ -171,8 +164,13 @@ class ObeSubmissionOverview extends Component
 
     public function render()
     {
+        $storedSemesters = CourseBlock::distinct()->pluck('semester')->filter()
+            ->filter(fn ($s) => ObeDataCompleteness::normalizeSemester($s) === '2nd')
+            ->values();
+
         return view('livewire.admin.obe-submission-overview', [
             'isAdminView' => $this->isAdminView(),
+            'storedSemesters' => $storedSemesters,
         ])->extends('layouts.admin')
             ->section('content');
     }

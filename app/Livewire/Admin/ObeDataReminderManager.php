@@ -31,13 +31,8 @@ class ObeDataReminderManager extends Component
     {
         $this->academicYears = AcademicYear::orderByDesc('start_year')->get();
 
-        $latestAyWithBlocks = AcademicYear::whereIn('id', CourseBlock::pluck('academic_year_id')->filter())
-            ->orderByDesc('start_year')
-            ->value('id');
-
-        $this->selectedAcademicYearId = $latestAyWithBlocks
-            ? (string) $latestAyWithBlocks
-            : ($this->academicYears->first()?->id ?? null);
+        $this->selectedAcademicYearId = (string) (AcademicYear::where('start_year', ObeDataCompleteness::SUBMISSION_ACADEMIC_YEAR_START)->value('id') ?? '');
+        $this->selectedSemester = '2nd';
 
         $this->loadBlocks();
     }
@@ -67,16 +62,18 @@ class ObeDataReminderManager extends Component
     {
         $this->reset('blocksByFaculty', 'stats');
 
-        $query = CourseBlock::query()
-            ->with(['course', 'academicYear', 'faculty', 'students'])
-            ->whereNotNull('faculty_id');
+        $query = ObeDataCompleteness::scopeQuery(
+            CourseBlock::query()
+                ->with(['course', 'academicYear', 'faculty', 'students'])
+                ->whereNotNull('faculty_id')
+        );
 
         if ($this->selectedAcademicYearId) {
             $query->where('academic_year_id', $this->selectedAcademicYearId);
         }
 
         if ($this->selectedSemester) {
-            $query->where('semester', $this->selectedSemester);
+            $query->whereIn(\DB::raw('LOWER(TRIM(semester))'), ['2nd', 'second', '2nd semester', 'second semester', 'semester 2', 'sem 2', '2nd sem', '2']);
         }
 
         if (!$this->isAdminView()) {
@@ -156,6 +153,11 @@ class ObeDataReminderManager extends Component
         $block = CourseBlock::with(['course', 'academicYear', 'faculty.user', 'students'])
             ->findOrFail($blockId);
 
+        if (!ObeDataCompleteness::inSubmissionScope($block)) {
+            session()->flash('obe-reminder-error', 'This block is outside the OBE submission window (SY 2025-2026, 2nd Semester) and does not require submission.');
+            return;
+        }
+
         if (!$this->isAdminView() && $block->faculty_id !== (int) Auth::user()?->employee?->id) {
             abort(403);
         }
@@ -182,11 +184,12 @@ class ObeDataReminderManager extends Component
 
     public function sendRemindersForFaculty(int $facultyId): void
     {
-        $blocks = CourseBlock::with(['course', 'academicYear', 'faculty.user', 'students'])
-            ->where('faculty_id', $facultyId)
-            ->when($this->selectedAcademicYearId, fn ($q) => $q->where('academic_year_id', $this->selectedAcademicYearId))
-            ->when($this->selectedSemester, fn ($q) => $q->where('semester', $this->selectedSemester))
-            ->get();
+        $blocks = ObeDataCompleteness::scopeQuery(
+            CourseBlock::with(['course', 'academicYear', 'faculty.user', 'students'])
+                ->where('faculty_id', $facultyId)
+                ->when($this->selectedAcademicYearId, fn ($q) => $q->where('academic_year_id', $this->selectedAcademicYearId))
+                ->when($this->selectedSemester, fn ($q) => $q->whereIn(\DB::raw('LOWER(TRIM(semester))'), ['2nd', 'second', '2nd semester', 'second semester', 'semester 2', 'sem 2', '2nd sem', '2']))
+        )->get();
 
         $missingByBlock = ObeDataCompleteness::evaluateMany($blocks);
 
@@ -209,15 +212,17 @@ class ObeDataReminderManager extends Component
 
     public function sendAllReminders(): void
     {
-        $query = CourseBlock::with(['course', 'academicYear', 'faculty.user', 'students'])
-            ->whereNotNull('faculty_id');
+        $query = ObeDataCompleteness::scopeQuery(
+            CourseBlock::with(['course', 'academicYear', 'faculty.user', 'students'])
+                ->whereNotNull('faculty_id')
+        );
 
         if ($this->selectedAcademicYearId) {
             $query->where('academic_year_id', $this->selectedAcademicYearId);
         }
 
         if ($this->selectedSemester) {
-            $query->where('semester', $this->selectedSemester);
+            $query->whereIn(\DB::raw('LOWER(TRIM(semester))'), ['2nd', 'second', '2nd semester', 'second semester', 'semester 2', 'sem 2', '2nd sem', '2']);
         }
 
         $blocks = $query->get();
