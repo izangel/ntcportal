@@ -36,6 +36,15 @@ class FacultySyllabus extends Component
         return Auth::user()?->employee?->id;
     }
 
+    private function semesterVariants(): array
+    {
+        return match ($this->semester) {
+            '1st' => ['1st', 'first', '1st semester', 'first semester', 'semester 1', 'sem 1', '1st sem', '1'],
+            '2nd' => ['2nd', 'second', '2nd semester', 'second semester', 'semester 2', 'sem 2', '2nd sem', '2'],
+            default => ['summer', 'summer term', '3rd', 'third', '3rd semester', 'third semester', 'semester 3', 'sem 3', '3'],
+        };
+    }
+
     private function loadBlocks(): void
     {
         if (!$this->facultyId() || !$this->academicYearId) {
@@ -45,7 +54,7 @@ class FacultySyllabus extends Component
 
         $allBlocks = CourseBlock::where('faculty_id', $this->facultyId())
             ->where('academic_year_id', $this->academicYearId)
-            ->where('semester', $this->semester)
+            ->whereIn(\DB::raw('LOWER(TRIM(semester))'), $this->semesterVariants())
             ->with(['course', 'section.program', 'academicYear', 'syllabus'])
             ->get();
 
