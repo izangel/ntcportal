@@ -651,6 +651,10 @@
                         <i class="fas fa-list-check mr-3 text-lg"></i>
                         {{ __('4-Assessment Setup') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.*')">
+                        <i class="fas fa-file-lines mr-3 text-lg"></i>
+                        {{ __('Course Syllabus') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('faculty.assessment-scores') }}" :active="request()->routeIs('faculty.assessment-scores')">
                         <i class="fas fa-pen-to-square mr-3 text-lg"></i>
                         {{ __('5-Assessment Scores') }}

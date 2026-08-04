@@ -1,0 +1,162 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\AssessmentTask;
+use App\Models\CourseBlock;
+use App\Models\CourseLearningOutcome;
+use App\Models\Peo;
+use App\Models\Program;
+use App\Models\ProgramOutcome;
+
+/**
+ * Resolves the auto-displayed syllabus data (PEO, PO, COs, CO-PO mapping,
+ * Assessment Tasks, and course descriptive data) for a given course block.
+ */
+class CourseSyllabusData
+{
+    public function __construct(
+        private CourseBlock $block
+    ) {
+    }
+
+    public function block(): CourseBlock
+    {
+        return $this->block;
+    }
+
+    /**
+     * The program that owns the course. Prefer the direct program_id FK,
+     * falling back to the course-program pivot.
+     */
+    public function program(): ?Program
+    {
+        $course = $this->block->course;
+
+        if ($course && $course->program_id) {
+            return $course->program;
+        }
+
+        if ($course && $course->programs()->count() > 0) {
+            return $course->programs()->first();
+        }
+
+        return null;
+    }
+
+    public function batchYear(): ?string
+    {
+        $batch = $this->block->batchYear();
+
+        return $batch !== null ? (string) $batch : null;
+    }
+
+    public function peos()
+    {
+        $program = $this->program();
+        if (!$program) {
+            return collect();
+        }
+
+        $query = Peo::where('program_id', $program->id);
+
+        if ($this->batchYear()) {
+            $query->where('effective_batch_year', $this->batchYear());
+        }
+
+        return $query->orderBy('code')->get();
+    }
+
+    public function programOutcomes()
+    {
+        $program = $this->program();
+        if (!$program) {
+            return collect();
+        }
+
+        $query = ProgramOutcome::where('program_id', $program->id);
+
+        if ($this->batchYear()) {
+            $query->where('effective_batch_year', $this->batchYear());
+        }
+
+        return $query->orderBy('code')->get();
+    }
+
+    /**
+     * Course outcomes (COs/CLOs), loaded with their CO-PO mapping and Bloom's
+     * taxonomy for the syllabus render.
+     */
+    public function courseLearningOutcomes()
+    {
+        $query = CourseLearningOutcome::with(['bloomsTaxonomy', 'programOutcomes'])
+            ->where('course_id', $this->block->course_id);
+
+        if ($this->batchYear()) {
+            $query->where('effective_batch_year', $this->batchYear());
+        }
+
+        return $query->orderBy('code')->get();
+    }
+
+    /**
+     * Assessment tasks with their mapped items for this course/batch.
+     */
+    public function assessmentTasks()
+    {
+        $query = AssessmentTask::with('items.clo')
+            ->where('course_id', $this->block->course_id);
+
+        if ($this->batchYear()) {
+            $query->where('effective_batch_year', $this->batchYear());
+        }
+
+        return $query->orderBy('created_at')->get();
+    }
+
+    /**
+     * CO-PO mapping level (I/G/A) for the given CO and PO.
+     */
+    public function coPoLevel(CourseLearningOutcome $clo, ProgramOutcome $po): string
+    {
+        return (string) $clo->programOutcomes->firstWhere('id', $po->id)?->pivot?->level ?? '';
+    }
+
+    /**
+     * All auto-displayed data as one associative array for views/exports.
+     */
+    public function toArray(): array
+    {
+        $block = $this->block;
+        $course = $block->course;
+
+        return [
+            'block' => $block,
+            'course' => $course,
+            'program' => $this->program(),
+            'batch_year' => $this->batchYear(),
+            'academic_year_label' => optional($block->academicYear)->label,
+            'semester' => $block->semester,
+            'sections' => $this->sectionLabels(),
+            'schedule' => $block->schedule_string,
+            'peos' => $this->peos(),
+            'program_outcomes' => $this->programOutcomes(),
+            'course_learning_outcomes' => $this->courseLearningOutcomes(),
+            'assessment_tasks' => $this->assessmentTasks(),
+        ];
+    }
+
+    public function sectionLabels(): string
+    {
+        $sections = $this->block->sections()->get();
+
+        if ($sections->isEmpty() && $this->block->section_id) {
+            $sections = collect([$this->block->section]);
+        }
+
+        return $sections->map(function ($section) {
+            $program = $section->program->name ?? '';
+            return $program ? "{$program}-{$section->name}" : ($section->name ?? '');
+        })->unique()->implode(', ');
+    }
+}

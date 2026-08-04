@@ -112,6 +112,11 @@ class CourseBlock extends Model
         return $this->hasOne(CourseAttainment::class, 'course_session_id');
     }
 
+    public function syllabus(): HasOne
+    {
+        return $this->hasOne(CourseSyllabus::class, 'course_block_id');
+    }
+
     // Pivot table mapping from student_courseblock
     public function students(): BelongsToMany
     {

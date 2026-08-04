@@ -68,6 +68,9 @@ use App\Livewire\CourseAssignment;
 
 use App\Livewire\ViewCourseBlockStudents;
 use App\Http\Controllers\CourseAttainmentController;
+use App\Http\Controllers\CourseSyllabusPrintController;
+use App\Livewire\Faculty\CourseSyllabusEditor;
+use App\Livewire\Faculty\FacultySyllabus;
 
 use App\Http\Controllers\AttendanceReportController;
 
@@ -569,6 +572,9 @@ Route::middleware([
         Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
         Route::get('/faculty/obe/reminders', ObeDataReminderManager::class)->name('faculty.obe.reminders');
         Route::get('/faculty/obe/submissions', ObeSubmissionOverview::class)->name('faculty.obe.submissions');
+        Route::get('/faculty/syllabus', FacultySyllabus::class)->name('faculty.syllabus.index');
+        Route::get('/faculty/syllabus/{courseBlock}', CourseSyllabusEditor::class)->name('faculty.syllabus.edit');
+        Route::get('/faculty/syllabus/{courseBlock}/print', [CourseSyllabusPrintController::class, 'show'])->name('faculty.syllabus.print');
     });
 
     //Attendance
