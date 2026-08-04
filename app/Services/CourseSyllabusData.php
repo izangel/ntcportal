@@ -27,7 +27,8 @@ class CourseSyllabusData
 
     /**
      * The program that owns the course. Prefer the direct program_id FK,
-     * falling back to the course-program pivot.
+     * then the single distinct program of the block's sections, then the
+     * course-program pivot (used when a course spans multiple programs).
      */
     public function program(): ?Program
     {
@@ -37,11 +38,52 @@ class CourseSyllabusData
             return $course->program;
         }
 
+        $sectionPrograms = $this->sectionPrograms();
+
+        if ($sectionPrograms->count() === 1) {
+            return $sectionPrograms->first();
+        }
+
+        $program = $this->preferProgram($sectionPrograms);
+
+        if ($program) {
+            return $program;
+        }
+
         if ($course && $course->programs()->count() > 0) {
             return $course->programs()->first();
         }
 
         return null;
+    }
+
+    /**
+     * Pick the highest-priority program from the given programs. When a block
+     * serves multiple programs, BSIS wins, then BTVTED, then DIT/DHRT, then ACT.
+     */
+    private function preferProgram($programs): ?Program
+    {
+        $priority = [1 => 1, 6 => 2, 7 => 2, 8 => 3, 9 => 4, 2 => 5, 3 => 5, 4 => 5, 5 => 5];
+
+        return $programs->sortBy(fn ($program) => $priority[$program->id] ?? 99)->first();
+    }
+
+    /**
+     * The distinct programs of the block's sections (pivot first, falling
+     * back to the legacy section_id column).
+     */
+    public function sectionPrograms()
+    {
+        $sections = $this->block->sections()->get();
+
+        if ($sections->isEmpty() && $this->block->section_id) {
+            $sections = collect([$this->block->section]);
+        }
+
+        return $sections->pluck('program')
+            ->filter()
+            ->unique('id')
+            ->values();
     }
 
     public function batchYear(): ?string
