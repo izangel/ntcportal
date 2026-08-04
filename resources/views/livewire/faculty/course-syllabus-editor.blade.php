@@ -118,86 +118,81 @@
                     </div>
                 </div>
 
-                {{-- COs + CO-PO Mapping --}}
+                {{-- COs + CO-PO Mapping + Assessment Tasks --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Course Outcomes &amp; CO-PO Mapping</h3>
+                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Course Outcomes &amp; CO-PO Mapping with Assessment Tasks</h3>
                         <p class="mt-0.5 text-xs text-gray-500">I — Introduced, E — Enabling, D — Demonstrating</p>
                     </div>
                     <div class="overflow-x-auto p-5">
-                        @forelse($clos as $clo)
-                            <div class="mb-4 last:mb-0">
-                                <div class="flex items-start gap-3">
-                                    <span class="w-20 shrink-0 text-xs font-bold text-indigo-600">{{ $clo->code }}</span>
-                                    <div>
-                                        <p class="text-sm text-gray-700">{{ $clo->description }}</p>
-                                        @if($clo->bloomsTaxonomy)
-                                            <span class="mt-1 inline-block rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
-                                                {{ $clo->bloomsTaxonomy->code }}: {{ $clo->bloomsTaxonomy->level }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="mt-2 ml-23 flex flex-wrap gap-2 pl-20">
-                                    @forelse($pos as $po)
-                                        @php
-                                            $level = $data->coPoLevel($clo, $po);
-                                            $style = match ($level) {
-                                                'I' => 'bg-blue-100 text-blue-800 border-blue-200',
-                                                'G' => 'bg-amber-100 text-amber-800 border-amber-200',
-                                                'A' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                                                default => 'bg-gray-50 text-gray-400 border-gray-200',
-                                            };
-                                            $label = match ($level) {
-                                                'I' => 'I', 'G' => 'E', 'A' => 'D', default => '—',
-                                            };
-                                        @endphp
-                                        <span class="inline-flex items-center rounded border px-2 py-1 text-[10px] font-bold {{ $style }}" title="{{ $po->code }}: {{ $po->description }}">
-                                            {{ $po->code }}:{{ $label }}
-                                        </span>
-                                    @empty
-                                        <span class="text-xs text-gray-400 italic">No POs mapped.</span>
-                                    @endforelse
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-400 italic">No Course Outcomes configured for this course yet.</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                {{-- Assessment Tasks --}}
-                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Assessment Tasks</h3>
-                    </div>
-                    <div class="p-5">
-                        @forelse($tasks as $task)
-                            <div class="mb-3 last:mb-0 border border-gray-100 rounded-lg p-4">
-                                <div class="flex flex-wrap items-center gap-3">
-                                    <span class="text-sm font-bold text-gray-900">{{ $task->title }}</span>
-                                    <span class="rounded bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-700">{{ $task->type }}</span>
-                                    <span class="text-xs text-gray-500">Weight: {{ $task->weight_percentage }}%</span>
-                                    <span class="text-xs text-gray-500">Marks: {{ $task->total_marks }}</span>
-                                </div>
-                                @if($task->items->isNotEmpty())
-                                    <ul class="mt-2 space-y-1">
-                                        @foreach($task->items as $item)
-                                            <li class="text-xs text-gray-600 flex gap-2">
-                                                <span class="text-gray-400">•</span>
-                                                <span>{{ $item->item_name }}</span>
-                                                <span class="text-gray-400">({{ $item->max_marks }} pts)</span>
-                                                @if($item->clo)
-                                                    <span class="text-indigo-500 font-semibold">→ {{ $item->clo->code }}</span>
-                                                @endif
-                                            </li>
+                        <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Course Outcomes</th>
+                                    @foreach($pos as $po)
+                                        <th class="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider text-gray-500" title="{{ $po->description }}">{{ $po->code }}</th>
+                                    @endforeach
+                                    <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-gray-500">Assessment Task</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($clos as $clo)
+                                    <tr>
+                                        <td class="px-4 py-3 align-top">
+                                            <div class="flex items-start gap-3">
+                                                <span class="w-20 shrink-0 text-xs font-bold text-indigo-600">{{ $clo->code }}</span>
+                                                <div>
+                                                    <p class="text-sm text-gray-700">{{ $clo->description }}</p>
+                                                    @if($clo->bloomsTaxonomy)
+                                                        <span class="mt-1 inline-block rounded bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-600">
+                                                            {{ $clo->bloomsTaxonomy->code }}: {{ $clo->bloomsTaxonomy->level }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </td>
+                                        @foreach($pos as $po)
+                                            @php
+                                                $level = $data->coPoLevel($clo, $po);
+                                                $style = match ($level) {
+                                                    'I' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                    'G' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                                    'A' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                                    default => 'text-gray-400',
+                                                };
+                                                $label = match ($level) {
+                                                    'I' => 'I', 'G' => 'E', 'A' => 'D', default => '—',
+                                                };
+                                            @endphp
+                                            <td class="px-3 py-3 text-center align-top">
+                                                <span class="inline-flex h-7 w-7 items-center justify-center rounded border text-xs font-bold {{ $style }}" title="{{ $po->code }}: {{ $po->description }}">{{ $label }}</span>
+                                            </td>
                                         @endforeach
-                                    </ul>
-                                @endif
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-400 italic">No assessment tasks configured for this course yet.</p>
-                        @endforelse
+                                        <td class="px-4 py-3 align-top">
+                                            @php
+                                                $cloTasks = $data->tasksForClo($clo);
+                                            @endphp
+                                            @forelse($cloTasks as $task)
+                                                <div class="mb-1.5 last:mb-0">
+                                                    <span class="inline-flex items-center gap-1.5 rounded border border-gray-200 bg-gray-50 px-2 py-1 text-xs font-semibold text-gray-700">
+                                                        <i class="fas fa-clipboard-check text-indigo-500"></i>{{ $task->title }}
+                                                        <span class="text-[10px] font-normal text-gray-400">({{ $task->weight_percentage }}%)</span>
+                                                    </span>
+                                                </div>
+                                            @empty
+                                                <span class="text-xs text-gray-400 italic">No assessment mapped</span>
+                                            @endforelse
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="{{ 2 + $pos->count() }}" class="px-4 py-8 text-center text-sm text-gray-400 italic">
+                                            No Course Outcomes configured for this course yet.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 

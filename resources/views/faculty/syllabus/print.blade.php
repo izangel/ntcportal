@@ -107,24 +107,28 @@
         @endforelse
     </ul>
 
-    <h2 class="section">Course Outcomes (CO) and CO-PO Mapping</h2>
+    <h2 class="section">Course Outcomes (CO), CO-PO Mapping and Assessment Tasks</h2>
     <table class="data">
         <thead>
             <tr>
                 <th style="width: 70px;">CO</th>
                 <th>Course Outcome Description</th>
-                <th style="width: 60px;">Bloom's</th>
                 @foreach($pos as $po)
-                    <th class="mapping-cell" style="width: 46px;">{{ $po->code }}</th>
+                    <th class="mapping-cell" style="width: 42px;">{{ $po->code }}</th>
                 @endforeach
+                <th>Assessment Task</th>
             </tr>
         </thead>
         <tbody>
             @forelse($clos as $clo)
                 <tr>
                     <td><strong>{{ $clo->code }}</strong></td>
-                    <td>{{ $clo->description }}</td>
-                    <td>{{ $clo->bloomsTaxonomy?->code }}</td>
+                    <td>
+                        {{ $clo->description }}
+                        @if($clo->bloomsTaxonomy)
+                            <div style="font-size:10px; color:#666; margin-top:2px;">{{ $clo->bloomsTaxonomy->code }}: {{ $clo->bloomsTaxonomy->level }}</div>
+                        @endif
+                    </td>
                     @foreach($pos as $po)
                         @php
                             $level = $data->coPoLevel($clo, $po);
@@ -132,6 +136,16 @@
                         @endphp
                         <td class="mapping-cell">{{ $label }}</td>
                     @endforeach
+                    <td>
+                        @php
+                            $cloTasks = $data->tasksForClo($clo);
+                        @endphp
+                        @forelse($cloTasks as $task)
+                            <div>{{ $task->title }} ({{ $task->weight_percentage }}%)</div>
+                        @empty
+                            <div class="empty">No assessment mapped</div>
+                        @endforelse
+                    </td>
                 </tr>
             @empty
                 <tr><td colspan="{{ 3 + $pos->count() }}" class="empty">No Course Outcomes configured.</td></tr>
@@ -139,38 +153,6 @@
         </tbody>
     </table>
     <div style="font-size:10px; color:#555; margin-top:3px;">I — Introduced, E — Enabling, D — Demonstrating</div>
-
-    <h2 class="section">Assessment Tasks</h2>
-    <table class="data">
-        <thead>
-            <tr>
-                <th style="width: 40px;">#</th>
-                <th>Assessment Task</th>
-                <th style="width: 90px;">Type</th>
-                <th style="width: 80px;">Weight</th>
-                <th style="width: 80px;">Marks</th>
-                <th>Assessment Items / Mapped CO</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($tasks as $i => $task)
-                <tr>
-                    <td>{{ $i + 1 }}</td>
-                    <td><strong>{{ $task->title }}</strong></td>
-                    <td>{{ $task->type }}</td>
-                    <td>{{ $task->weight_percentage }}%</td>
-                    <td>{{ $task->total_marks }}</td>
-                    <td>
-                        @foreach($task->items as $item)
-                            <div>{{ $item->item_name }} ({{ $item->max_marks }} pts) {{ $item->clo ? '→ ' . $item->clo->code : '' }}</div>
-                        @endforeach
-                    </td>
-                </tr>
-            @empty
-                <tr><td colspan="6" class="empty">No assessment tasks configured.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
 
     <h2 class="section">Grading System</h2>
     <div class="textblock">{{ $syllabus?->grading_system ?: '—' }}</div>

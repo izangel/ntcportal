@@ -157,6 +157,17 @@ class CourseSyllabusData
     }
 
     /**
+     * Assessment tasks mapped to the given course outcome (via their items).
+     */
+    public function tasksForClo(CourseLearningOutcome $clo)
+    {
+        return AssessmentTask::where('course_id', $this->block->course_id)
+            ->whereIn('id', $clo->assessmentItems()->pluck('assessment_task_id'))
+            ->orderBy('created_at')
+            ->get();
+    }
+
+    /**
      * CO-PO mapping level (I/G/A) for the given CO and PO.
      */
     public function coPoLevel(CourseLearningOutcome $clo, ProgramOutcome $po): string
