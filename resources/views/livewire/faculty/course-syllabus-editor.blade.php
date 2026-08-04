@@ -211,6 +211,24 @@
                 {{-- Teacher-entered fields --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                     <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Assessment Tasks Setup</h3>
+                        <p class="mt-0.5 text-xs text-gray-500">Create assessment tasks and map each item to a course outcome so the CO-PO mapping above is populated.</p>
+                    </div>
+                    <div class="p-5">
+                        @if($tasks->isEmpty())
+                            <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                                <i class="fas fa-triangle-exclamation mr-2"></i>
+                                <strong>Assessment tasks required.</strong> No assessment tasks exist for this course yet — set them up below.
+                            </div>
+                        @endif
+                        <livewire:faculty.assessment-task-setup
+                            :courseBlockId="$block->id"
+                            wire:key="assessment-tasks-{{ $block->id }}-{{ $programId }}" />
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Grading System</h3>
                     </div>
                     <div class="p-5">

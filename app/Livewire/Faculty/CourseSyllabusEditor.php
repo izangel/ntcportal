@@ -8,6 +8,7 @@ use App\Models\Program;
 use App\Models\SyllabusLearningPlanItem;
 use App\Services\CourseSyllabusData;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class CourseSyllabusEditor extends Component
@@ -183,6 +184,15 @@ class CourseSyllabusEditor extends Component
         return $block ? (new CourseSyllabusData($block))->programs() : collect();
     }
 
+    /**
+     * Refresh the CO-PO matrix and required-tasks banner when the embedded
+     * assessment-task setup saves, deletes, or re-maps an item.
+     */
+    #[On('assessment-tasks-updated')]
+    public function refreshAssessmentTasks(): void
+    {
+    }
+
     public function render()
     {
         $data = $this->data();
@@ -191,6 +201,7 @@ class CourseSyllabusEditor extends Component
             'data' => $data,
             'items' => $this->items,
             'programs' => $this->programs(),
+            'tasks' => $data ? $data->assessmentTasks() : collect(),
             'courseBlockId' => $this->courseBlockId,
             'programId' => $this->programId,
         ])->extends('layouts.admin')->section('content');
