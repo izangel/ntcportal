@@ -55,7 +55,7 @@ class FacultySyllabus extends Component
         $allBlocks = CourseBlock::where('faculty_id', $this->facultyId())
             ->where('academic_year_id', $this->academicYearId)
             ->whereIn(\DB::raw('LOWER(TRIM(semester))'), $this->semesterVariants())
-            ->with(['course', 'section.program', 'academicYear', 'syllabus'])
+            ->with(['course', 'sections.program', 'academicYear', 'syllabus'])
             ->get();
 
         $this->assignedBlocks = $allBlocks
@@ -64,10 +64,17 @@ class FacultySyllabus extends Component
                 $firstBlock = $group->first();
 
                 $sections = $group->map(function ($block) {
-                    $program = $block->section->program->name ?? 'N/A';
-                    $section = $block->section->name ?? 'N/A';
-                    return "{$program}-{$section}";
-                })->unique()->sort()->implode(', ');
+                    $blockSections = $block->sections()->get();
+
+                    if ($blockSections->isEmpty() && $block->section_id) {
+                        $blockSections = collect([$block->section]);
+                    }
+
+                    return $blockSections->map(function ($section) {
+                        $program = $section->program->name ?? '';
+                        return $program ? "{$program}-{$section->name}" : ($section->name ?? '');
+                    });
+                })->flatten()->unique()->sort()->implode(', ');
 
                 $syllabus = CourseSyllabus::where('course_block_id', $firstBlock->id)->first();
 
