@@ -5,6 +5,7 @@ namespace App\Livewire\Faculty;
 use App\Models\AcademicYear;
 use App\Models\CourseBlock;
 use App\Models\CourseSyllabus;
+use App\Services\CourseSyllabusData;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -76,7 +77,23 @@ class FacultySyllabus extends Component
                     });
                 })->flatten()->unique()->sort()->implode(', ');
 
-                $syllabus = CourseSyllabus::where('course_block_id', $firstBlock->id)->first();
+                $svc = new CourseSyllabusData($group->first());
+                $programs = $svc->programs();
+
+                $programEntries = $programs->isEmpty()
+                    ? collect()
+                    : $programs->map(function ($program) use ($firstBlock) {
+                        $syllabus = CourseSyllabus::where('course_block_id', $firstBlock->id)
+                            ->where('program_id', $program->id)
+                            ->first();
+
+                        return [
+                            'id' => $program->id,
+                            'name' => $program->name,
+                            'has_syllabus' => $syllabus !== null,
+                            'has_learning_plan' => $syllabus ? $syllabus->learningPlanItems()->exists() : false,
+                        ];
+                    })->values();
 
                 return [
                     'id' => $firstBlock->id,
@@ -85,8 +102,8 @@ class FacultySyllabus extends Component
                     'course_units' => $firstBlock->course->units,
                     'schedule_string' => $firstBlock->schedule_string,
                     'sections' => $sections,
-                    'has_syllabus' => $syllabus !== null,
-                    'has_learning_plan' => $syllabus ? $syllabus->learningPlanItems()->exists() : false,
+                    'programs' => $programEntries,
+                    'mixed' => $programEntries->count() > 1,
                 ];
             })
             ->values()

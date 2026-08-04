@@ -10,6 +10,7 @@ class CourseSyllabus extends Model
 {
     protected $fillable = [
         'course_block_id',
+        'program_id',
         'grading_system',
         'textbooks_references',
         'classroom_policies',
@@ -18,6 +19,11 @@ class CourseSyllabus extends Model
     public function courseBlock(): BelongsTo
     {
         return $this->belongsTo(CourseBlock::class);
+    }
+
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
     }
 
     public function learningPlanItems(): HasMany

@@ -20,12 +20,24 @@
                 <i class="fas fa-arrow-left"></i>Back to Courses
             </a>
             @if($data)
-                <a href="{{ route('faculty.syllabus.print', $block->id) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-bold hover:bg-gray-800">
+                <a href="{{ route('faculty.syllabus.print', [$block->id, $data->program()->id]) }}" target="_blank" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-bold hover:bg-gray-800">
                     <i class="fas fa-print"></i>Print Syllabus
                 </a>
             @endif
         </div>
     </div>
+
+    @if($programs->count() > 1)
+        <div class="mb-4 bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Program Syllabus:</span>
+            @foreach($programs as $p)
+                <a href="{{ route('faculty.syllabus.edit', [$courseBlockId, $p->id]) }}"
+                   class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold {{ $p->id == $programId ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    <i class="fas fa-graduation-cap"></i>{{ $p->name }}
+                </a>
+            @endforeach
+        </div>
+    @endif
 
     @if(session()->has('success'))
         <div class="mb-4 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg text-sm">

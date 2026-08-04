@@ -4,6 +4,7 @@ namespace App\Livewire\Faculty;
 
 use App\Models\CourseBlock;
 use App\Models\CourseSyllabus;
+use App\Models\Program;
 use App\Models\SyllabusLearningPlanItem;
 use App\Services\CourseSyllabusData;
 use Illuminate\Support\Facades\Auth;
@@ -13,13 +14,15 @@ class CourseSyllabusEditor extends Component
 {
     public $courseBlockId = null;
 
+    public $programId = null;
+
     public $grading_system = '';
     public $textbooks_references = '';
     public $classroom_policies = '';
 
     public $items = [];
 
-    public function mount($courseBlock): void
+    public function mount($courseBlock, $program = null): void
     {
         $block = $this->loadBlock($courseBlock);
         if (!$block) {
@@ -28,8 +31,16 @@ class CourseSyllabusEditor extends Component
 
         $this->courseBlockId = $block->id;
 
+        $programId = $this->resolveProgramId($block, $program);
+        if (!$programId) {
+            abort(404);
+        }
+
+        $this->programId = $programId;
+
         $syllabus = CourseSyllabus::with('learningPlanItems')
             ->where('course_block_id', $block->id)
+            ->where('program_id', $programId)
             ->first();
 
         if ($syllabus) {
@@ -53,6 +64,28 @@ class CourseSyllabusEditor extends Component
         if (empty($this->items)) {
             $this->items = [$this->blankItem()];
         }
+    }
+
+    /**
+     * Resolve which program syllabus we are editing: an explicit program
+     * segment, else the single program served by the block, else the
+     * highest-priority program for mixed blocks.
+     */
+    private function resolveProgramId(CourseBlock $block, $program): ?int
+    {
+        $programs = (new CourseSyllabusData($block))->programs();
+
+        if ($program) {
+            $programId = (int) $program;
+            return $programs->contains('id', $programId) ? $programId : null;
+        }
+
+        if ($programs->count() === 1) {
+            return (int) $programs->first()->id;
+        }
+
+        $default = (new CourseSyllabusData($block))->program();
+        return $default?->id;
     }
 
     private function blankItem(): array
@@ -97,8 +130,14 @@ class CourseSyllabusEditor extends Component
         }
 
         $syllabus = CourseSyllabus::firstOrCreate(
-            ['course_block_id' => $block->id],
-            ['course_block_id' => $block->id]
+            [
+                'course_block_id' => $block->id,
+                'program_id' => $this->programId,
+            ],
+            [
+                'course_block_id' => $block->id,
+                'program_id' => $this->programId,
+            ]
         );
 
         $syllabus->update([
@@ -128,7 +167,20 @@ class CourseSyllabusEditor extends Component
     {
         $block = $this->loadBlock($this->courseBlockId);
 
-        return $block ? new CourseSyllabusData($block) : null;
+        if (!$block) {
+            return null;
+        }
+
+        $program = Program::find($this->programId);
+
+        return $program ? new CourseSyllabusData($block, $program) : null;
+    }
+
+    public function programs()
+    {
+        $block = $this->loadBlock($this->courseBlockId);
+
+        return $block ? (new CourseSyllabusData($block))->programs() : collect();
     }
 
     public function render()
@@ -138,6 +190,9 @@ class CourseSyllabusEditor extends Component
         return view('livewire.faculty.course-syllabus-editor', [
             'data' => $data,
             'items' => $this->items,
+            'programs' => $this->programs(),
+            'courseBlockId' => $this->courseBlockId,
+            'programId' => $this->programId,
         ])->extends('layouts.admin')->section('content');
     }
 }

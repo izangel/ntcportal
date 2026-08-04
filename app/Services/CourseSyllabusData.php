@@ -16,7 +16,8 @@ use App\Models\ProgramOutcome;
 class CourseSyllabusData
 {
     public function __construct(
-        private CourseBlock $block
+        private CourseBlock $block,
+        private ?Program $programOverride = null
     ) {
     }
 
@@ -26,12 +27,35 @@ class CourseSyllabusData
     }
 
     /**
-     * The program that owns the course. Prefer the direct program_id FK,
-     * then the single distinct program of the block's sections, then the
-     * course-program pivot (used when a course spans multiple programs).
+     * The distinct programs served by this block's sections (used to decide
+     * whether one or multiple syllabi need to be generated).
+     */
+    public function programs(): \Illuminate\Support\Collection
+    {
+        $sections = $this->block->sections()->get();
+
+        if ($sections->isEmpty() && $this->block->section_id) {
+            $sections = collect([$this->block->section]);
+        }
+
+        return $sections->pluck('program')
+            ->filter()
+            ->unique('id')
+            ->values();
+    }
+
+    /**
+     * The program that owns the current syllabus. A supplied override always
+     * wins; otherwise prefer the direct program_id FK, then the single
+     * distinct program of the block's sections, then the course-program
+     * pivot (used when a course spans multiple programs).
      */
     public function program(): ?Program
     {
+        if ($this->programOverride) {
+            return $this->programOverride;
+        }
+
         $course = $this->block->course;
 
         if ($course && $course->program_id) {
@@ -74,16 +98,7 @@ class CourseSyllabusData
      */
     public function sectionPrograms()
     {
-        $sections = $this->block->sections()->get();
-
-        if ($sections->isEmpty() && $this->block->section_id) {
-            $sections = collect([$this->block->section]);
-        }
-
-        return $sections->pluck('program')
-            ->filter()
-            ->unique('id')
-            ->values();
+        return $this->programs();
     }
 
     public function batchYear(): ?string

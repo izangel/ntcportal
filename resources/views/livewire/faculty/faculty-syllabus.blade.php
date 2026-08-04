@@ -39,19 +39,25 @@
                     {{ $block['sections'] }} • {{ $block['schedule_string'] }}
                 </p>
             </div>
-            <div class="flex items-center gap-2">
-                @if($block['has_syllabus'])
-                    <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-                        <i class="fas fa-circle-check mr-1"></i>{{ $block['has_learning_plan'] ? 'Prepared' : 'Incomplete' }}
-                    </span>
-                @else
-                    <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
-                        <i class="fas fa-pen mr-1"></i>Not yet prepared
-                    </span>
-                @endif
-                <a href="{{ route('faculty.syllabus.edit', $block['id']) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
-                    <i class="fas fa-file-lines"></i>{{ $block['has_syllabus'] ? 'Edit Syllabus' : 'Prepare Syllabus' }}
-                </a>
+            <div class="flex flex-wrap items-center gap-2">
+                @foreach($block['programs'] as $program)
+                    <div class="flex items-center gap-2">
+                        @if($program['has_syllabus'])
+                            <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                                <i class="fas fa-circle-check mr-1"></i>{{ $program['name'] }}
+                                {{ $program['has_learning_plan'] ? 'Prepared' : 'Incomplete' }}
+                            </span>
+                        @else
+                            <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+                                <i class="fas fa-pen mr-1"></i>{{ $program['name'] }} Not yet prepared
+                            </span>
+                        @endif
+                        <a href="{{ route('faculty.syllabus.edit', [$block['id'], $program['id']]) }}"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+                            <i class="fas fa-file-lines"></i>{{ $program['has_syllabus'] ? 'Edit' : 'Prepare' }} Syllabus
+                        </a>
+                    </div>
+                @endforeach
             </div>
         </div>
     @empty
