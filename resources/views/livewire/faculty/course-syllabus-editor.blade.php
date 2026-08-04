@@ -136,6 +136,20 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wider">Course Outcomes &amp; CO-PO Mapping with Assessment Tasks</h3>
                         <p class="mt-0.5 text-xs text-gray-500">I — Introduced, E — Enabling, D — Demonstrating</p>
                     </div>
+                    @if($ruleViolations->isNotEmpty())
+                        <div class="mx-5 mt-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+                            <p class="text-sm font-bold text-amber-800"><i class="fas fa-triangle-exclamation mr-2"></i>Fix the following before saving:</p>
+                            <ul class="mt-2 space-y-1 text-sm text-amber-800">
+                                @foreach($ruleViolations as $violation)
+                                    <li class="flex gap-2"><i class="fas fa-circle-xmark mt-0.5 text-amber-600"></i>{{ $violation }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @else
+                        <div class="mx-5 mt-5 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3">
+                            <p class="text-sm font-semibold text-emerald-800"><i class="fas fa-circle-check mr-2"></i>All CLO/PO/assessment mapping rules are satisfied.</p>
+                        </div>
+                    @endif
                     <div class="overflow-x-auto p-5">
                         <table class="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
                             <thead class="bg-gray-50">
@@ -316,6 +330,11 @@
                         <i class="fas fa-save mr-1"></i>Save Syllabus
                     </button>
                 </div>
+                @error('syllabus_rules')
+                    <div class="mt-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+                        <i class="fas fa-triangle-exclamation mr-2"></i>{{ $message }}
+                    </div>
+                @enderror
             </div>
         </form>
     @else

@@ -7,6 +7,7 @@ use App\Models\CourseSyllabus;
 use App\Models\Program;
 use App\Models\SyllabusLearningPlanItem;
 use App\Services\CourseSyllabusData;
+use App\Services\ObeSyllabusRules;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\On;
 use Livewire\Component;
@@ -130,6 +131,16 @@ class CourseSyllabusEditor extends Component
             abort(404);
         }
 
+        $program = Program::find($this->programId);
+        $violations = ObeSyllabusRules::violations($block, $program);
+
+        if (!empty($violations)) {
+            foreach ($violations as $violation) {
+                $this->addError('syllabus_rules', $violation);
+            }
+            return;
+        }
+
         $syllabus = CourseSyllabus::firstOrCreate(
             [
                 'course_block_id' => $block->id,
@@ -197,6 +208,14 @@ class CourseSyllabusEditor extends Component
     {
         $data = $this->data();
 
+        $violations = collect();
+        if ($data && $data->program()) {
+            $violations = collect(ObeSyllabusRules::violations(
+                $data->block(),
+                $data->program()
+            ));
+        }
+
         return view('livewire.faculty.course-syllabus-editor', [
             'data' => $data,
             'items' => $this->items,
@@ -204,6 +223,7 @@ class CourseSyllabusEditor extends Component
             'tasks' => $data ? $data->assessmentTasks() : collect(),
             'courseBlockId' => $this->courseBlockId,
             'programId' => $this->programId,
+            'ruleViolations' => $violations,
         ])->extends('layouts.admin')->section('content');
     }
 }
