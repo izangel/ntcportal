@@ -51,10 +51,11 @@ class Section extends Model
         return $this->hasMany(Enrollment::class, 'section_id', 'id');
     }
 
-     // Define hasMany relationship with Courseblocks model
+     // Define belongsToMany relationship with Courseblocks through the pivot
     public function courseBlocks()
     {
-        return $this->hasMany(CourseBlock::class, 'section_id', 'id');
+        return $this->belongsToMany(CourseBlock::class, 'course_block_section', 'section_id', 'course_block_id')
+            ->withPivot('academic_year_id', 'semester');
     }
 
     // Define hasMany relationship with Enrollment model

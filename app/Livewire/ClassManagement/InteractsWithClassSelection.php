@@ -77,7 +77,7 @@ trait InteractsWithClassSelection
         $blocks = CourseBlock::where('faculty_id', $this->facultyId)
             ->where('academic_year_id', $this->academicYearId)
             ->where('semester', $this->semester)
-            ->with(['course', 'section.program', 'academicYear'])
+            ->with(['course', 'sections.program', 'academicYear'])
             ->get();
 
         $this->assignedBlocks = $blocks
@@ -116,7 +116,7 @@ trait InteractsWithClassSelection
             return null;
         }
 
-        return CourseBlock::with(['course', 'section', 'section.program', 'academicYear', 'faculty'])
+        return CourseBlock::with(['course', 'sections', 'sections.program', 'academicYear', 'faculty'])
             ->find((int) $this->selectedBlockId);
     }
 }

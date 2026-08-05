@@ -73,7 +73,7 @@
 
                         <tr class="hover:bg-[#FFF5F5] transition-colors">
                             <td class="px-3 py-0.5 text-slate-400 font-medium whitespace-nowrap">
-                                {{ $block->section->program->name ?? 'N/A' }}-{{ $block->section->name ?? 'N/A' }}
+                                {{ $block->sections->map(fn($s) => (($s->program->name ?? 'N/A').'-'.$s->name))->unique()->implode(', ') ?: 'N/A' }}
                             </td>
                             <td class="px-3 py-0.5 font-bold text-slate-700">{{ $block->course->code }}</td>
                             <td class="px-3 py-0.5 text-slate-500 uppercase truncate max-w-[220px]">{{ $block->course->name }}</td>

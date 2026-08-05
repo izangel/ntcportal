@@ -40,7 +40,7 @@ class FacultyCourseLoad extends Component
         $allBlocks = CourseBlock::where('faculty_id', $this->facultyId)
             ->where('academic_year_id', $this->academicYearId)
             ->where('semester', $this->semester)
-            ->with(['course', 'section.program'])
+            ->with(['course', 'sections.program'])
             ->get();
 
         $this->assignedBlocks = $allBlocks->groupBy(function($item) {

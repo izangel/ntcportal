@@ -90,13 +90,16 @@ protected function loadIncStudents()
     }
 
     // 1. Get all section IDs sharing this specific merged schedule
-    $sharedSectionIds = CourseBlock::where('faculty_id', $block->faculty_id)
+    $blockSections = CourseBlock::where('faculty_id', $block->faculty_id)
         ->where('academic_year_id', $block->academic_year_id)
         ->where('semester', $block->semester)
         ->where('course_id', $block->course_id)
         ->where('schedule_string', $block->schedule_string)
         // Note: room_name removed for better matching across merged blocks
-        ->pluck('section_id');
+        ->with('sections:id')
+        ->get();
+
+    $sharedSectionIds = $blockSections->flatMap->sections->pluck('id')->unique();
 
     // 2. Fetch enrollments that have 'INC'
     $enrollments = Enrollment::whereIn('section_id', $sharedSectionIds)

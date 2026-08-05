@@ -21,10 +21,11 @@ class SectionStudent extends Model
     {
         static::created(function ($membership) {
             
-            $blocks = CourseBlock::where('section_id', $membership->section_id)
-                ->where('academic_year_id', $membership->academic_year_id)
-                ->where('semester', $membership->semester)
-                ->get();
+            $blocks = CourseBlock::whereHas('sections', function ($q) use ($membership) {
+                $q->where('sections.id', $membership->section_id)
+                  ->where('course_block_section.academic_year_id', $membership->academic_year_id)
+                  ->where('course_block_section.semester', $membership->semester);
+            })->get();
         }); 
     }
 }

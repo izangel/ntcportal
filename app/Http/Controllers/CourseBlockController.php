@@ -30,7 +30,8 @@ class CourseBlockController extends Controller
 public function store(Request $request)
 {
     $validated = $request->validate([
-        'section_id' => 'required',
+        'section_ids' => 'required|array|min:1',
+        'section_ids.*' => 'exists:sections,id',
         'course_id' => 'required',
         'faculty_id' => 'required',
         'academic_year_id' => 'required',
@@ -38,26 +39,37 @@ public function store(Request $request)
         'room_name' => 'required',
         'schedule_string' => 'required',
     ]);
-        CourseBlock::create($validated);
 
-        return redirect()->route('course_blocks.index')->with('Success', 'Course Block created Successfully!');
+    $sectionIds = array_map('intval', $validated['section_ids']);
+    unset($validated['section_ids']);
+
+    $block = CourseBlock::create($validated);
+
+    foreach ($sectionIds as $sectionId) {
+        $block->sections()->attach($sectionId, [
+            'academic_year_id' => $block->academic_year_id,
+            'semester' => $block->semester,
+        ]);
     }
+
+    return redirect()->route('course_blocks.index')->with('Success', 'Course Block created Successfully!');
+}
 
     // Add this method inside the class
 public function index(Request $request)
 {
-    $query = CourseBlock::with(['section.program', 'course', 'faculty', 'academicYear'])
-        ->join('sections', 'course_blocks.section_id', '=', 'sections.id')
-        ->join('programs', 'sections.program_id', '=', 'programs.id')
+    $query = CourseBlock::with(['sections.program', 'course', 'faculty', 'academicYear'])
         ->join('courses', 'course_blocks.course_id', '=', 'courses.id')
         ->join('academic_years', 'course_blocks.academic_year_id', '=', 'academic_years.id')
         ->join('employees', 'course_blocks.faculty_id', '=', 'employees.id');
 
     // Filters (Level, AY, Sem)
     if ($request->filled('level')) {
-        $request->level === 'SHS' 
-            ? $query->where('programs.name', 'LIKE', 'SHS%') 
-            : $query->where('programs.name', 'NOT LIKE', 'SHS%');
+        if ($request->level === 'SHS') {
+            $query->whereHas('sections.program', fn ($q) => $q->where('programs.name', 'LIKE', 'SHS%'));
+        } else {
+            $query->whereDoesntHave('sections.program', fn ($q) => $q->where('programs.name', 'LIKE', 'SHS%'));
+        }
     }
     if ($request->filled('ay')) $query->where('course_blocks.academic_year_id', $request->ay);
     if ($request->filled('sem')) {
@@ -98,7 +110,8 @@ public function edit(CourseBlock $courseBlock)
 public function update(Request $request, CourseBlock $courseBlock)
 {
     $validated = $request->validate([
-        'section_id' => 'required|exists:sections,id',
+        'section_ids' => 'required|array|min:1',
+        'section_ids.*' => 'exists:sections,id',
         'course_id' => 'required|exists:courses,id',
         'faculty_id' => 'required|exists:employees,id',
         'academic_year_id' => 'required|exists:academic_years,id',
@@ -107,7 +120,15 @@ public function update(Request $request, CourseBlock $courseBlock)
         'schedule_string' => 'required|string',
     ]);
 
+    $sectionIds = array_map('intval', $validated['section_ids']);
+    unset($validated['section_ids']);
+
     $courseBlock->update($validated);
+
+    $courseBlock->sections()->syncWithPivotValues($sectionIds, [
+        'academic_year_id' => $courseBlock->academic_year_id,
+        'semester' => $courseBlock->semester,
+    ]);
 
     return redirect()->route('course_blocks.index')->with('success', 'Course Block updated successfully.');
 }

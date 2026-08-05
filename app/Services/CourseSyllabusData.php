@@ -34,10 +34,6 @@ class CourseSyllabusData
     {
         $sections = $this->block->sections()->get();
 
-        if ($sections->isEmpty() && $this->block->section_id) {
-            $sections = collect([$this->block->section]);
-        }
-
         return $sections->pluck('program')
             ->filter()
             ->unique('id')
@@ -217,10 +213,6 @@ class CourseSyllabusData
     public function sectionLabels(): string
     {
         $sections = $this->block->sections()->get();
-
-        if ($sections->isEmpty() && $this->block->section_id) {
-            $sections = collect([$this->block->section]);
-        }
 
         return $sections->map(function ($section) {
             $program = $section->program->name ?? '';

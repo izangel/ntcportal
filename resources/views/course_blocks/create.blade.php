@@ -16,14 +16,13 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     <div>
-                        <label for="section_id" class="block text-sm font-medium text-gray-700">Section</label>
-                        <select name="section_id" id="section_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                            <option value="">Select Section/Program</option>
+                        <label for="section_ids" class="block text-sm font-medium text-gray-700">Sections</label>
+                        <select name="section_ids[]" id="section_ids" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" size="6">
                             @foreach($sections as $section)
                                 <option value="{{ $section->id }}">{{ $section->program->name }}-{{ $section->name }}</option>
                             @endforeach
                         </select>
-                        @error('section_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                        @error('section_ids') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div>

@@ -217,7 +217,7 @@ class DashboardController extends Controller
                 $staffData['myCourses'] = CourseBlock::where('faculty_id', $user->employee->id)
                     ->where('academic_year_id', $activeSemester->academic_year_id)
                     ->where('semester', $semesterName) // Filter by active semester name
-                    ->with(['course', 'section.program'])
+                    ->with(['course', 'sections.program'])
                     ->get()
                     ->groupBy(fn($item) => $item->course_id . '-' . $item->schedule_string)
                     ->map(fn($group) => [

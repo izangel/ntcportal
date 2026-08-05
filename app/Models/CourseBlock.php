@@ -11,7 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class CourseBlock extends Model
 {
     protected $fillable = [
-        'section_id',
         'course_id',
         'faculty_id',
         'academic_year_id',
@@ -22,9 +21,15 @@ class CourseBlock extends Model
     ];
 
     // Relationships
-    public function section()
+    /**
+     * Backward-compatible accessor: returns the first section linked via the
+     * course_block_section pivot. Display components previously relied on the
+     * singular belongsTo section_id column, which has been removed in favour
+     * of the many-to-many pivot.
+     */
+    public function getSectionAttribute()
     {
-        return $this->belongsTo(Section::class);
+        return $this->sections()->get()->first();
     }
 
     public function sections()
@@ -78,12 +83,8 @@ class CourseBlock extends Model
     protected static function booted()
     {
         static::created(function ($courseBlock) {
-            // Sections are linked through course_block_section; fall back to the
-            // legacy section_id column when no pivot links exist yet.
+            // Sections are linked through the course_block_section pivot.
             $sections = $courseBlock->sections()->get();
-            if ($sections->isEmpty() && $courseBlock->section_id) {
-                $sections = Section::where('id', $courseBlock->section_id)->get();
-            }
 
             foreach ($sections as $section) {
                 // 1. Find all students already registered in this section

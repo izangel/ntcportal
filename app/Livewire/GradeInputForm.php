@@ -83,7 +83,7 @@ public $combinedSectionsLabel = '';
 
 public function loadGrades()
 {
-    $this->selectedBlock = CourseBlock::with(['course', 'academicYear', 'section.program'])->find($this->blockId);
+    $this->selectedBlock = CourseBlock::with(['course', 'academicYear', 'sections.program'])->find($this->blockId);
     if (!$this->selectedBlock) return;
 
     $this->gradesFinalized = $this->selectedBlock->finalized;
@@ -97,14 +97,14 @@ public function loadGrades()
         ->where('academic_year_id', $this->selectedBlock->academic_year_id)
         ->where('semester', $this->selectedBlock->semester)
         ->where('schedule_string', $this->selectedBlock->schedule_string)
-        ->with(['section.program'])
+        ->with(['sections.program'])
         ->get();
 
-    $relatedSectionIds = $relatedBlocks->pluck('section_id');
+    $relatedSectionIds = $relatedBlocks->flatMap->sections->pluck('id')->unique();
 
     // 3. Create the Sections Label (e.g., "BSIS-1A" or "BSIS-1A, BSED-2B")
-    $this->combinedSectionsLabel = $relatedBlocks->map(function($b) {
-        return ($b->section->program->name ?? '') . '-' . ($b->section->name ?? '');
+    $this->combinedSectionsLabel = $relatedBlocks->flatMap->sections->map(function($section) {
+        return ($section->program->name ?? '') . '-' . ($section->name ?? '');
     })->unique()->sort()->implode(', ');
 
     // 4. Pull all enrollments (Existing logic)

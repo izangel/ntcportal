@@ -71,7 +71,7 @@ class InstitutionalAnalytics extends Component
 
     private function filteredBlocks()
     {
-        $query = CourseBlock::with(['course', 'faculty', 'section.program', 'sections.program'])
+        $query = CourseBlock::with(['course', 'faculty', 'sections.program'])
             ->when($this->academicYearId, fn ($q) => $q->where('academic_year_id', $this->academicYearId))
             ->when($this->semester, fn ($q) => $q->where('semester', $this->semester))
             ->when($this->facultyId, fn ($q) => $q->where('faculty_id', $this->facultyId));
@@ -93,10 +93,6 @@ class InstitutionalAnalytics extends Component
             if ($section->program_id) {
                 $ids[] = (int) $section->program_id;
             }
-        }
-
-        if ($block->section && $block->section->program_id) {
-            $ids[] = (int) $block->section->program_id;
         }
 
         return array_values(array_unique($ids));

@@ -67,10 +67,6 @@ class FacultySyllabus extends Component
                 $sections = $group->map(function ($block) {
                     $blockSections = $block->sections()->get();
 
-                    if ($blockSections->isEmpty() && $block->section_id) {
-                        $blockSections = collect([$block->section]);
-                    }
-
                     return $blockSections->map(function ($section) {
                         $program = $section->program->name ?? '';
                         return $program ? "{$program}-{$section->name}" : ($section->name ?? '');

@@ -286,7 +286,6 @@ class CourseDashboardSeeder extends Seeder
                     'course_id' => $course->id,
                     'academic_year_id' => $ay->id,
                     'semester' => $semester,
-                    'section_id' => $section->id,
                 ],
                 [
                     'faculty_id' => $blockFacultyId,
