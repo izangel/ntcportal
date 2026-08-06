@@ -127,7 +127,8 @@ class DashboardController extends Controller
                 'classes'     => (int) DB::table('student_courseblock')->distinct()->count('course_block_id'),
                 'programs'    => (int) DB::table('student_courseblock as sc')
                                     ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
-                                    ->join('sections as sec', 'cb.section_id', '=', 'sec.id')
+                                    ->join('course_block_section as cbs', 'cbs.course_block_id', '=', 'cb.id')
+                                    ->join('sections as sec', 'cbs.section_id', '=', 'sec.id')
                                     ->distinct()->count('sec.program_id'),
             ];
             $enrollmentTotal = $staffData['enrollmentTotals']['enrollments'];
@@ -158,7 +159,8 @@ class DashboardController extends Controller
 
             $enrollmentsByProgram = DB::table('student_courseblock as sc')
                 ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
-                ->join('sections as sec', 'cb.section_id', '=', 'sec.id')
+                ->join('course_block_section as cbs', 'cbs.course_block_id', '=', 'cb.id')
+                ->join('sections as sec', 'cbs.section_id', '=', 'sec.id')
                 ->join('programs as p', 'sec.program_id', '=', 'p.id')
                 ->select(
                     'p.id as program_id',
@@ -166,7 +168,7 @@ class DashboardController extends Controller
                     DB::raw('count(*) as enrollments'),
                     DB::raw('count(distinct sc.student_id) as students'),
                     DB::raw('count(distinct cb.course_id) as courses'),
-                    DB::raw('count(distinct cb.section_id) as sections')
+                    DB::raw('count(distinct cbs.section_id) as sections')
                 )
                 ->groupBy('p.id', 'p.name')
                 ->orderByDesc('enrollments')
