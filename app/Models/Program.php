@@ -14,6 +14,22 @@ class Program extends Model
     protected $fillable = ['name'];
 
     /**
+     * Get the program head assignments (history preserved).
+     */
+    public function programHeads(): HasMany
+    {
+        return $this->hasMany(ProgramHead::class)->latest();
+    }
+
+    /**
+     * The currently assigned program head (latest active assignment).
+     */
+    public function currentHead(): ?ProgramHead
+    {
+        return $this->programHeads()->active()->latest()->first();
+    }
+
+    /**
      * Get the sections for the program.
      */
     public function sections()

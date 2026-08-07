@@ -8,6 +8,12 @@
         <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{{ session('success') }}</div>
     @endif
 
+    @if($locked)
+        <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <i class="fas fa-lock mr-2"></i><strong>Assessment tasks are locked.</strong> They are final and can no longer be changed after syllabus submission.
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-3">
         <div>
             <label class="mb-1 block text-xs font-semibold uppercase text-gray-600">Academic Year</label>
@@ -43,6 +49,7 @@
             <span class="ml-2">Batch {{ $selectedBlock->academicYear->start_year }} | {{ $selectedBlock->semester }} | {{ $selectedBlock->section->name ?? 'Section' }}</span>
         </div>
 
+        @if(!$locked)
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
                 <h2 class="mb-4 text-base font-bold text-gray-900">
@@ -92,6 +99,7 @@
                 </form>
             </div>
         </div>
+        @endif
 
         <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <h2 class="mb-4 text-base font-bold text-gray-900">Tasks and CLO Items</h2>
@@ -104,8 +112,10 @@
                                 <span class="ml-2 text-xs text-gray-500">{{ $task->type }} | {{ $task->weight_percentage }}% | {{ $task->total_marks }} marks</span>
                             </div>
                             <div class="flex items-center gap-3">
-                                <button type="button" wire:click="editTask({{ $task->id }})" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
-                                <button type="button" wire:click="deleteTask({{ $task->id }})" wire:confirm="Delete this assessment task and all mapped CLO items?" class="text-xs font-semibold text-rose-600 hover:text-rose-800">Delete</button>
+                                @if(!$locked)
+                                    <button type="button" wire:click="editTask({{ $task->id }})" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
+                                    <button type="button" wire:click="deleteTask({{ $task->id }})" wire:confirm="Delete this assessment task and all mapped CLO items?" class="text-xs font-semibold text-rose-600 hover:text-rose-800">Delete</button>
+                                @endif
                             </div>
                         </div>
                         <div class="mt-3 space-y-1 border-t border-gray-200 pt-2">

@@ -77,6 +77,7 @@ use App\Http\Controllers\AttendanceReportController;
 use App\Http\Controllers\EvaluationWorkflowController;
 
 use App\Http\Controllers\RoleAssignmentController;
+use App\Http\Controllers\ProgramHeadAssignmentController;
 use App\Livewire\Hr\LeaveCreditsTable;
 use App\Livewire\LeaveApplicationManager;
 
@@ -264,6 +265,14 @@ Route::middleware([
         // We use PUT/PATCH because we are updating an existing user's relationships
         Route::put('/admin/roles/{user}', [RoleAssignmentController::class, 'update'])
             ->name('roles.update');
+
+        // Program Head assignment per program
+        Route::get('/admin/program-heads', [ProgramHeadAssignmentController::class, 'index'])
+            ->name('program-heads.index');
+        Route::post('/admin/program-heads', [ProgramHeadAssignmentController::class, 'store'])
+            ->name('program-heads.store');
+        Route::delete('/admin/program-heads/{program}', [ProgramHeadAssignmentController::class, 'unassign'])
+            ->name('program-heads.unassign');
 
         // The view to see the list and checkboxes
 
@@ -564,6 +573,17 @@ Route::middleware([
     Route::middleware('role:academic_head|registrar|hr|admin|program_head_shs')
         ->get('/admin/attainments', [CourseAttainmentController::class, 'adminIndex'])->name('attainment.admin');
 
+    // Syllabus approval workflow (registered BEFORE the parameterized syllabus routes)
+    Route::middleware('role:program_head|program_head_college|program_head_shs')->group(function () {
+        Route::get('/faculty/syllabus/reviews', \App\Livewire\Faculty\ProgramHeadSyllabusReviews::class)
+            ->name('faculty.syllabus.reviews');
+    });
+
+    Route::middleware('role:academic_head')->group(function () {
+        Route::get('/faculty/syllabus/approvals', \App\Livewire\Faculty\AcademicHeadSyllabusApprovals::class)
+            ->name('faculty.syllabus.approvals');
+    });
+
     //OBE
     Route::middleware('role:teacher|faculty|staff')->group(function () {
         Route::get('/faculty/assessment-tasks', AssessmentTaskSetup::class)->name('faculty.assessment-tasks');
@@ -622,10 +642,6 @@ Route::middleware([
         Route::post('/voting', [StudentVotingController::class, 'store'])->name('student.voting.store');
         Route::get('/voting/results', [StudentVotingController::class, 'results'])->name('student.voting.results');
     });
-});
-
-Livewire::setUpdateRoute(function ($handle) {
-    return Route::post('/ntcportal/livewire/update', $handle);
 });
 
 // Standard Jetstream authentication routes

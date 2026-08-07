@@ -12,7 +12,17 @@ class CourseSyllabusPrintController extends Controller
 {
     public function show(CourseBlock $courseBlock, $program = null)
     {
-        if (!Auth::user()?->employee || Auth::user()->employee->id !== $courseBlock->faculty_id) {
+        $user = Auth::user();
+
+        if (!$user?->employee) {
+            abort(403, 'You are not assigned to this class.');
+        }
+
+        $isOwner = $user->employee->id === $courseBlock->faculty_id;
+        $isAcademicHead = $user->hasRole('academic_head');
+        $isProgramHead = $user->hasRole('program_head') || $user->hasRole('program_head_college') || $user->hasRole('program_head_shs');
+
+        if (!$isOwner && !$isAcademicHead && !$isProgramHead) {
             abort(403, 'You are not assigned to this class.');
         }
 
@@ -34,7 +44,7 @@ class CourseSyllabusPrintController extends Controller
         }
 
         $data = new CourseSyllabusData($courseBlock, $programModel);
-        $syllabus = CourseSyllabus::with('learningPlanItems')
+        $syllabus = CourseSyllabus::with(['learningPlanItems', 'gradingComponents'])
             ->where('course_block_id', $courseBlock->id)
             ->where('program_id', $programModel->id)
             ->first();
