@@ -84,7 +84,7 @@ class ClassStudents extends Component
         $blocks = CourseBlock::where('faculty_id', $this->facultyId)
             ->where('academic_year_id', $this->academicYearId)
             ->where('semester', $this->semester)
-            ->with(['course', 'section.program', 'academicYear'])
+            ->with(['course', 'sections.program', 'academicYear'])
             ->get();
 
         $this->assignedBlocks = $blocks

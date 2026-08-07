@@ -133,6 +133,18 @@ class Employee extends Model
         return $this->hasMany(CourseBlock::class, 'faculty_id');
     }
 
+    public function getFullNameAttribute(): string
+    {
+        $middle = $this->mid_name ? substr($this->mid_name, 0, 1) . '. ' : '';
+
+        return trim(($this->first_name ?? '') . ' ' . $middle . ($this->last_name ?? ''));
+    }
+
+    public function programHeads()
+    {
+        return $this->hasMany(ProgramHead::class);
+    }
+
     public function receivedEvaluations()
 {
     return $this->hasMany(Evaluation::class, 'teacher_id');

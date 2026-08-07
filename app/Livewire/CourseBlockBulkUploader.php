@@ -98,7 +98,6 @@ class CourseBlockBulkUploader extends Component
                 
                 // Construct the block data
                 $data = [
-                    'section_id' => $row[$columnIndex['section_id']] ?? null,
                     'course_id' => $row[$columnIndex['course_id']] ?? null,
                     'faculty_id' => $row[$columnIndex['faculty_id']] ?? null,
                     'room_name' => $row[$columnIndex['room_name']] ?? null,
@@ -107,27 +106,31 @@ class CourseBlockBulkUploader extends Component
                     'semester' => $this->semester, // Context
                     'finalized' => 0, // Default value
                 ];
-                
+                $csvSectionId = $row[$columnIndex['section_id']] ?? null;
+
                 // --- Row-level Validation ---
                 $validator = Validator::make($data, [
                     // Ensure the IDs exist in their respective tables
-                    'section_id' => 'required|exists:sections,id',
                     'course_id' => 'required|exists:courses,id',
                     'faculty_id' => 'required|exists:employees,id',
                     'academic_year_id' => 'required|exists:academic_years,id',
                     'semester' => 'required|in:1st,2nd,Summer',
                     'room_name' => 'required|string|max:100',
                     'schedule_string' => 'required|string|max:150',
-                ]);
+                ] + ['section_id' => 'required|exists:sections,id']);
 
                 if ($validator->fails()) {
-                    $bulkErrors[] = "Line {$line}: Validation Failed. Section ID: {$data['section_id']}. " . json_encode($validator->errors()->all());
+                    $bulkErrors[] = "Line {$line}: Validation Failed. Section ID: {$csvSectionId}. " . json_encode($validator->errors()->all());
                     $skippedCount++;
                     continue;
                 }
-                
+
                 // --- Duplicate Check / Update ---
-                $existingBlock = CourseBlock::where('section_id', $data['section_id'])
+                $existingBlock = CourseBlock::whereHas('sections', function ($q) use ($csvSectionId, $data) {
+                                            $q->where('sections.id', $csvSectionId)
+                                              ->where('course_block_section.academic_year_id', $data['academic_year_id'])
+                                              ->where('course_block_section.semester', $data['semester']);
+                                        })
                                             ->where('course_id', $data['course_id'])
                                             ->where('academic_year_id', $data['academic_year_id'])
                                             ->where('semester', $data['semester'])
@@ -140,9 +143,20 @@ class CourseBlockBulkUploader extends Component
                         'schedule_string' => $data['schedule_string'],
                         'finalized' => $data['finalized'],
                     ]);
+
+                    if (! $existingBlock->sections()->wherePivot('section_id', $csvSectionId)->exists()) {
+                        $existingBlock->sections()->attach($csvSectionId, [
+                            'academic_year_id' => $data['academic_year_id'],
+                            'semester' => $data['semester'],
+                        ]);
+                    }
                     $updatedCount++;
                 } else {
-                    CourseBlock::create($data);
+                    $block = CourseBlock::create($data);
+                    $block->sections()->attach($csvSectionId, [
+                        'academic_year_id' => $data['academic_year_id'],
+                        'semester' => $data['semester'],
+                    ]);
                     $createdCount++;
                 }
 

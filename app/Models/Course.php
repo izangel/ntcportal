@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -14,6 +15,9 @@ class Course extends Model
     protected $fillable = [
         'name',
         'code',
+        'units',
+        'prerequisite',
+        'program_id',
         'description',
     ];
 
@@ -69,6 +73,11 @@ class Course extends Model
     public function programs(): BelongsToMany
     {
         return $this->belongsToMany(Program::class);
+    }
+
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(Program::class);
     }
 
     public function getTotalEnrolledStudentsAttribute()

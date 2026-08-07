@@ -148,10 +148,12 @@ class StudentCourseController extends Controller
             ->first();
 
         if ($enrollment) {
-            $block = CourseBlock::where('section_id', $enrollment->section_id)
-                ->where('course_id', $request->course_id)
+            $block = CourseBlock::where('course_id', $request->course_id)
                 ->where('academic_year_id', $activeSem->academic_year_id)
                 ->where('semester', $semesterName)
+                ->whereHas('sections', function ($q) use ($enrollment) {
+                    $q->where('sections.id', $enrollment->section_id);
+                })
                 ->first();
             $teacherId = $block ? $block->faculty_id : null;
         }

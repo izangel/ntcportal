@@ -220,8 +220,6 @@ class ObeCourseDashboard extends Component
                     $query->where(function ($q) use ($programId) {
                         $q->whereHas('sections.program', function ($sq) use ($programId) {
                             $sq->where('programs.id', $programId);
-                        })->orWhereHas('section.program', function ($sq) use ($programId) {
-                            $sq->where('programs.id', $programId);
                         });
                     });
                 }

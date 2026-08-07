@@ -138,6 +138,24 @@
                                                                 <div>
                                                                     <span class="font-semibold text-indigo-700">{{ $clo->code }}</span>
                                                                     <span class="text-gray-600">{{ $clo->description }}</span>
+                                                                    @php
+                                                                        $hasPoForProgram = $clo->programOutcomes
+                                                                            ->pluck('id')
+                                                                            ->intersect($programOutcomes->pluck('id'))
+                                                                            ->isNotEmpty();
+                                                                        $hasAssessmentItem = isset($clo->assessment_items)
+                                                                            && $clo->assessment_items->isNotEmpty();
+                                                                    @endphp
+                                                                    @if(!$hasPoForProgram)
+                                                                        <span class="ml-2 inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-rose-700">
+                                                                            <i class="fas fa-circle-xmark mr-1"></i>No PO mapped
+                                                                        </span>
+                                                                    @endif
+                                                                    @if(!$hasAssessmentItem)
+                                                                        <span class="ml-1 inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-700">
+                                                                            <i class="fas fa-circle-xmark mr-1"></i>No assessment item
+                                                                        </span>
+                                                                    @endif
                                                                 </div>
                                                                 <button type="button" wire:click="editClo({{ $clo->id }})" class="shrink-0 font-semibold text-indigo-600 hover:text-indigo-800">
                                                                     Edit
@@ -244,12 +262,23 @@
                                                             return $courseCloIds->contains($item->course_learning_outcome_id);
                                                         });
                                                     });
+                                                    $courseTaskWeightTotal = $course->assessmentTasks->sum('weight_percentage');
                                                     $facultySections = $course->courseBlocks->map(function ($block) {
                                                         $faculty = trim(($block->faculty->first_name ?? '') . ' ' . ($block->faculty->last_name ?? ''));
                                                         $sections = $block->sections->pluck('name')->filter()->unique()->implode(', ');
                                                         return 'Block #' . $block->id . ' | ' . ($sections ?: 'Section') . ': ' . ($faculty ?: 'Unassigned');
                                                     })->filter()->unique()->values();
                                                 @endphp
+
+                                                @if($course->assessmentTasks->isEmpty())
+                                                    <div class="mb-2 inline-flex items-center rounded bg-rose-50 px-2 py-1 text-[10px] font-bold text-rose-700">
+                                                        <i class="fas fa-triangle-exclamation mr-1"></i>No assessment tasks
+                                                    </div>
+                                                @elseif(abs($courseTaskWeightTotal - 100) > 0.001)
+                                                    <div class="mb-2 inline-flex items-center rounded bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">
+                                                        <i class="fas fa-triangle-exclamation mr-1"></i>Weights total {{ $courseTaskWeightTotal }}% (must be 100%)
+                                                    </div>
+                                                @endif
 
                                                 @forelse($courseTasks as $task)
                                                     <div class="mb-2 rounded border border-gray-200 bg-gray-50 p-2 text-xs">

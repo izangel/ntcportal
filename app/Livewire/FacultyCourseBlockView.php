@@ -138,12 +138,12 @@ class FacultyCourseBlockView extends Component
         ->where('semester', $contextBlock->semester)
         ->where('course_id', $contextBlock->course_id)
         ->where('schedule_string', $contextBlock->schedule_string)
-        ->with(['section.program'])
+        ->with(['sections.program'])
         ->get();
 
-    $sectionIds = $relatedBlocks->pluck('section_id');
-    $mergedSectionNames = $relatedBlocks->map(function($b) {
-        return ($b->section->program->name ?? '') . '-' . ($b->section->name ?? '');
+    $sectionIds = $relatedBlocks->flatMap->sections->pluck('id')->unique();
+    $mergedSectionNames = $relatedBlocks->flatMap->sections->map(function($section) {
+        return ($section->program->name ?? '') . '-' . ($section->name ?? '');
     })->unique()->implode(', ');
 
     // 3. Prepare Student List
@@ -205,7 +205,7 @@ class FacultyCourseBlockView extends Component
     $allBlocks = CourseBlock::where('faculty_id', $this->facultyId)
                             ->where('academic_year_id', $this->academicYearId)
                             ->where('semester', $this->semester)
-                            ->with(['course', 'section.program'])
+                            ->with(['course', 'sections.program'])
                             ->get();
 
     // 🔑 Group by Course + Schedule to handle merged/combined classes

@@ -21,10 +21,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700">Section</label>
-                        <select name="section_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <label class="block text-sm font-medium text-gray-700">Sections</label>
+                        <select name="section_ids[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" size="6">
                             @foreach($sections as $section)
-                                <option value="{{ $section->id }}" {{ $courseBlock->section_id == $section->id ? 'selected' : '' }}>
+                                <option value="{{ $section->id }}" {{ $courseBlock->sections->contains('id', $section->id) ? 'selected' : '' }}>
                                      {{ $section->program->name }}-{{ $section->name }}
                                 </option>
                             @endforeach

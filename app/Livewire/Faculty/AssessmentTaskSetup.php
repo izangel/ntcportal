@@ -13,24 +13,61 @@ use Livewire\Component;
 class AssessmentTaskSetup extends Component
 {
     public $academicYearId = null;
+
     public $semester = '1st';
+
     public $selectedCourseBlockId = null;
+
     public $selectedTaskId = null;
 
     public $editingTaskId = null;
+
     public $taskTitle = '';
+
     public $taskType = 'Exam';
+
     public $taskWeight = '';
+
     public $taskTotalMarks = '';
+
     public $itemName = '';
+
     public $itemCloId = null;
+
     public $itemMarks = '';
 
     public $semesters = ['1st', '2nd', 'Summer'];
 
-    public function mount(): void
+    public $locked = false;
+
+    public function mount($courseBlockId = null): void
     {
         $this->academicYearId = AcademicYear::orderByDesc('start_year')->value('id');
+
+        if ($courseBlockId) {
+            $block = CourseBlock::whereKey($courseBlockId)
+                ->where('faculty_id', $this->facultyId())
+                ->first();
+
+            if ($block) {
+                $this->academicYearId = $block->academic_year_id;
+                $this->semester = $this->normalizeSemester($block->semester);
+                $this->selectedCourseBlockId = (string) $block->id;
+            }
+        }
+    }
+
+    private function normalizeSemester(?string $semester): string
+    {
+        $s = strtolower(trim((string) $semester));
+        if (in_array($s, ['1st', 'first', '1st semester', 'first semester'])) {
+            return '1st';
+        }
+        if (in_array($s, ['2nd', 'second', '2nd semester', 'second semester'])) {
+            return '2nd';
+        }
+
+        return 'Summer';
     }
 
     public function updatedAcademicYearId(): void
@@ -85,7 +122,7 @@ class AssessmentTaskSetup extends Component
 
     private function selectedBlock(): ?CourseBlock
     {
-        if (!$this->selectedCourseBlockId || !$this->facultyId()) {
+        if (! $this->selectedCourseBlockId || ! $this->facultyId()) {
             return null;
         }
 
@@ -106,9 +143,13 @@ class AssessmentTaskSetup extends Component
 
     public function saveTask(): void
     {
+        if ($this->locked) {
+            return;
+        }
         $block = $this->selectedBlock();
-        if (!$block) {
+        if (! $block) {
             $this->addError('selectedCourseBlockId', 'Select one of your assigned course blocks.');
+
             return;
         }
 
@@ -143,12 +184,17 @@ class AssessmentTaskSetup extends Component
             $this->reset(['taskTitle']);
             session()->flash('success', 'Assessment task created for the selected course and batch.');
         }
+
+        $this->dispatch('assessment-tasks-updated');
     }
 
     public function editTask(int $taskId): void
     {
+        if ($this->locked) {
+            return;
+        }
         $block = $this->selectedBlock();
-        if (!$block) {
+        if (! $block) {
             return;
         }
 
@@ -179,9 +225,13 @@ class AssessmentTaskSetup extends Component
 
     public function saveItem(): void
     {
+        if ($this->locked) {
+            return;
+        }
         $block = $this->selectedBlock();
-        if (!$block) {
+        if (! $block) {
             $this->addError('selectedCourseBlockId', 'Select one of your assigned course blocks.');
+
             return;
         }
 
@@ -214,13 +264,18 @@ class AssessmentTaskSetup extends Component
 
         $this->reset(['itemName', 'itemCloId', 'itemMarks']);
         session()->flash('success', 'Assessment item mapped to the selected CLO.');
+        $this->dispatch('assessment-tasks-updated');
     }
 
     public function deleteTask(int $taskId): void
     {
+        if ($this->locked) {
+            return;
+        }
         $block = $this->selectedBlock();
-        if (!$block) {
+        if (! $block) {
             $this->addError('selectedCourseBlockId', 'Select one of your assigned course blocks.');
+
             return;
         }
 
@@ -238,6 +293,7 @@ class AssessmentTaskSetup extends Component
         }
 
         session()->flash('success', 'Assessment task and its mapped items were deleted.');
+        $this->dispatch('assessment-tasks-updated');
     }
 
     public function render()
@@ -277,6 +333,7 @@ class AssessmentTaskSetup extends Component
             'clos' => $clos,
             'tasks' => $tasks,
             'selectedBlock' => $selectedBlock,
+            'locked' => $this->locked,
         ])->extends('layouts.admin')->section('content');
     }
 }

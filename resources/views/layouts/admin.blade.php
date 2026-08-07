@@ -518,6 +518,10 @@
                         <i class="fas fa-user-tag mr-3 text-lg"></i>
                         {{ __('Employee Roles') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('program-heads.index') }}" :active="request()->routeIs('program-heads.*')">
+                        <i class="fas fa-users-gear mr-3 text-lg"></i>
+                        {{ __('Assign Program Heads') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-plane-departure mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}
@@ -651,6 +655,22 @@
                         <i class="fas fa-list-check mr-3 text-lg"></i>
                         {{ __('4-Assessment Setup') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit')">
+                        <i class="fas fa-file-lines mr-3 text-lg"></i>
+                        {{ __('Course Syllabus') }}
+                    </x-nav-link>
+                    @if(Auth::user()->hasRole('program_head') || Auth::user()->hasRole('program_head_college') || Auth::user()->hasRole('program_head_shs'))
+                    <x-nav-link href="{{ route('faculty.syllabus.reviews') }}" :active="request()->routeIs('faculty.syllabus.reviews')">
+                        <i class="fas fa-clipboard-check mr-3 text-lg"></i>
+                        {{ __('Syllabus Reviews (PH)') }}
+                    </x-nav-link>
+                    @endif
+                    @if(Auth::user()->hasRole('academic_head'))
+                    <x-nav-link href="{{ route('faculty.syllabus.approvals') }}" :active="request()->routeIs('faculty.syllabus.approvals')">
+                        <i class="fas fa-stamp mr-3 text-lg"></i>
+                        {{ __('Syllabus Approvals (AH)') }}
+                    </x-nav-link>
+                    @endif
                     <x-nav-link href="{{ route('faculty.assessment-scores') }}" :active="request()->routeIs('faculty.assessment-scores')">
                         <i class="fas fa-pen-to-square mr-3 text-lg"></i>
                         {{ __('5-Assessment Scores') }}
