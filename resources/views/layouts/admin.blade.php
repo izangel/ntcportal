@@ -22,7 +22,13 @@
             {{-- Sidebar --}}
 <aside class="w-64 bg-gray-900 text-white shadow-lg flex-shrink-0" style="min-height: calc(100vh);">
     <div class="p-6 flex items-center justify-center border-b border-gray-700">
-        <h2 class="text-2xl font-bold tracking-tight">Admin Panel</h2>
+        <h2 class="text-2xl font-bold tracking-tight">
+            @php
+                $hasStudent = Auth::user()->student;
+                $isFaculty = Auth::user()->hasRole('teacher') || Auth::user()->hasRole('faculty') || Auth::user()->hasRole('staff');
+            @endphp
+            {{ $hasStudent ? 'Student Portal' : ($isFaculty ? 'Faculty Portal' : 'Admin Panel') }}
+        </h2>
     </div>
     <nav class="p-4 space-y-2">
         
@@ -38,6 +44,10 @@
         <x-nav-link href="{{ route('important_dates.index') }}" :active="request()->routeIs('important_dates.index')">
             <i class="fas fa-calendar-days mr-3 text-lg"></i>
             {{ __('Important Dates') }}
+        </x-nav-link>
+        <x-nav-link href="{{ route('system-updates.index') }}" :active="request()->routeIs('system-updates.index')">
+            <i class="fas fa-circle-info mr-3 text-lg"></i>
+            {{ __('System Updates') }}
         </x-nav-link>
 
         {{-- My Profile (COLLAPSIBLE) --}}
@@ -59,7 +69,7 @@
                 </div>
             </div>
 
-        {{-- Library Resources (COLLAPSIBLE) --}}
+        {{-- LIBRARY RESOURCES — NOT IMPLEMENTED YET, DISABLED
         <div class="mt-4 space-y-1" x-data="{ open: false }">
             <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                 <h3 class="text-left">Library Resources</h3>
@@ -69,16 +79,36 @@
             <div x-show="open" x-collapse.duration.300ms>
                 <x-nav-link href="#">
                     <i class="fas fa-magnifying-glass mr-3 text-lg"></i>
-                    {{ __('Search Library Catalog') }}
+                    Search Library Catalog
                 </x-nav-link>
                 <x-nav-link href="#">
                     <i class="fas fa-book mr-3 text-lg"></i>
-                    {{ __('Request Books') }}
+                    Request Books
                 </x-nav-link>
             </div>
         </div>
+        --}}
 
         @if(Auth::user()->student)
+             {{-- My Classes & Schedule (COLLAPSIBLE) - Student Only --}}
+             <div class="mt-4 space-y-1" x-data="{ open: true }">
+                <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
+                    <h3 class="text-left">MY CLASSES</h3>
+                    <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
+                </button>
+
+                <div x-show="open" x-collapse.duration.300ms>
+                    <x-nav-link href="{{ route('student.course-blocks') }}" :active="request()->routeIs('student.course-blocks')">
+                        <i class="fas fa-calendar-day mr-3 text-lg"></i>
+                        {{ __('My Schedule') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('student.courses') }}" :active="request()->routeIs('student.courses')">
+                        <i class="fas fa-book-open mr-3 text-lg"></i>
+                        {{ __('My Courses') }}
+                    </x-nav-link>
+                </div>
+            </div>
+
              <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">COURSE EVALUATION</h3>
@@ -110,7 +140,7 @@
                 </div>
             </div>
 
-            {{-- My Course Materials (COLLAPSIBLE) - Student Only --}}
+            {{-- MY COURSE MATERIALS — NOT IMPLEMENTED YET, DISABLED
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">MY COURSE MATERIALS</h3>
@@ -124,8 +154,9 @@
                     </x-nav-link>
                 </div>
             </div>
+            --}}
 
-            {{-- Apply for Candidacy (COLLAPSIBLE) - Student Only --}}
+            {{-- APPLY FOR CANDIDACY — NOT IMPLEMENTED YET, DISABLED
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">Apply for Candidacy</h3>
@@ -147,8 +178,9 @@
                     </x-nav-link>
                 </div>
             </div>
+            --}}
 
-            {{-- SSG Voting (COLLAPSIBLE) - Student Only --}}
+            {{-- SSG VOTING — NOT IMPLEMENTED YET, DISABLED
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">SSG Voting</h3>
@@ -166,6 +198,7 @@
                     </x-nav-link>
                 </div>
             </div>
+            --}}
 
         @endif
             
@@ -522,6 +555,10 @@
                         <i class="fas fa-users-gear mr-3 text-lg"></i>
                         {{ __('Assign Program Heads') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('admin.system-updates') }}" :active="request()->routeIs('admin.system-updates')">
+                        <i class="fas fa-circle-info mr-3 text-lg"></i>
+                        {{ __('Manage System Updates') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-plane-departure mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}
@@ -630,6 +667,7 @@
             </div>
         @endif
 
+            {{-- OUTCOMES-BASED EDUCATION — NOT IMPLEMENTED YET, DISABLED
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">Outcomes-based Education</h3>
@@ -693,6 +731,7 @@
                                     
                 </div>
             </div>
+            --}}
     </nav>
 </aside>
 

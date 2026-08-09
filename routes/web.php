@@ -128,8 +128,8 @@ Route::middleware([
     
     // Primary Dashboard Route
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/portal-updates', \App\Livewire\User\SystemUpdateList::class)->name('portal-updates.list');
     Route::get('/notifications', \App\Livewire\NotificationsPage::class)->name('notifications.index');
+    Route::get('/system-updates', \App\Livewire\SystemUpdatesPage::class)->name('system-updates.index');
     Route::get('/leaveapplicationstatus', [LeaveApplicationStatusController::class, 'index'])->name('leaveapplicationstatus');
     Route::get('/my-leave', [EmployeeLeaveController::class, 'index']);
 
@@ -189,8 +189,6 @@ Route::middleware([
         Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
         Route::delete('/enrollments/{enrollment}', [EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
-
-        Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
 
          Route::get('/assign-course-blocks', AssignStudentCourseBlock::class)
                 ->name('assign.courseblocks');
@@ -274,9 +272,10 @@ Route::middleware([
         Route::delete('/admin/program-heads/{program}', [ProgramHeadAssignmentController::class, 'unassign'])
             ->name('program-heads.unassign');
 
-        // The view to see the list and checkboxes
+        Route::get('/admin/system-updates', \App\Livewire\Admin\SystemUpdatesManager::class)
+            ->name('admin.system-updates');
 
-        Route::get('/system-maintenance/updates', \App\Livewire\Admin\SystemUpdateManager::class)->name('system-updates.manager');
+        // The view to see the list and checkboxes
 
         Route::get('/hr/leave-credits/all', [HrController::class, 'showAllEmployeeLeaveCredits'])->name('hr.leave_credits.all');
         Route::resource('/hr/leave-credits', HrController::class);

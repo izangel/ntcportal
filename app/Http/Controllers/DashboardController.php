@@ -211,8 +211,6 @@ class DashboardController extends Controller
                 'inProgress' => (int) DB::table('course_blocks')->where('finalized', 0)->count(),
             ];
 
-            //$staffData['recentUpdates'] = SystemUpdate::latest()->take(5)->get();
-
             $staffData['myCourses'] = collect();
             if ($user->employee && $activeSemester) {
                 // REVISED: Filter by active Academic Year AND Active Semester name
@@ -248,11 +246,11 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'), 
-       //     'activeAYCount', 'activeSemesterCount', 'currentAYName', 'currentSemName'), 
-        $staffData, 
-        $studentData
-    );
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
+            ['recentUpdates' => SystemUpdate::orderBy('release_date', 'desc')->orderBy('created_at', 'desc')->take(5)->get()],
+            $staffData,
+            $studentData
+        );
 
     return view('dashboard', $viewData);
 }
