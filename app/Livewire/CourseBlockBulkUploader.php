@@ -109,7 +109,11 @@ class CourseBlockBulkUploader extends Component
                 $csvSectionId = $row[$columnIndex['section_id']] ?? null;
 
                 // --- Row-level Validation ---
-                $validator = Validator::make($data, [
+                // `section_id` is the section the block attaches to via the
+                // course_block_section pivot (the legacy course_blocks.section_id
+                // column no longer exists), so it is validated separately from
+                // the block attributes written to the course_blocks table.
+                $validator = Validator::make($data + ['section_id' => $csvSectionId], [
                     // Ensure the IDs exist in their respective tables
                     'course_id' => 'required|exists:courses,id',
                     'faculty_id' => 'required|exists:employees,id',
