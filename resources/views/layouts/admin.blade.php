@@ -667,7 +667,6 @@
             </div>
         @endif
 
-            {{-- OUTCOMES-BASED EDUCATION — NOT IMPLEMENTED YET, DISABLED
             <div class="mt-4 space-y-1" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center justify-between w-full text-xs font-semibold uppercase text-gray-400 px-3 py-2 hover:bg-gray-700/50 rounded-md transition duration-150 ease-in-out focus:outline-none">
                     <h3 class="text-left">Outcomes-based Education</h3>
@@ -731,7 +730,6 @@
                                     
                 </div>
             </div>
-            --}}
     </nav>
 </aside>
 
