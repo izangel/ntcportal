@@ -1,4 +1,6 @@
-<x-app-layout>
+@extends('layouts.admin')
+
+@section('content')
     <div class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
             
@@ -19,7 +21,7 @@
                         <label for="section_ids" class="block text-sm font-medium text-gray-700">Sections</label>
                         <select name="section_ids[]" id="section_ids" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" size="6">
                             @foreach($sections as $section)
-                                <option value="{{ $section->id }}">{{ $section->program->name }}-{{ $section->name }}</option>
+                                <option value="{{ $section->id }}">{{ $section->program?->name ?? 'No Program' }}-{{ $section->name }}</option>
                             @endforeach
                         </select>
                         @error('section_ids') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
@@ -90,4 +92,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+@endsection

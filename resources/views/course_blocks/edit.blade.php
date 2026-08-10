@@ -1,4 +1,6 @@
-<x-app-layout>
+@extends('layouts.admin')
+
+@section('content')
     <div class="max-w-4xl mx-auto py-10 sm:px-6 lg:px-8">
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
             <h2 class="text-2xl font-bold mb-6 text-gray-800">Edit Course Block</h2>
@@ -25,7 +27,7 @@
                         <select name="section_ids[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" size="6">
                             @foreach($sections as $section)
                                 <option value="{{ $section->id }}" {{ $courseBlock->sections->contains('id', $section->id) ? 'selected' : '' }}>
-                                     {{ $section->program->name }}-{{ $section->name }}
+                                     {{ $section->program?->name ?? 'No Program' }}-{{ $section->name }}
                                 </option>
                             @endforeach
                         </select>
@@ -85,4 +87,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+@endsection
