@@ -2,11 +2,9 @@
 
 namespace App\Models;
 
-
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CourseBlock extends Model
 {
@@ -33,11 +31,24 @@ class CourseBlock extends Model
     }
 
     public function sections()
-{
-    // Ensure the table name 'course_block_section' matches your DB exactly
-    return $this->belongsToMany(Section::class, 'course_block_section', 'course_block_id', 'section_id')
-                ->withPivot('academic_year_id', 'semester');
-}
+    {
+        // Ensure the table name 'course_block_section' matches your DB exactly
+        return $this->belongsToMany(Section::class, 'course_block_section', 'course_block_id', 'section_id')
+            ->withPivot('academic_year_id', 'semester');
+    }
+
+    /**
+     * "Program-Section" label, e.g. "BSIT-1A". Used by the course-blocks
+     * overview to group blocks when viewing by Program-Section.
+     */
+    public function getProgSectionLabelAttribute()
+    {
+        return $this->sections
+            ->sortBy('id')
+            ->map(fn ($s) => (($s->program->name ?? 'N/A').'-'.$s->name))
+            ->unique()
+            ->implode(', ') ?: 'N/A';
+    }
 
     public function course()
     {
@@ -57,7 +68,7 @@ class CourseBlock extends Model
     public function batchYear(): ?int
     {
         $startYear = $this->academicYear?->start_year;
-        if (!$startYear) {
+        if (! $startYear) {
             return null;
         }
 
@@ -66,12 +77,13 @@ class CourseBlock extends Model
         $grade = $sections->pluck('name')
             ->map(function ($name) {
                 preg_match('/\d+/', (string) $name, $matches);
+
                 return isset($matches[0]) ? (int) $matches[0] : null;
             })
             ->filter()
             ->min();
 
-        if (!$grade) {
+        if (! $grade) {
             return (int) $startYear;
         }
 
@@ -88,19 +100,19 @@ class CourseBlock extends Model
 
             foreach ($sections as $section) {
                 // 1. Find all students already registered in this section
-                $registrations = \App\Models\SectionStudent::where('section_id', $section->id)
+                $registrations = SectionStudent::where('section_id', $section->id)
                     ->where('academic_year_id', $courseBlock->academic_year_id)
                     ->where('semester', $courseBlock->semester)
                     ->get();
 
                 // 2. Enroll them in this specific newly created course block
                 foreach ($registrations as $reg) {
-                    \App\Models\Enrollment::firstOrCreate([
-                        'student_id'       => $reg->student_id,
-                        'course_id'        => $courseBlock->course_id,
-                        'section_id'       => $section->id,
+                    Enrollment::firstOrCreate([
+                        'student_id' => $reg->student_id,
+                        'course_id' => $courseBlock->course_id,
+                        'section_id' => $section->id,
                         'academic_year_id' => $courseBlock->academic_year_id,
-                        'semester'         => $courseBlock->semester,
+                        'semester' => $courseBlock->semester,
                     ]);
                 }
             }
@@ -122,6 +134,6 @@ class CourseBlock extends Model
     public function students(): BelongsToMany
     {
         return $this->belongsToMany(Student::class, 'student_courseblock', 'course_block_id', 'student_id')
-                    ->withPivot('grade', 'remarks');
+            ->withPivot('grade', 'remarks');
     }
 }
