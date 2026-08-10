@@ -643,5 +643,8 @@ Route::middleware([
     });
 });
 
+Livewire::setUpdateRoute(function ($handle) {
+    return Route::post('/ntcportal/livewire/update', $handle);
+});
 // Standard Jetstream authentication routes
 require __DIR__.'/auth.php';
