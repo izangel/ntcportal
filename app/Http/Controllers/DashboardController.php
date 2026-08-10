@@ -30,6 +30,7 @@ class DashboardController extends Controller
         // 1. Get Active Semester early to use for both Students and Staff
         $activeSemester = Semester::where('is_active', 1)->first();
         $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
+        $activeAYId = $activeSemester ? $activeSemester->academic_year_id : null;
 
         
        
@@ -122,16 +123,24 @@ class DashboardController extends Controller
 
           
             $staffData['enrollmentTotals'] = [
-                'enrollments' => (int) DB::table('student_courseblock')->count(),
-                'students'    => (int) DB::table('student_courseblock')->distinct()->count('student_id'),
-                'classes'     => (int) DB::table('student_courseblock')->distinct()->count('course_block_id'),
-                'programs'    => (int) DB::table('student_courseblock as sc')
-                                    ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
-                                    ->join('course_block_section as cbs', 'cbs.course_block_id', '=', 'cb.id')
-                                    ->join('sections as sec', 'cbs.section_id', '=', 'sec.id')
-                                    ->distinct()->count('sec.program_id'),
+                'students' => (int) DB::table('student_courseblock as sc')
+                                        ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
+                                        ->where('cb.academic_year_id', $activeAYId)
+                                        ->where('cb.semester', $semesterName)
+                                        ->distinct()->count('sc.student_id'),
+                'classes'  => (int) DB::table('course_blocks')
+                                        ->where('academic_year_id', $activeAYId)
+                                        ->where('semester', $semesterName)
+                                        ->count(),
+                'programs' => (int) DB::table('student_courseblock as sc')
+                                        ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
+                                        ->join('course_block_section as cbs', 'cbs.course_block_id', '=', 'cb.id')
+                                        ->join('sections as sec', 'cbs.section_id', '=', 'sec.id')
+                                        ->where('cb.academic_year_id', $activeAYId)
+                                        ->where('cb.semester', $semesterName)
+                                        ->distinct()->count('sec.program_id'),
             ];
-            $enrollmentTotal = $staffData['enrollmentTotals']['enrollments'];
+            $enrollmentTotal = (int) DB::table('student_courseblock')->count();
 
             $enrollmentsByAY = DB::table('student_courseblock as sc')
                 ->join('course_blocks as cb', 'sc.course_block_id', '=', 'cb.id')
@@ -189,6 +198,8 @@ class DashboardController extends Controller
             $facultyLoad = DB::table('course_blocks as cb')
                 ->join('employees as e', 'cb.faculty_id', '=', 'e.id')
                 ->leftJoin('student_courseblock as sc', 'sc.course_block_id', '=', 'cb.id')
+                ->where('cb.academic_year_id', $activeAYId)
+                ->where('cb.semester', $semesterName)
                 ->select('e.id', 'e.first_name', 'e.last_name', 'e.mid_name', DB::raw('count(distinct cb.id) as classes'), DB::raw('count(distinct sc.student_id) as students'))
                 ->groupBy('e.id', 'e.first_name', 'e.last_name', 'e.mid_name')
                 ->orderByDesc('classes')

@@ -331,10 +331,9 @@
                     </h4>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     @php
                         $enrollTiles = [
-                            ['label' => 'Total Enrollments', 'val' => number_format($enrollmentTotals['enrollments']), 'color' => 'bg-indigo-500'],
                             ['label' => 'Enrolled Students', 'val' => number_format($enrollmentTotals['students']), 'color' => 'bg-blue-500'],
                             ['label' => 'Classes', 'val' => number_format($enrollmentTotals['classes']), 'color' => 'bg-purple-500'],
                             ['label' => 'Programs', 'val' => number_format($enrollmentTotals['programs']), 'color' => 'bg-green-500'],
