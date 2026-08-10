@@ -2,15 +2,12 @@
 
 namespace App\Livewire;
 
-use Livewire\Component;
-use Livewire\WithFileUploads;
-use App\Models\CourseBlock;
 use App\Models\AcademicYear;
-use App\Models\Section; // Still needed for validation
-use App\Models\Employee; // Still needed for validation
-use App\Models\Course; // Still needed for validation
+use App\Models\CourseBlock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Component;
+use Livewire\WithFileUploads;
 
 class CourseBlockBulkUploader extends Component
 {
@@ -18,15 +15,19 @@ class CourseBlockBulkUploader extends Component
 
     // --- Context Selection Properties ---
     public $academicYearId;
+
     public $semester;
 
     // --- Data for Dropdowns ---
     public $academicYears = [];
+
     public $semesters = ['1st', '2nd', 'Summer'];
 
     // --- CSV Upload State ---
-    public $csvFile; 
+    public $csvFile;
+
     public $uploading = false;
+
     public $showUploadForm = false; // Controls visibility of upload form
 
     // --- Lifecycle and Initialization ---
@@ -35,7 +36,7 @@ class CourseBlockBulkUploader extends Component
     {
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
     }
-    
+
     // Updates the visibility of the upload form when context changes
     public function updated($propertyName)
     {
@@ -44,7 +45,6 @@ class CourseBlockBulkUploader extends Component
         }
     }
 
-
     // ------------------------------------------
     // --- BULK UPLOAD METHOD (Revised) ---
     // ------------------------------------------
@@ -52,8 +52,9 @@ class CourseBlockBulkUploader extends Component
     public function bulkUploadCourseBlocks()
     {
         // 1. Context Validation
-        if (!$this->academicYearId || !$this->semester) {
+        if (! $this->academicYearId || ! $this->semester) {
             session()->flash('error', 'Please select an **Academic Year** and **Semester** before uploading.');
+
             return;
         }
 
@@ -65,22 +66,23 @@ class CourseBlockBulkUploader extends Component
         $this->uploading = true;
         $path = $this->csvFile->getRealPath();
         $file = fopen($path, 'r');
-        $header = fgetcsv($file); 
+        $header = fgetcsv($file);
 
         // Expected headers
         $expectedHeaders = [
-            'section_id', 'course_id', 'faculty_id', 'room_name', 
+            'section_id', 'course_id', 'faculty_id', 'room_name',
             'schedule_string',
         ];
 
         // Map column names to indexes
         $columnIndex = array_flip($header);
-        
+
         foreach ($expectedHeaders as $expected) {
-            if (!isset($columnIndex[$expected])) {
-                session()->flash('error', "CSV header validation failed. Missing required column: **{$expected}**.");
+            if (! isset($columnIndex[$expected])) {
+                session()->flash('error', "CSV header validation failed. Missing required column: \"{$expected}\".");
                 $this->uploading = false;
                 $this->reset('csvFile');
+
                 return;
             }
         }
@@ -93,9 +95,9 @@ class CourseBlockBulkUploader extends Component
             $skippedCount = 0;
             $line = 1;
 
-            while (($row = fgetcsv($file)) !== FALSE) {
+            while (($row = fgetcsv($file)) !== false) {
                 $line++;
-                
+
                 // Construct the block data
                 $data = [
                     'course_id' => $row[$columnIndex['course_id']] ?? null,
@@ -109,7 +111,12 @@ class CourseBlockBulkUploader extends Component
                 $csvSectionId = $row[$columnIndex['section_id']] ?? null;
 
                 // --- Row-level Validation ---
-                $validator = Validator::make($data, [
+                // `$data` holds only the attributes written to the course_blocks
+                // table. `section_id` is NOT one of them (the legacy
+                // course_blocks.section_id column no longer exists) — it is the
+                // section the block attaches to via the course_block_section
+                // pivot, so it is validated separately here.
+                $validator = Validator::make($data + ['section_id' => $csvSectionId], [
                     // Ensure the IDs exist in their respective tables
                     'course_id' => 'required|exists:courses,id',
                     'faculty_id' => 'required|exists:employees,id',
@@ -117,24 +124,26 @@ class CourseBlockBulkUploader extends Component
                     'semester' => 'required|in:1st,2nd,Summer',
                     'room_name' => 'required|string|max:100',
                     'schedule_string' => 'required|string|max:150',
-                ] + ['section_id' => 'required|exists:sections,id']);
+                    'section_id' => 'required|exists:sections,id',
+                ]);
 
                 if ($validator->fails()) {
-                    $bulkErrors[] = "Line {$line}: Validation Failed. Section ID: {$csvSectionId}. " . json_encode($validator->errors()->all());
+                    $bulkErrors[] = "Line {$line}: Validation Failed. Section ID: {$csvSectionId}. ".json_encode($validator->errors()->all());
                     $skippedCount++;
+
                     continue;
                 }
 
                 // --- Duplicate Check / Update ---
                 $existingBlock = CourseBlock::whereHas('sections', function ($q) use ($csvSectionId, $data) {
-                                            $q->where('sections.id', $csvSectionId)
-                                              ->where('course_block_section.academic_year_id', $data['academic_year_id'])
-                                              ->where('course_block_section.semester', $data['semester']);
-                                        })
-                                            ->where('course_id', $data['course_id'])
-                                            ->where('academic_year_id', $data['academic_year_id'])
-                                            ->where('semester', $data['semester'])
-                                            ->first();
+                    $q->where('sections.id', $csvSectionId)
+                        ->where('course_block_section.academic_year_id', $data['academic_year_id'])
+                        ->where('course_block_section.semester', $data['semester']);
+                })
+                    ->where('course_id', $data['course_id'])
+                    ->where('academic_year_id', $data['academic_year_id'])
+                    ->where('semester', $data['semester'])
+                    ->first();
 
                 if ($existingBlock) {
                     $existingBlock->update([
@@ -160,38 +169,37 @@ class CourseBlockBulkUploader extends Component
                     $createdCount++;
                 }
 
-            } 
+            }
 
             DB::commit();
 
             $total = $createdCount + $updatedCount + $skippedCount;
             $successMessage = "Bulk Upload Complete! Total Rows: **{$total}**. Created: **{$createdCount}**, Updated: **{$updatedCount}**, Skipped (Invalid/Error): **{$skippedCount}**.";
-            
+
             session()->flash('message', $successMessage);
-            if (!empty($bulkErrors)) {
-                 session()->flash('bulk_errors', $bulkErrors);
+            if (! empty($bulkErrors)) {
+                session()->flash('bulk_errors', $bulkErrors);
             }
 
             $this->reset('csvFile');
-            
 
         } catch (\Exception $e) {
             DB::rollBack();
-            session()->flash('error', 'Bulk upload failed: ' . $e->getMessage());
+            session()->flash('error', 'Bulk upload failed: '.$e->getMessage());
         } finally {
             $this->uploading = false;
         }
     }
-    
+
     /**
      * Renders the corresponding Livewire view.
      */
     public function render()
     {
         $ay_name = $this->academicYearId ? (AcademicYear::find($this->academicYearId)->start_year ?? 'N/A') : 'N/A';
-        
+
         return view('livewire.course-block-bulk-uploader', [
-            'ay_name' => $ay_name
+            'ay_name' => $ay_name,
         ])
             ->extends('layouts.admin')
             ->section('content');

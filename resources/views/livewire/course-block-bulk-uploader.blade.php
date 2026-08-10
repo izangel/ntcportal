@@ -60,10 +60,21 @@
         <div class="bg-white shadow-lg rounded-xl p-6 border-t-4 border-teal-500">
             <h3 class="text-xl font-semibold mb-4 text-gray-700">2. Upload CSV File</h3>
             
-            <p class="text-sm text-red-600 mb-4 font-semibold">
-                **Required CSV Columns:** `section_id`, `course_id`, `faculty_id`, `room_name`, `schedule_string`. 
-                (Use database ID's. Context: **AY {{ $ay_name }}** / **{{ $semester }}**)
-            </p>
+            <div class="text-sm bg-teal-50 border border-teal-200 text-teal-800 rounded-lg p-4 mb-4">
+                <p class="font-bold mb-1">CSV Format</p>
+                <p class="mb-2">The first row must be the header row. Use database IDs. Required columns (in any order):</p>
+                <ul class="list-disc list-inside mb-2 space-y-0.5">
+                    <li><code class="text-xs bg-white px-1 rounded">section_id</code> &mdash; ID of the section this block attaches to (from the <em>sections</em> table)</li>
+                    <li><code class="text-xs bg-white px-1 rounded">course_id</code> &mdash; ID of the course (from <em>courses</em>)</li>
+                    <li><code class="text-xs bg-white px-1 rounded">faculty_id</code> &mdash; ID of the faculty member (from <em>employees</em>)</li>
+                    <li><code class="text-xs bg-white px-1 rounded">room_name</code> &mdash; e.g. <em>Room 201</em></li>
+                    <li><code class="text-xs bg-white px-1 rounded">schedule_string</code> &mdash; e.g. <em>MWF 10:00 AM - 11:30 AM</em></li>
+                </ul>
+                <p class="mb-2">The Academic Year and Semester are taken from the context selected above &mdash; do <strong>not</strong> include them in the CSV.</p>
+                <pre class="text-[11px] bg-white border border-teal-200 rounded p-2 overflow-x-auto">section_id,course_id,faculty_id,room_name,schedule_string
+2,4,7,Room 201,MWF 0100-0230A</pre>
+                <p class="mt-2">Target context: <strong>{{ $ay_name }}</strong> / <strong>{{ $semester }}</strong></p>
+            </div>
 
             <form wire:submit.prevent="bulkUploadCourseBlocks">
                 <div class="flex items-center space-x-4">
