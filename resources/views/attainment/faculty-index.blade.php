@@ -122,6 +122,11 @@
                                     </td>
 
                                     <td class="px-4 py-3 text-right whitespace-nowrap">
+                                        <a href="{{ route('faculty.course-attainment.report', $course->id) }}" target="_blank"
+                                           class="inline-flex items-center px-3 py-1.5 bg-indigo-50 border border-indigo-200 rounded-md font-semibold text-[10px] text-indigo-700 uppercase tracking-widest hover:bg-indigo-100 shadow-sm transition">
+                                            <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2-4H3m2 0V5a2 2 0 012-2h10a2 2 0 012 2v2m-2 0h1a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2" /></svg>
+                                            Report
+                                        </a>
                                         <template x-if="!editing && {{ $hasLink ? 'true' : 'false' }}">
                                             <button @click="editing = true" class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md font-semibold text-[10px] text-gray-700 uppercase tracking-widest hover:bg-gray-50 shadow-sm transition">
                                                 Update
