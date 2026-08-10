@@ -6,25 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('system_updates', function (Blueprint $table) {
             $table->id();
-            $table->string('version_number')->nullable();
-            $table->string('category');
+            $table->string('category')->default('New Feature');
             $table->string('title');
-            $table->date('release_date');
             $table->text('description');
+            $table->date('release_date');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('system_updates');

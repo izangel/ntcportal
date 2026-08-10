@@ -492,6 +492,39 @@
             </div>
         @endif
 
+        {{-- 7. Recent System Updates --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h4 class="text-lg font-bold text-gray-800 flex items-center">
+                    <span class="p-2 bg-sky-100 rounded-lg mr-3">
+                        <i class="fas fa-circle-info text-sky-600"></i>
+                    </span>
+                    Recent System Updates
+                </h4>
+                <a href="{{ route('system-updates.index') }}" class="inline-flex items-center text-xs font-bold text-sky-600 hover:text-sky-700 transition">
+                    View All Updates <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+
+            <div class="space-y-3">
+                @forelse($recentUpdates as $update)
+                    <a href="{{ route('system-updates.index') }}" class="block rounded-lg border border-gray-100 bg-gray-50/50 p-4 hover:border-sky-200 hover:bg-sky-50/50 transition">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold {{ $update->category === 'Bug Fix' ? 'bg-rose-50 text-rose-700' : ($update->category === 'Improvement' ? 'bg-sky-50 text-sky-700' : 'bg-emerald-50 text-emerald-700') }}">
+                                <i class="fas {{ $update->category === 'Bug Fix' ? 'fa-bug' : ($update->category === 'Improvement' ? 'fa-arrows-rotate' : 'fa-star') }}"></i>
+                                {{ $update->category }}
+                            </span>
+                            <span class="text-[10px] font-medium text-gray-400">{{ $update->release_date?->format('M d, Y') }}</span>
+                        </div>
+                        <p class="text-sm font-bold text-gray-900">{{ $update->title }}</p>
+                        <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ $update->description }}</p>
+                    </a>
+                @empty
+                    <p class="text-sm text-gray-400 italic py-4 text-center">No system updates yet.</p>
+                @endforelse
+            </div>
+        </div>
+
     </div>
 </div>
 @endsection
