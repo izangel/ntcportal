@@ -71,6 +71,7 @@ use App\Http\Controllers\CourseAttainmentController;
 use App\Http\Controllers\CourseSyllabusPrintController;
 use App\Livewire\Faculty\CourseSyllabusEditor;
 use App\Livewire\Faculty\FacultySyllabus;
+use App\Livewire\Faculty\CourseAttainmentReport;
 
 use App\Http\Controllers\AttendanceReportController;
 
@@ -594,6 +595,8 @@ Route::middleware([
         Route::get('/faculty/syllabus', FacultySyllabus::class)->name('faculty.syllabus.index');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}/print', [CourseSyllabusPrintController::class, 'show'])->name('faculty.syllabus.print');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}', CourseSyllabusEditor::class)->name('faculty.syllabus.edit');
+
+        Route::get('/faculty/course-attainment/{courseBlock}', CourseAttainmentReport::class)->name('faculty.course-attainment.report');
     });
 
     //Attendance

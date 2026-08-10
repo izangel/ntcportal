@@ -673,59 +673,91 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
+                    @php
+                        $isHead = Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs');
+                        $isPh   = Auth::user()->hasRole('program_head') || Auth::user()->hasRole('program_head_college') || Auth::user()->hasRole('program_head_shs');
+                    @endphp
                     @if(!Auth::user()->student)
-                    @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs'))
-                    <x-nav-link href="{{ route('admin.obe.setup') }}" :active="request()->routeIs('admin.obe.setup')">
-                        <i class="fas fa-sliders mr-3 text-lg"></i>
-                        {{ __('1-OBE Configuration') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('admin.obe.program-courses') }}" :active="request()->routeIs('admin.obe.program-courses')">
-                        <i class="fas fa-book-open mr-3 text-lg"></i>
-                        {{ __('2-Program Course Manager') }}
-                    </x-nav-link>
-                    @endif
-                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.program-report') : route('faculty.obe.program-report') }}" :active="request()->routeIs('admin.obe.program-report') || request()->routeIs('faculty.obe.program-report')">
-                        <i class="fas fa-file-lines mr-3 text-lg"></i>
-                        {{ __('3-OBE Program Report') }}
-                    </x-nav-link>
-                     <x-nav-link href="{{ route('faculty.assessment-tasks') }}" :active="request()->routeIs('faculty.assessment-tasks')">
-                        <i class="fas fa-list-check mr-3 text-lg"></i>
-                        {{ __('4-Assessment Setup') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit')">
-                        <i class="fas fa-file-lines mr-3 text-lg"></i>
-                        {{ __('Course Syllabus') }}
-                    </x-nav-link>
-                    @if(Auth::user()->hasRole('program_head') || Auth::user()->hasRole('program_head_college') || Auth::user()->hasRole('program_head_shs'))
-                    <x-nav-link href="{{ route('faculty.syllabus.reviews') }}" :active="request()->routeIs('faculty.syllabus.reviews')">
-                        <i class="fas fa-clipboard-check mr-3 text-lg"></i>
-                        {{ __('Syllabus Reviews (PH)') }}
-                    </x-nav-link>
-                    @endif
-                    @if(Auth::user()->hasRole('academic_head'))
-                    <x-nav-link href="{{ route('faculty.syllabus.approvals') }}" :active="request()->routeIs('faculty.syllabus.approvals')">
-                        <i class="fas fa-stamp mr-3 text-lg"></i>
-                        {{ __('Syllabus Approvals (AH)') }}
-                    </x-nav-link>
-                    @endif
-                    <x-nav-link href="{{ route('faculty.assessment-scores') }}" :active="request()->routeIs('faculty.assessment-scores')">
-                        <i class="fas fa-pen-to-square mr-3 text-lg"></i>
-                        {{ __('5-Assessment Scores') }}
-                    </x-nav-link>
-                    @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs'))
-                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.course-dashboard') : route('faculty.obe.course-dashboard') }}" :active="request()->routeIs('admin.obe.course-dashboard') || request()->routeIs('faculty.obe.course-dashboard')">
-                        <i class="fas fa-gauge-high mr-3 text-lg"></i>
-                        {{ __('6-OBE Course Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.reminders') : route('faculty.obe.reminders') }}" :active="request()->routeIs('admin.obe.reminders') || request()->routeIs('faculty.obe.reminders')">
-                        <i class="fas fa-bell mr-3 text-lg"></i>
-                        {{ __('7-OBE Data Reminders') }}
-                    </x-nav-link>
-                    @endif
-                    <x-nav-link href="{{ Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs') ? route('admin.obe.submissions') : route('faculty.obe.submissions') }}" :active="request()->routeIs('admin.obe.submissions') || request()->routeIs('faculty.obe.submissions')">
-                        <i class="fas fa-clipboard-list mr-3 text-lg"></i>
-                        {{ __('8-OBE Submission Overview') }}
-                    </x-nav-link>
+
+                        {{-- ============ PROGRAM HEADS & ADMIN ============ --}}
+                        @if($isHead)
+                            <p class="mt-3 px-3 text-[10px] font-bold text-indigo-300/80 uppercase tracking-wider border-b border-gray-700/60 pb-1">Program Heads &amp; Admin</p>
+                            <x-nav-link href="{{ route('admin.obe.setup') }}" :active="request()->routeIs('admin.obe.setup')">
+                                <i class="fas fa-sliders mr-3 text-lg"></i>
+                                {{ __('1-OBE Configuration') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.program-courses') }}" :active="request()->routeIs('admin.obe.program-courses')">
+                                <i class="fas fa-book-open mr-3 text-lg"></i>
+                                {{ __('2-Program Course Manager') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.program-report') }}" :active="request()->routeIs('admin.obe.program-report')">
+                                <i class="fas fa-file-lines mr-3 text-lg"></i>
+                                {{ __('3-OBE Program Report') }}
+                            </x-nav-link>
+                            @if($isPh)
+                            <x-nav-link href="{{ route('faculty.syllabus.reviews') }}" :active="request()->routeIs('faculty.syllabus.reviews')">
+                                <i class="fas fa-clipboard-check mr-3 text-lg"></i>
+                                {{ __('Syllabus Reviews (PH)') }}
+                            </x-nav-link>
+                            @endif
+                            @if(Auth::user()->hasRole('academic_head'))
+                            <x-nav-link href="{{ route('faculty.syllabus.approvals') }}" :active="request()->routeIs('faculty.syllabus.approvals')">
+                                <i class="fas fa-stamp mr-3 text-lg"></i>
+                                {{ __('Syllabus Approvals (AH)') }}
+                            </x-nav-link>
+                            @endif
+                            <x-nav-link href="{{ route('admin.obe.course-dashboard') }}" :active="request()->routeIs('admin.obe.course-dashboard')">
+                                <i class="fas fa-gauge-high mr-3 text-lg"></i>
+                                {{ __('6-OBE Course Dashboard') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.reminders') }}" :active="request()->routeIs('admin.obe.reminders')">
+                                <i class="fas fa-bell mr-3 text-lg"></i>
+                                {{ __('7-OBE Data Reminders') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.submissions') }}" :active="request()->routeIs('admin.obe.submissions')">
+                                <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                                {{ __('8-OBE Submission Overview') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('attainment.admin') }}" :active="request()->routeIs('attainment.admin')">
+                                <i class="fas fa-bullseye mr-3 text-lg"></i>
+                                {{ __('9-Course Attainment') }}
+                            </x-nav-link>
+                        @endif
+
+                        {{-- ============ FACULTY ============ --}}
+                        <p class="mt-3 px-3 text-[10px] font-bold text-indigo-300/80 uppercase tracking-wider border-b border-gray-700/60 pb-1">Faculty</p>
+                        <x-nav-link href="{{ route('faculty.obe.program-report') }}" :active="request()->routeIs('faculty.obe.program-report')">
+                            <i class="fas fa-file-lines mr-3 text-lg"></i>
+                            {{ __('3-OBE Program Report') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.assessment-tasks') }}" :active="request()->routeIs('faculty.assessment-tasks')">
+                            <i class="fas fa-list-check mr-3 text-lg"></i>
+                            {{ __('4-Assessment Setup') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit')">
+                            <i class="fas fa-file-lines mr-3 text-lg"></i>
+                            {{ __('Course Syllabus') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.assessment-scores') }}" :active="request()->routeIs('faculty.assessment-scores')">
+                            <i class="fas fa-pen-to-square mr-3 text-lg"></i>
+                            {{ __('5-Assessment Scores') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.obe.course-dashboard') }}" :active="request()->routeIs('faculty.obe.course-dashboard')">
+                            <i class="fas fa-gauge-high mr-3 text-lg"></i>
+                            {{ __('6-OBE Course Dashboard') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.obe.reminders') }}" :active="request()->routeIs('faculty.obe.reminders')">
+                            <i class="fas fa-bell mr-3 text-lg"></i>
+                            {{ __('7-OBE Data Reminders') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('faculty.obe.submissions') }}" :active="request()->routeIs('faculty.obe.submissions')">
+                            <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                            {{ __('8-OBE Submission Overview') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('attainment.index') }}" :active="request()->routeIs('attainment.index') || request()->routeIs('faculty.course-attainment.report')">
+                            <i class="fas fa-bullseye mr-3 text-lg"></i>
+                            {{ __('9-Course Attainment') }}
+                        </x-nav-link>
                     @endif
                                     
                 </div>
