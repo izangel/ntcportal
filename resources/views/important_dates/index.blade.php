@@ -59,7 +59,19 @@
                 {{-- Header Actions --}}
                 <div class="flex justify-between items-center mb-6 web-only-title">
                     <h3 class="text-lg font-medium text-gray-900">Academic & Administrative Calendar</h3>
-                    <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 flex-wrap gap-2">
+                        {{-- VIEW TOGGLE: Calendar (default) / List --}}
+                        <div class="inline-flex rounded-md border border-gray-300 overflow-hidden">
+                            <a href="{{ route('important_dates.index', ['view' => 'calendar', 'category_id' => request('category_id'), 'month' => $month, 'year' => $year]) }}"
+                                class="inline-flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-widest transition ease-in-out duration-150 {{ $view === 'list' ? 'bg-white text-gray-600 hover:bg-gray-50' : 'bg-indigo-600 text-white' }}">
+                                <i class="fas fa-calendar-days mr-2 text-sm"></i> Calendar
+                            </a>
+                            <a href="{{ route('important_dates.index', ['view' => 'list', 'category_id' => request('category_id')]) }}"
+                                class="inline-flex items-center px-3 py-2 text-xs font-semibold uppercase tracking-widest transition ease-in-out duration-150 {{ $view === 'list' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">
+                                <i class="fas fa-list-ul mr-2 text-sm"></i> List
+                            </a>
+                        </div>
+
                         {{-- PRINTABLE CALENDAR BUTTON: Admin, Teacher, HR, Academic Head, at Staff --}}
                         @if (in_array(auth()->user()->role, ['admin', 'teacher', 'hr', 'academic_head', 'staff']))
                             <button onclick="window.print()"
@@ -89,6 +101,11 @@
                 {{-- Filter Form --}}
                 <form action="{{ route('important_dates.index') }}" method="GET"
                     class="mb-4 bg-gray-50 p-4 rounded-md shadow-sm border border-gray-100 web-only-title">
+                    <input type="hidden" name="view" value="{{ $view }}">
+                    @if ($view !== 'list')
+                        <input type="hidden" name="month" value="{{ $month }}">
+                        <input type="hidden" name="year" value="{{ $year }}">
+                    @endif
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label for="category_id" class="block font-medium text-sm text-gray-700">Filter by
@@ -117,6 +134,84 @@
                     </div>
                 </form>
 
+                {{-- CALENDAR VIEW (default) --}}
+                @if ($view !== 'list')
+                    <div class="print:hidden">
+                        {{-- Month Navigation --}}
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4 web-only-title">
+                            <div class="flex items-center space-x-2">
+                                <a href="{{ route('important_dates.index', ['view' => 'calendar', 'category_id' => request('category_id'), 'month' => $prevMonth->month, 'year' => $prevMonth->year]) }}"
+                                    class="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                                    title="Previous month">
+                                    <i class="fas fa-chevron-left text-xs"></i>
+                                </a>
+                                <a href="{{ route('important_dates.index', ['view' => 'calendar', 'category_id' => request('category_id'), 'month' => now()->month, 'year' => now()->year]) }}"
+                                    class="inline-flex items-center h-9 px-3 rounded-md border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50">
+                                    Today
+                                </a>
+                                <a href="{{ route('important_dates.index', ['view' => 'calendar', 'category_id' => request('category_id'), 'month' => $nextMonth->month, 'year' => $nextMonth->year]) }}"
+                                    class="inline-flex items-center justify-center w-9 h-9 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-50"
+                                    title="Next month">
+                                    <i class="fas fa-chevron-right text-xs"></i>
+                                </a>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900">{{ $calendarTitle }}</h3>
+                        </div>
+
+                        {{-- Calendar Grid (Mon–Sun, rows of weeks) --}}
+                        <div class="border border-gray-200 rounded-lg overflow-hidden">
+                            <div class="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+                                @foreach (['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as $weekday)
+                                    <div
+                                        class="px-2 py-2 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                        {{ $weekday }}
+                                    </div>
+                                @endforeach
+                            </div>
+                            @foreach ($calendarGrid as $week)
+                                <div class="grid grid-cols-7">
+                                    @foreach ($week as $cell)
+                                        @php
+                                            $isWeekend = in_array($cell['date']->dayOfWeek, [6, 0]);
+                                        @endphp
+                                        <div
+                                            class="min-h-28 border-l first:border-l-0 border-t p-1.5 {{ $cell['in_month'] ? ($isWeekend ? 'bg-gray-50/60' : 'bg-white') : 'bg-gray-100/70' }}">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span
+                                                    class="inline-flex items-center justify-center w-6 h-6 text-xs font-semibold rounded-full {{ $cell['is_today'] ? 'bg-indigo-600 text-white' : ($cell['in_month'] ? 'text-gray-700' : 'text-gray-400') }}">{{ $cell['date']->day }}</span>
+                                                @if ($cell['in_month'] && count($cell['events']) > 0)
+                                                    <span
+                                                        class="text-[10px] font-medium text-gray-400">{{ count($cell['events']) }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="space-y-1">
+                                                @foreach (array_slice($cell['events'], 0, 3) as $ev)
+                                                    @php
+                                                        $evStart = $ev->start_date->copy()->startOfDay();
+                                                        $evEnd = ($ev->end_date ?? $ev->start_date)->copy()->startOfDay();
+                                                        $chipClass = now()->startOfDay()->between($evStart, $evEnd)
+                                                            ? 'bg-green-100 text-green-800 border-green-200'
+                                                            : (now()->startOfDay()->lt($evStart)
+                                                                ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                                                : 'bg-gray-100 text-gray-500 border-gray-200');
+                                                    @endphp
+                                                    <div class="px-1.5 py-0.5 rounded text-[11px] font-medium border truncate {{ $chipClass }}"
+                                                        title="{{ $ev->title }}">{{ $ev->title }}</div>
+                                                @endforeach
+                                                @if (count($cell['events']) > 3)
+                                                    <div class="px-1.5 py-0.5 text-[11px] font-semibold text-indigo-600">
+                                                        +{{ count($cell['events']) - 3 }} more
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 {{-- 🖨️ (Perfectly Centered with Logo) --}}
                 <div class="print-only-header" style="width: 100%; text-align: center; margin-bottom: 20px;">
                     <h1 class="font-serif text-2xl font-black text-black text-center uppercase m-0 p-0">
@@ -128,8 +223,8 @@
                     </h2>
                     <div style="border-bottom: 2px solid black; width: 100%; margin-bottom: 15px;"></div>
                 </div>
-                {{-- Data Table --}}
-                <div class="overflow-x-auto">
+                {{-- Data Table (list view on screen; always printable) --}}
+                <div class="overflow-x-auto {{ $view === 'list' ? '' : 'hidden print:block' }}">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
