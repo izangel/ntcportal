@@ -83,7 +83,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Pre-requisite</p>
-                            <p class="mt-1 text-sm font-bold text-gray-900">{{ $course->prerequisite ?: '—' }}</p>
+                            <p class="mt-1 text-sm font-bold text-gray-900">{{ $course->prerequisite_label ?: '—' }}</p>
                         </div>
                         <div>
                             <p class="text-xs font-semibold text-gray-500 uppercase">Program</p>

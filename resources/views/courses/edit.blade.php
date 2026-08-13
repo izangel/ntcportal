@@ -35,6 +35,22 @@
                             <x-input-error for="description" class="mt-2" />
                         </div>
 
+                        <div class="mb-4">
+                            <x-input-label for="prerequisites" :value="__('Prerequisites (Optional)')" />
+                            <select id="prerequisites" name="prerequisites[]" multiple size="8"
+                                class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                @foreach ($courses as $courseOption)
+                                    <option value="{{ $courseOption->id }}" {{ in_array($courseOption->id, old('prerequisites', $selectedPrerequisites)) ? 'selected' : '' }}>
+                                        {{ $courseOption->code }} — {{ $courseOption->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Hold Ctrl (Windows) or Cmd (Mac) to select multiple prerequisite courses.</p>
+                            @error('prerequisites.*')
+                                <span class="mt-2 text-sm text-red-600">{{ $message }}</span>
+                            @enderror
+                        </div>
+
                         <div class="flex items-center justify-end mt-4">
                             <x-primary-button>
                                 {{ __('Update Course') }}

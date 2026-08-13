@@ -25,8 +25,8 @@ class Course extends Model
     public function students()
     {
         return $this->belongsToMany(Student::class, 'enrollments')
-                    ->withPivot('grade', 'created_at')
-                    ->withTimestamps();
+            ->withPivot('grade', 'created_at')
+            ->withTimestamps();
     }
 
     // Define hasMany relationship with Enrollment model
@@ -67,12 +67,42 @@ class Course extends Model
         return $this->hasMany(AssessmentTask::class);
     }
 
-   
-
-
     public function programs(): BelongsToMany
     {
         return $this->belongsToMany(Program::class);
+    }
+
+    /**
+     * Courses that must be completed before this course (many-to-many via
+     * the course_prerequisite pivot).
+     */
+    public function prerequisites(): BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'course_prerequisite', 'course_id', 'prerequisite_course_id');
+    }
+
+    /**
+     * Courses that require this course as a prerequisite (inverse of
+     * prerequisites()).
+     */
+    public function dependentCourses(): BelongsToMany
+    {
+        return $this->belongsToMany(Course::class, 'course_prerequisite', 'prerequisite_course_id', 'course_id');
+    }
+
+    /**
+     * Comma-separated codes of this course's prerequisites, falling back to
+     * the legacy free-text column.
+     */
+    public function getPrerequisiteLabelAttribute(): string
+    {
+        $codes = $this->prerequisites->pluck('code')->filter();
+
+        if ($codes->isNotEmpty()) {
+            return $codes->implode(', ');
+        }
+
+        return $this->prerequisite ?: '';
     }
 
     public function program(): BelongsTo
@@ -89,7 +119,7 @@ class Course extends Model
 
     /**
      * Get overall completion/success rate across all CLOs for this course.
-     */ 
+     */
     public function getCompletionRateAttribute()
     {
         $clos = $this->learningOutcomes;
@@ -97,7 +127,7 @@ class Course extends Model
             return 0;
         }
 
-        $scores = $clos->map(fn($clo) => $clo->attainment)->filter();
+        $scores = $clos->map(fn ($clo) => $clo->attainment)->filter();
 
         return $scores->count() > 0 ? round($scores->avg(), 1) : 0;
     }
@@ -109,5 +139,4 @@ class Course extends Model
     {
         return $this->completion_rate;
     }
-
 }
