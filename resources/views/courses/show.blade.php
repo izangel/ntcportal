@@ -18,6 +18,7 @@
                         <p><strong>Course Name:</strong> {{ $course->name }}</p>
                         <p><strong>Course Code:</strong> {{ $course->code }}</p>
                         <p><strong>Description:</strong> {{ $course->description ?? 'N/A' }}</p>
+                        <p><strong>Prerequisites:</strong> {{ $course->prerequisite_label ?: 'None' }}</p>
                     </div>
 
                     <h3 class="text-lg font-medium text-gray-900 mb-2">Enrolled Students:</h3>

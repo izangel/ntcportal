@@ -117,7 +117,7 @@
             </tr>
             <tr>
                 <td class="label">Course Title</td><td>{{ $course->name }}</td>
-                <td class="label">Pre-requisite</td><td>{{ $course->prerequisite ?: '—' }}</td>
+                <td class="label">Pre-requisite</td><td>{{ $course->prerequisite_label ?: '—' }}</td>
             </tr>
             <tr>
                 <td class="label">Class Schedule</td><td>{{ $block->schedule_string ?: '—' }}</td>
