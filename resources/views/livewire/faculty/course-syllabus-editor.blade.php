@@ -235,6 +235,7 @@
                         </table>
                     </div>
                 </div>
+            </form>
 
                 {{-- Teacher-entered fields --}}
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -256,6 +257,7 @@
                     </div>
                 </div>
 
+                <form wire:submit.prevent="save">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                         <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between gap-2 flex-wrap">
