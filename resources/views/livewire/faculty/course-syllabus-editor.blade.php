@@ -447,12 +447,7 @@
                         <i class="fas fa-triangle-exclamation mr-2"></i>{{ $message }}
                     </div>
                 @enderror
-                @if(session()->has('success'))
-                    <div class="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                        <i class="fas fa-circle-check mr-2"></i>{{ session('success') }}
-                    </div>
-                @endif
-            </div>
+                </div>
         </form>
 
         @if($confirmSubmit)

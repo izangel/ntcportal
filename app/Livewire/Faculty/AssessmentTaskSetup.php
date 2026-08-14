@@ -178,14 +178,19 @@ class AssessmentTaskSetup extends Component
                 ->firstOrFail()
                 ->update($data);
             $this->resetTaskForm();
-            session()->flash('success', 'Assessment task updated.');
+            $this->toast('success', 'Assessment task updated.');
         } else {
             AssessmentTask::create($data);
             $this->reset(['taskTitle']);
-            session()->flash('success', 'Assessment task created for the selected course and batch.');
+            $this->toast('success', 'Assessment task created for the selected course and batch.');
         }
 
         $this->dispatch('assessment-tasks-updated');
+    }
+
+    private function toast(string $type, string $message): void
+    {
+        $this->dispatch('toast', type: $type, message: $message);
     }
 
     public function editTask(int $taskId): void
@@ -263,7 +268,7 @@ class AssessmentTaskSetup extends Component
         ]);
 
         $this->reset(['itemName', 'itemCloId', 'itemMarks']);
-        session()->flash('success', 'Assessment item mapped to the selected CLO.');
+        $this->toast('success', 'Assessment item mapped to the selected CLO.');
         $this->dispatch('assessment-tasks-updated');
     }
 
@@ -292,7 +297,7 @@ class AssessmentTaskSetup extends Component
             $this->selectedTaskId = null;
         }
 
-        session()->flash('success', 'Assessment task and its mapped items were deleted.');
+        $this->toast('success', 'Assessment task and its mapped items were deleted.');
         $this->dispatch('assessment-tasks-updated');
     }
 

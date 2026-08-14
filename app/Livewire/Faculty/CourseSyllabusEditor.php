@@ -330,7 +330,12 @@ $this->submittedAt = $syllabus->submitted_at;
 
         $this->persist();
 
-        session()->flash('success', 'Syllabus draft saved successfully.');
+        $this->toast('success', 'Syllabus draft saved successfully.');
+    }
+
+    private function toast(string $type, string $message): void
+    {
+        $this->dispatch('toast', type: $type, message: $message);
     }
 
     /**
@@ -346,6 +351,8 @@ $this->submittedAt = $syllabus->submitted_at;
         }
 
         if ($this->addCompletenessErrors()) {
+            $this->toast('error', 'Syllabus is incomplete and cannot be submitted. Fix the missing items above, save as a draft, and try again when everything is complete.');
+
             return;
         }
 
@@ -462,6 +469,7 @@ $this->submittedAt = $syllabus->submitted_at;
         if ($this->addCompletenessErrors()) {
             $this->confirmSubmit = false;
             $this->confirmFinal = false;
+            $this->toast('error', 'Syllabus is incomplete and cannot be submitted. Fix the missing items above, save as a draft, and try again when everything is complete.');
 
             return;
         }
@@ -476,7 +484,7 @@ $this->submittedAt = $syllabus->submitted_at;
         $this->confirmSubmit = false;
         $this->confirmFinal = false;
 
-        session()->flash('success', 'Syllabus submitted and locked. It can no longer be edited.');
+        $this->toast('success', 'Syllabus submitted and locked. It can no longer be edited.');
     }
 
     private function persist(bool $submitted = false): void

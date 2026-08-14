@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class FlashToast extends Component
@@ -11,6 +12,7 @@ class FlashToast extends Component
 
     // This listener is triggered by the parent component (FacultyCourseBlockView)
     // after it processes the message and sets the session flash data.
+    #[On('show')]
     public function show($type, $message)
     {
         $this->type = $type;

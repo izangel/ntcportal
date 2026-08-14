@@ -4,10 +4,6 @@
         <p class="mt-1 text-sm text-gray-500">Create assessment tasks and map each item to a course learning outcome.</p>
     </div>
 
-    @if(session()->has('success'))
-        <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">{{ session('success') }}</div>
-    @endif
-
     @if($locked)
         <div class="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
             <i class="fas fa-lock mr-2"></i><strong>Assessment tasks are locked.</strong> They are final and can no longer be changed after syllabus submission.

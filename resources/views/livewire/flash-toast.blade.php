@@ -1,10 +1,10 @@
 <div x-data="{ show: false, message: '', type: 'success', timeout: null }"
-     x-init="
-        @this.on('show-toast', () => {
-            show = true;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => show = false, 5000); // Hide after 5 seconds
-        });
+     x-on:toast.window="
+        message = $event.detail.message;
+        type = $event.detail.type;
+        show = true;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => show = false, 5000); // Hide after 5 seconds
      "
      x-show="show"
      x-transition:enter="transition ease-out duration-300"
@@ -17,22 +17,20 @@
      style="display: none;">
 
     <div :class="{
-        'bg-green-600': @js($type) === 'success',
-        'bg-red-600': @js($type) === 'error'
+        'bg-green-600': type === 'success',
+        'bg-red-600': type === 'error'
     }" class="p-4 text-white">
         <div class="flex items-start">
             <div class="flex-shrink-0 pt-0.5">
-                <svg x-show="@js($type) === 'success'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg x-show="type === 'success'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <svg x-show="@js($type) === 'error'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg x-show="type === 'error'" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.332 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             </div>
             <div class="ml-3 flex-1 pt-0.5">
-                <p class="text-sm font-medium leading-5">
-                    {{ $message }}
-                </p>
+                <p class="text-sm font-medium leading-5" x-text="message"></p>
             </div>
             <div class="ml-4 flex flex-shrink-0">
                 <button @click="show = false" class="inline-flex text-white transition ease-in-out duration-150 hover:text-gray-200 focus:outline-none focus:text-gray-200">

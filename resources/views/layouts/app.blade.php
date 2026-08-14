@@ -40,6 +40,8 @@
 
         @stack('modals')
 
+        @livewire('flash-toast')
+
         @livewireScripts
     </body>
 </html>

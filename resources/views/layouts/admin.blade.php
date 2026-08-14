@@ -796,6 +796,7 @@
         </div>
 
         @stack('modals')
+        @livewire('flash-toast')
         @livewireScripts
         @stack('scripts')
     </body>
