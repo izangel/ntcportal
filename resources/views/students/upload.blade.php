@@ -14,6 +14,18 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-xl font-semibold text-gray-800 mb-6">Upload Student CSV File</h3>
 
+                <div class="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                    <p class="font-semibold mb-1">CSV Requirements</p>
+                    <p class="mb-1">The CSV must include a header row with these columns:</p>
+                    <ul class="ml-4 list-disc list-inside space-y-0.5">
+                        <li><code class="bg-blue-100 px-1 rounded">first_name</code> (required)</li>
+                        <li><code class="bg-blue-100 px-1 rounded">last_name</code> (required)</li>
+                        <li><code class="bg-blue-100 px-1 rounded">email</code> (required)</li>
+                        <li><code class="bg-blue-100 px-1 rounded">password</code> (optional — defaults to <code class="bg-blue-100 px-1 rounded">northlink</code>)</li>
+                    </ul>
+                    <p class="mt-1">A student user account is created automatically for each row and linked to the student record. Students already registered are skipped.</p>
+                </div>
+
                 {{-- Success message with icon --}}
                 @if (session('success'))
                     <div class="flex items-center p-4 mb-4 text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400" role="alert">
