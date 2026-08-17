@@ -169,7 +169,10 @@ Route::middleware([
         Route::resource('courses', CourseController::class);
         Route::resource('coursetosections', CourseToSectionController::class);
         Route::resource('programs', ProgramController::class);
+        Route::get('/sections/copy', [SectionController::class, 'copyForm'])->name('sections.copy.form');
+        Route::post('/sections/copy', [SectionController::class, 'copyStore'])->name('sections.copy.store');
         Route::resource('sections', SectionController::class);
+        Route::get('/academic-years/setup', [AcademicYearController::class, 'setup'])->name('academic_years.setup');
         Route::resource('academic_years', AcademicYearController::class);
         Route::resource('semesters', SemesterController::class);
         Route::get('/students/promote', [StudentController::class, 'showPromoteForm'])->name('students.promote.view');

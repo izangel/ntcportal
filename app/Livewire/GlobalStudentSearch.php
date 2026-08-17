@@ -85,8 +85,13 @@ class GlobalStudentSearch extends Component
 
     public function render()
     {
+        $activeAY = AcademicYear::where('is_active', true)->first();
+
         return view('livewire.global-student-search', [
-            'sections' => Section::with('program')->get()->sortBy('name')
+            'sections' => Section::with('program')
+                ->when($activeAY, fn ($q) => $q->where('academic_year_id', $activeAY->id))
+                ->get()
+                ->sortBy('name')
         ]);
     }
 }

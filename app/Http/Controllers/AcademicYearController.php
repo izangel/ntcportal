@@ -8,6 +8,17 @@ use Illuminate\Http\Request;
 class AcademicYearController extends Controller
 {
     /**
+     * Show the year-start setup checklist for the active academic year.
+     */
+    public function setup()
+    {
+        $activeAy = \App\Services\AcademicYearSetup::activeYear();
+        $checklist = \App\Services\AcademicYearSetup::checklist($activeAy);
+
+        return view('academic_years.setup', compact('activeAy', 'checklist'));
+    }
+
+    /**
      * Display a listing of the academic years.
      */
     public function index()

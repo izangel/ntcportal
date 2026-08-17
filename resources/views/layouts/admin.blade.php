@@ -513,9 +513,13 @@
                         <i class="fas fa-table-columns mr-3 text-lg"></i>
                         {{ __('Manage Sections') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('academic_years.index') }}" :active="request()->routeIs('academic_years.*')">
+                    <x-nav-link href="{{ route('academic_years.index') }}" :active="request()->routeIs('academic_years.index')">
                         <i class="fas fa-calendar-check mr-3 text-lg"></i>
                         {{ __('Manage Academic Years') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('academic_years.setup') }}" :active="request()->routeIs('academic_years.setup')">
+                        <i class="fas fa-list-check mr-3 text-lg"></i>
+                        {{ __('Academic Year Setup') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('semesters.index') }}" :active="request()->routeIs('semesters.*')">
                         <i class="fas fa-timeline mr-3 text-lg"></i>
@@ -790,9 +794,10 @@
 {{-- Main Content Area --}}
 <main class="flex-1 p-6 sm:p-8">
 
-   
-    
-                    @yield('content')
+    @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs'))
+        @include('partials.year-setup-banner')
+    @endif
+                            @yield('content')
 
                     
                 </main>

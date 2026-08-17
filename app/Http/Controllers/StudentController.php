@@ -47,6 +47,7 @@ class StudentController extends Controller
             ->where('programs.name', 'NOT LIKE', '%SHS%')
             ->select('sections.*')
             ->with('program')
+            ->when($activeAYId, fn ($q) => $q->where('sections.academic_year_id', $activeAYId))
             ->get();
 
         // 2. MAIN STUDENT QUERY
@@ -227,6 +228,7 @@ public function bulkPromote(Request $request)
             ->orderBy('programs.name')
             ->orderBy('sections.name')
             ->select('sections.*')
+            ->when($context['ay']?->id, fn ($q) => $q->where('sections.academic_year_id', $context['ay']->id))
             ->get();
 
         return view('students.create', compact('context', 'sections'));
@@ -326,8 +328,15 @@ public function bulkPromote(Request $request)
             ->where('semester', $sem)
             ->value('section_id');
 
-        $sections = Section::with('program')->get();
-        
+        $sections = Section::with('program')
+            ->where(function ($q) use ($ayId, $currentSectionId) {
+                $q->where('academic_year_id', $ayId);
+                if ($currentSectionId) {
+                    $q->orWhere('id', $currentSectionId);
+                }
+            })
+            ->get();
+
         return view('students.edit', compact('student', 'sections', 'currentSectionId', 'context'));
     }
 
@@ -520,7 +529,9 @@ public function bulkPromote(Request $request)
     public function showPromoteForm(Request $request)
 {
     $context = $this->getCurrentContext();
-    $sections = Section::with('program')->get();
+    $sections = Section::with('program')
+        ->when($context['ay']?->id, fn ($q) => $q->where('academic_year_id', $context['ay']->id))
+        ->get();
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
     // 1. Capture filter inputs

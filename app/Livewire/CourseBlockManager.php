@@ -53,17 +53,8 @@ class CourseBlockManager extends Component
     public function mount()
     {
         $this->academicYears = AcademicYear::orderBy('start_year', 'desc')->get(); 
-        $this->sections = Section::with('program')
-            ->get()
-            // Map the collection to an array of just the ID, Name, and Program Name
-            ->map(function ($section) {
-                return [
-                    'id' => $section->id,
-                    'name' => $section->name,
-                    'program_name' => $section->program ? $section->program->name : 'N/A', // Assuming 'name' is the column for the program name
-                ];
-            })
-            ->toArray();
+        $this->academicYearId = AcademicYear::getActiveAcademicYear()?->id;
+        $this->loadSections();
         $this->allCourses = Course::orderBy('code')->get();
         $this->allFaculty = Employee::orderBy('last_name')->get();
         
@@ -82,7 +73,28 @@ class CourseBlockManager extends Component
 
     public function updatedAcademicYearId($value)
     {
+        $this->loadSections();
         $this->handleDropdownChange();
+    }
+
+    /**
+     * Loads the section dropdown, filtered to the selected academic year.
+     * Falls back to showing all sections when no academic year is selected.
+     */
+    protected function loadSections()
+    {
+        $this->sections = Section::with('program')
+            ->when($this->academicYearId, fn ($query) => $query->where('academic_year_id', $this->academicYearId))
+            ->get()
+            // Map the collection to an array of just the ID, Name, and Program Name
+            ->map(function ($section) {
+                return [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'program_name' => $section->program ? $section->program->name : 'N/A', // Assuming 'name' is the column for the program name
+                ];
+            })
+            ->toArray();
     }
 
     public function updatedSemester($value)

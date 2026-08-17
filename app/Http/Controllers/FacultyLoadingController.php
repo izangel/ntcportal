@@ -30,9 +30,10 @@ class FacultyLoadingController extends Controller
         $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
         $courses = Course::orderBy('code')->get();
         $facultyMembers = Employee::orderBy('last_name')->get();
+        $activeAyId = AcademicYear::where('is_active', true)->value('id');
         $sections = Section::with('program')->orderBy('name')->get();
 
-        return view('faculty_loadings.create', compact('academicYears', 'courses', 'facultyMembers', 'sections'));
+        return view('faculty_loadings.create', compact('academicYears', 'courses', 'facultyMembers', 'sections', 'activeAyId'));
     }
 
     /**
@@ -65,7 +66,7 @@ class FacultyLoadingController extends Controller
         $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
         $courses = Course::orderBy('code')->get();
         $facultyMembers = Employee::orderBy('last_name')->get();
-        $sections = Section::with('program')->orderBy('name')->get(); 
+        $sections = Section::with('program')->orderBy('name')->get();
 
         return view('faculty_loadings.edit', compact('loading', 'academicYears', 'courses', 'facultyMembers', 'sections'));
     }

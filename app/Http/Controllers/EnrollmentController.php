@@ -28,6 +28,7 @@ class EnrollmentController extends Controller
             'students'      => Student::orderBy('last_name')->get(),
             'courses'       => Course::orderBy('name')->get(),
             'sections'      => Section::with('program')->get(),
+            'activeAyId'    => AcademicYear::where('is_active', true)->value('id'),
             'academicYears' => AcademicYear::orderBy('start_year', 'desc')->get(),
         ]);
     }

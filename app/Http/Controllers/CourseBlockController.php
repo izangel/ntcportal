@@ -18,15 +18,16 @@ class CourseBlockController extends Controller
     public function create()
     {
         // Fetch data for dropdowns
-        $sections = Section::all();
+        $sections = Section::with('program')->get();
         // Sort courses by 'code' in ascending order
         $courses = Course::orderBy('code', 'asc')->get();
 
         // Sort employees (faculties) by 'last_name' in ascending order
         $faculties = Employee::orderBy('last_name', 'asc')->get();
         $academicYears = AcademicYear::all();
+        $activeAyId = AcademicYear::where('is_active', true)->value('id');
 
-        return view('course_blocks.create', compact('sections', 'courses', 'faculties', 'academicYears'));
+        return view('course_blocks.create', compact('sections', 'courses', 'faculties', 'academicYears', 'activeAyId'));
     }
 
     public function store(Request $request)
@@ -173,7 +174,7 @@ class CourseBlockController extends Controller
     public function edit(CourseBlock $courseBlock)
     {
         // Fetch dropdown data
-        $sections = Section::all();
+        $sections = Section::with('program')->get();
         $courses = Course::all();
         $employees = Employee::all();
         $academicYears = AcademicYear::all();

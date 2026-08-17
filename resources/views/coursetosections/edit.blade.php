@@ -65,9 +65,9 @@
                 {{-- Section --}}
                 <div class="mb-4">
                     <x-input-label value="Section" />
-                    <select name="section_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                    <select name="section_id" data-section-filter class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
                         @foreach($sections as $section)
-                            <option value="{{ $section->id }}" {{ $coursetosection->section_id == $section->id ? 'selected' : '' }}>
+                            <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}" {{ $coursetosection->section_id == $section->id ? 'selected' : '' }}>
                                 {{ $section->program->code ?? '' }} - {{ $section->name }}
                             </option>
                         @endforeach
@@ -80,6 +80,7 @@
                 </div>
             </form>
 
+            @include('partials.section-filter')
         </div>
     </div>
 </div>

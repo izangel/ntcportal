@@ -24,9 +24,9 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700">Sections</label>
-                        <select name="section_ids[]" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" size="6">
+                        <select name="section_ids[]" data-section-filter multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" size="6">
                             @foreach($sections as $section)
-                                <option value="{{ $section->id }}" {{ $courseBlock->sections->contains('id', $section->id) ? 'selected' : '' }}>
+                                <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}" {{ $courseBlock->sections->contains('id', $section->id) ? 'selected' : '' }}>
                                      {{ $section->program?->name ?? 'No Program' }}-{{ $section->name }}
                                 </option>
                             @endforeach
@@ -85,6 +85,8 @@
                     </button>
                 </div>
             </form>
+
+            @include('partials.section-filter')
         </div>
     </div>
 @endsection

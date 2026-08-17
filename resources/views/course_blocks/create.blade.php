@@ -19,9 +19,9 @@
                     
                     <div>
                         <label for="section_ids" class="block text-sm font-medium text-gray-700">Sections</label>
-                        <select name="section_ids[]" id="section_ids" multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" size="6">
+                        <select name="section_ids[]" id="section_ids" data-section-filter multiple class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" size="6">
                             @foreach($sections as $section)
-                                <option value="{{ $section->id }}">{{ $section->program?->name ?? 'No Program' }}-{{ $section->name }}</option>
+                                <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}">{{ $section->program?->name ?? 'No Program' }}-{{ $section->name }}</option>
                             @endforeach
                         </select>
                         @error('section_ids') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
@@ -54,7 +54,7 @@
                         <select name="academic_year_id" id="academic_year_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
                             <option value="">Select A.Y.</option>
                             @foreach($academicYears as $ay)
-                                <option value="{{ $ay->id }}">{{ $ay->start_year }}-{{ $ay->end_year }}</option>
+                                <option value="{{ $ay->id }}" {{ (old('academic_year_id') ?: $activeAyId) == $ay->id ? 'selected' : '' }}>{{ $ay->start_year }}-{{ $ay->end_year }}</option>
                             @endforeach
                         </select>
                         @error('academic_year_id') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
@@ -90,6 +90,8 @@
                     </button>
                 </div>
             </form>
+
+            @include('partials.section-filter')
         </div>
     </div>
 @endsection
