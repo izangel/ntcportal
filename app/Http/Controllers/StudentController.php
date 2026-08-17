@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use League\Csv\Reader; 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -382,18 +383,46 @@ public function bulkPromote(Request $request)
             $csv = Reader::createFromPath($file->getRealPath(), 'r');
             $csv->setHeaderOffset(0);
             $records = $csv->getRecords();
-            $studentsToInsert = [];
 
-            foreach ($records as $record) {
-                $studentsToInsert[] = [
-                    'first_name' => $record['first_name'],
-                    'last_name' => $record['last_name'],
-                    'email' => $record['email'],
-                    'created_at' => now(), 'updated_at' => now(),
-                ];
-            }
-            DB::table('students')->insert($studentsToInsert);
-            return redirect()->back()->with('success', 'Imported successfully!');
+            $processed = 0;
+
+            DB::transaction(function () use ($records, &$processed) {
+                foreach ($records as $record) {
+                    $firstName = trim((string) ($record['first_name'] ?? ''));
+                    $lastName = trim((string) ($record['last_name'] ?? ''));
+                    $email = strtolower(trim((string) ($record['email'] ?? '')));
+
+                    if ($firstName === '' || $lastName === '' || $email === '') {
+                        continue;
+                    }
+
+                    // Create the student's user account (skips if the email already exists).
+                    $user = User::firstOrCreate(
+                        ['email' => $email],
+                        [
+                            'name' => trim($firstName.' '.$lastName),
+                            'email' => $email,
+                            'password' => Hash::make($record['password'] ?? 'northlink'),
+                            'role' => 'student',
+                        ]
+                    );
+
+                    // Create (or update) the student and link it to the user account.
+                    Student::updateOrCreate(
+                        ['email' => $email],
+                        [
+                            'user_id' => $user->id,
+                            'first_name' => $firstName,
+                            'last_name' => $lastName,
+                            'email' => $email,
+                        ]
+                    );
+
+                    $processed++;
+                }
+            });
+
+            return redirect()->back()->with('success', "Imported {$processed} student(s). A user account was created for each student.");
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['csv_error' => $e->getMessage()]);
         }

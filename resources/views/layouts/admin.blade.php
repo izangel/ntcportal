@@ -489,6 +489,10 @@
                         <i class="fas fa-users-gear mr-3 text-lg"></i>
                         {{ __('Manage Students') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('students.upload.form') }}" :active="request()->routeIs('students.upload.form')">
+                        <i class="fas fa-file-csv mr-3 text-lg"></i>
+                        {{ __('Upload Students (CSV)') }}
+                    </x-nav-link>
                      <x-nav-link href="{{ route('students.studentportal') }}" :active="request()->routeIs('students.studentportal')">
                         <i class="fas fa-people-group mr-3 text-lg"></i>
                         {{ __('Manage Student Sections') }}
