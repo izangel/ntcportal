@@ -407,6 +407,7 @@ public function bulkPromote(Request $request)
                     $contactNumber = trim((string) ($record['contact_number'] ?? ''));
                     $studentIdName = trim((string) ($record['student_id_name'] ?? ''));
                     $birthday = trim((string) ($record['birthday'] ?? ''));
+                    $gender = trim((string) ($record['gender'] ?? ''));
 
                     // Create the student's user account (skips if the email already exists).
                     $user = User::firstOrCreate(
@@ -431,6 +432,7 @@ public function bulkPromote(Request $request)
                             'contact_number' => $contactNumber !== '' ? $contactNumber : null,
                             'student_id_name' => $studentIdName !== '' ? $studentIdName : null,
                             'birthday' => $birthday !== '' ? $birthday : null,
+                            'gender' => $gender !== '' ? $gender : null,
                         ]
                     );
 

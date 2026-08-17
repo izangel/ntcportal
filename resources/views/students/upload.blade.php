@@ -22,6 +22,7 @@
                         <li><code class="bg-blue-100 px-1 rounded">last_name</code> (required)</li>
                         <li><code class="bg-blue-100 px-1 rounded">email</code> (optional — if blank, a login account is generated as <code class="bg-blue-100 px-1 rounded">lastnamefirstname@northlink.edu.ph</code>)</li>
                         <li><code class="bg-blue-100 px-1 rounded">middle_name</code> (optional)</li>
+                        <li><code class="bg-blue-100 px-1 rounded">gender</code> (optional)</li>
                         <li><code class="bg-blue-100 px-1 rounded">contact_number</code> (optional)</li>
                         <li><code class="bg-blue-100 px-1 rounded">student_id_name</code> (optional — display label for the student's ID, separate from the system's <code class="bg-blue-100 px-1 rounded">student_id</code>)</li>
                         <li><code class="bg-blue-100 px-1 rounded">birthday</code> (optional — <code class="bg-blue-100 px-1 rounded">YYYY-MM-DD</code>)</li>
