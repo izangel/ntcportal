@@ -379,6 +379,9 @@ public function bulkPromote(Request $request)
         $request->validate(['csv_file' => 'required|mimes:csv,txt|max:2048']);
         
         try {
+            // Large imports need more time than the default 30s.
+            set_time_limit(0);
+
             $file = $request->file('csv_file');
             $csv = Reader::createFromPath($file->getRealPath(), 'r');
             $csv->setHeaderOffset(0);
@@ -386,7 +389,11 @@ public function bulkPromote(Request $request)
 
             $processed = 0;
 
-            DB::transaction(function () use ($records, &$processed) {
+            // Hash the default password once and reuse it for every row; bcrypt
+            // is intentionally slow, so hashing per row is what hits the 30s limit.
+            $defaultPasswordHash = Hash::make('northlink');
+
+            DB::transaction(function () use ($records, &$processed, $defaultPasswordHash) {
                 foreach ($records as $record) {
                     $firstName = trim((string) ($record['first_name'] ?? ''));
                     $lastName = trim((string) ($record['last_name'] ?? ''));
@@ -410,12 +417,13 @@ public function bulkPromote(Request $request)
                     $gender = trim((string) ($record['gender'] ?? ''));
 
                     // Create the student's user account (skips if the email already exists).
+                    $password = trim((string) ($record['password'] ?? ''));
                     $user = User::firstOrCreate(
                         ['email' => $email],
                         [
                             'name' => trim($firstName.' '.$lastName),
                             'email' => $email,
-                            'password' => Hash::make($record['password'] ?? 'northlink'),
+                            'password' => $password !== '' ? Hash::make($password) : $defaultPasswordHash,
                             'role' => 'student',
                         ]
                     );
