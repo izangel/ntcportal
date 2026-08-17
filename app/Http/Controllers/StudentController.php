@@ -392,9 +392,21 @@ public function bulkPromote(Request $request)
                     $lastName = trim((string) ($record['last_name'] ?? ''));
                     $email = strtolower(trim((string) ($record['email'] ?? '')));
 
-                    if ($firstName === '' || $lastName === '' || $email === '') {
+                    if ($firstName === '' || $lastName === '') {
                         continue;
                     }
+
+                    // Generate a placeholder email for students uploaded without
+                    // one so they still get a login account.
+                    if ($email === '') {
+                        $slug = strtolower(preg_replace('/[^a-z0-9]/', '', $lastName.$firstName));
+                        $email = ($slug !== '' ? $slug : 'student').'@northlink.edu.ph';
+                    }
+
+                    $middleName = trim((string) ($record['middle_name'] ?? ''));
+                    $contactNumber = trim((string) ($record['contact_number'] ?? ''));
+                    $studentIdName = trim((string) ($record['student_id_name'] ?? ''));
+                    $birthday = trim((string) ($record['birthday'] ?? ''));
 
                     // Create the student's user account (skips if the email already exists).
                     $user = User::firstOrCreate(
@@ -413,8 +425,12 @@ public function bulkPromote(Request $request)
                         [
                             'user_id' => $user->id,
                             'first_name' => $firstName,
+                            'middle_name' => $middleName !== '' ? $middleName : null,
                             'last_name' => $lastName,
                             'email' => $email,
+                            'contact_number' => $contactNumber !== '' ? $contactNumber : null,
+                            'student_id_name' => $studentIdName !== '' ? $studentIdName : null,
+                            'birthday' => $birthday !== '' ? $birthday : null,
                         ]
                     );
 
