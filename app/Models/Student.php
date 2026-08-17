@@ -19,6 +19,8 @@ class Student extends Model
         'email',
         'date_of_birth',
         'section_id',
+        'contact_number',
+        'student_id_name',
 
         'gender',           // Added
         'birthday',         // Added
