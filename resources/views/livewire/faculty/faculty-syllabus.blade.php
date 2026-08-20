@@ -4,6 +4,10 @@
             <h1 class="text-2xl font-bold text-gray-900">Course Syllabus</h1>
             <p class="text-sm text-gray-600">Select one of your assigned course blocks to prepare or update its syllabus.</p>
         </div>
+        <a href="{{ route('faculty.syllabus.help') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50">
+            <i class="fas fa-circle-question text-indigo-600"></i> User Manual
+        </a>
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">

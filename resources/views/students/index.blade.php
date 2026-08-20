@@ -19,15 +19,15 @@
                 {{-- Note: Use $students->sum(...) or pass specific gender counts from Controller for accuracy with pagination --}}
                 <div class="bg-white p-3 rounded shadow-sm border-l-4 border-blue-500">
                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Male</p>
-                    <p class="text-xl font-black text-blue-700 leading-none">{{ $students->where('gender', 'Male')->count() }}</p>
+                    <p class="text-xl font-black text-blue-700 leading-none">{{ $stats['male'] }}</p>
                 </div>
                 <div class="bg-white p-3 rounded shadow-sm border-l-4 border-pink-500">
                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Female</p>
-                    <p class="text-xl font-black text-pink-600 leading-none">{{ $students->where('gender', 'Female')->count() }}</p>
+                    <p class="text-xl font-black text-pink-600 leading-none">{{ $stats['female'] }}</p>
                 </div>
                 <div class="bg-blue-900 p-3 rounded shadow-sm text-white">
-                    <p class="text-[8px] font-black text-blue-300 uppercase italic">College Context</p>
-                    <p class="text-[10px] font-bold">{{ $context['ay']->start_year }}-{{ $context['ay']->end_year }} | {{ $context['semester'] }}</p>
+                    <p class="text-[8px] font-black text-blue-300 uppercase italic">Viewing</p>
+                    <p class="text-[10px] font-bold">{{ $selectedAy ? $selectedAy->start_year . '-' . $selectedAy->end_year : 'All Years' }} | {{ $selectedSem }}</p>
                 </div>
             </div>
 
@@ -70,6 +70,8 @@
                 </div>
                 
                 <form method="GET" action="{{ route('students.index') }}" class="flex gap-1">
+                    <input type="hidden" name="academic_year_id" value="{{ $selectedAYId }}">
+                    <input type="hidden" name="semester" value="{{ $selectedSem }}">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Search ID/Name..." class="px-2 py-1 border-gray-300 rounded text-xs w-48">
                     <button type="submit" class="bg-blue-900 text-white px-3 py-1 rounded text-[10px] font-black uppercase">Search</button>
                 </form>
@@ -77,9 +79,35 @@
 
             <div class="bg-white rounded shadow-sm border border-gray-200 overflow-hidden">
                 {{-- SECTION FILTER (Already filtered to College in Controller) --}}
-                <div class="p-1.5 bg-gray-50 border-b">
+                <div class="p-1.5 bg-gray-50 border-b flex flex-wrap gap-2 items-center">
+                    <div class="flex items-center gap-1">
+                        <span class="text-[9px] font-black text-gray-400 uppercase">A.Y.</span>
+                        <select onchange="location = this.value;" class="text-[11px] border-gray-300 rounded py-0.5 font-bold text-blue-900">
+                            @foreach($academicYears as $ay)
+                                <option value="{{ request()->fullUrlWithQuery(['academic_year_id' => $ay->id, 'section_id' => null]) }}" {{ $selectedAYId == $ay->id ? 'selected' : '' }}>
+                                    {{ $ay->start_year }}-{{ $ay->end_year }}
+                                    @if($activeAYId == $ay->id)
+                                        (ACTIVE)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-[9px] font-black text-gray-400 uppercase">Sem</span>
+                        <select onchange="location = this.value;" class="text-[11px] border-gray-300 rounded py-0.5 font-bold text-blue-900">
+                            @foreach($semesters as $sem)
+                                <option value="{{ request()->fullUrlWithQuery(['semester' => $sem]) }}" {{ $selectedSem == $sem ? 'selected' : '' }}>
+                                    {{ $sem }}
+                                    @if($activeSem == $sem)
+                                        (ACTIVE)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <select onchange="location = this.value;" class="text-[11px] border-gray-300 rounded py-0.5 w-full max-w-sm font-bold text-blue-900">
-                        <option value="{{ route('students.index') }}">-- ALL COLLEGE SECTIONS --</option>
+                        <option value="{{ request()->fullUrlWithQuery(['section_id' => null]) }}">-- ALL COLLEGE SECTIONS --</option>
                         @foreach($sections as $s)
                             <option value="{{ request()->fullUrlWithQuery(['section_id' => $s->id]) }}" {{ request('section_id') == $s->id ? 'selected' : '' }}>
                                 {{ $s->program->name }} » {{ $s->name }}
@@ -158,11 +186,10 @@
                                 {{-- Filter summary to College only --}}
                                 @foreach($sections->sortBy('program.name') as $statSection)
                                     @php
-                                        $nSem = ($context['semester'] == 'Second Semester') ? '2nd Semester' : '1st Semester';
                                         $secCount = DB::table('section_student')
                                             ->where('section_id', $statSection->id)
-                                            ->where('academic_year_id', $context['ay']->id)
-                                            ->where('semester', $nSem)
+                                            ->where('academic_year_id', $selectedAYId)
+                                            ->where('semester', $selectedSem)
                                             ->count();
                                     @endphp
                                     @if($secCount > 0)

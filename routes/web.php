@@ -41,6 +41,7 @@ use App\Http\Controllers\SupervisorAssignmentController;
 use App\Http\Controllers\StudentEvaluationController;
 use App\Http\Controllers\Admin\BulkUserController;
 use App\Http\Controllers\Admin\StudentAccountController;
+use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Teacher\MyEvaluationController;
 use App\Http\Controllers\Admin\EvaluationMonitoringController;
 use App\Http\Controllers\SubstituteAcknowledgementController;
@@ -69,6 +70,9 @@ use App\Livewire\CourseAssignment;
 use App\Livewire\ViewCourseBlockStudents;
 use App\Http\Controllers\CourseAttainmentController;
 use App\Http\Controllers\CourseSyllabusPrintController;
+use App\Http\Controllers\SyllabusManualController;
+use App\Http\Controllers\SyllabusSubmissionStatusController;
+use App\Http\Controllers\TeacherGuideController;
 use App\Livewire\Faculty\CourseSyllabusEditor;
 use App\Livewire\Faculty\FacultySyllabus;
 use App\Livewire\Faculty\CourseAttainmentReport;
@@ -324,6 +328,11 @@ Route::middleware([
         // Manage student accounts
         Route::get('/admin/student-accounts', [StudentAccountController::class, 'index'])->name('admin.student-accounts.index');
         Route::patch('/admin/student-accounts/{user}/reset', [StudentAccountController::class, 'resetPassword'])->name('admin.student-accounts.reset');
+
+        // Manage user accounts (all / unlinked / students without accounts)
+        Route::get('/admin/user-accounts', [UserAccountController::class, 'index'])->name('admin.user-accounts.index');
+        Route::delete('/admin/user-accounts/{user}', [UserAccountController::class, 'destroy'])->name('admin.user-accounts.destroy');
+        Route::post('/admin/user-accounts/students/{student}/create-account', [UserAccountController::class, 'createStudentAccount'])->name('admin.user-accounts.create-student');
 
         // View student evaluation status
         Route::get('/admin/monitoring/evaluations', [EvaluationMonitoringController::class, 'index'])->name('admin.monitoring.evaluations');
@@ -587,6 +596,11 @@ Route::middleware([
             ->name('faculty.syllabus.approvals');
     });
 
+    // Syllabus submission status overview (registered BEFORE the parameterized syllabus routes)
+    Route::middleware('role:academic_head|program_head|program_head_college|program_head_shs')
+        ->get('/syllabus/submission-status', [SyllabusSubmissionStatusController::class, 'show'])
+        ->name('syllabus.submission-status');
+
     //OBE
     Route::middleware('role:teacher|faculty|staff')->group(function () {
         Route::get('/faculty/assessment-tasks', AssessmentTaskSetup::class)->name('faculty.assessment-tasks');
@@ -595,6 +609,9 @@ Route::middleware([
         Route::get('/faculty/obe/program-report', ProgramBatchReport::class)->name('faculty.obe.program-report');
         Route::get('/faculty/obe/reminders', ObeDataReminderManager::class)->name('faculty.obe.reminders');
         Route::get('/faculty/obe/submissions', ObeSubmissionOverview::class)->name('faculty.obe.submissions');
+        Route::get('/faculty/syllabus/help', [SyllabusManualController::class, 'show'])->name('faculty.syllabus.help');
+        Route::get('/guides/teachers', [TeacherGuideController::class, 'show'])->name('guides.teacher');
+        Route::get('/guides/teachers/manual', [TeacherGuideController::class, 'manual'])->name('guides.teacher.manual');
         Route::get('/faculty/syllabus', FacultySyllabus::class)->name('faculty.syllabus.index');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}/print', [CourseSyllabusPrintController::class, 'show'])->name('faculty.syllabus.print');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}', CourseSyllabusEditor::class)->name('faculty.syllabus.edit');

@@ -567,6 +567,10 @@
                         <i class="fas fa-circle-info mr-3 text-lg"></i>
                         {{ __('Manage System Updates') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('admin.user-accounts.index') }}" :active="request()->routeIs('admin.user-accounts.*')">
+                        <i class="fas fa-user-lock mr-3 text-lg"></i>
+                        {{ __('Manage User Accounts') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-plane-departure mr-3 text-lg"></i>
                         {{ __('My Leave Applications') }}
@@ -714,6 +718,12 @@
                                 {{ __('Syllabus Approvals (AH)') }}
                             </x-nav-link>
                             @endif
+                            @if($isPh || Auth::user()->hasRole('academic_head'))
+                            <x-nav-link href="{{ route('syllabus.submission-status') }}" :active="request()->routeIs('syllabus.submission-status')">
+                                <i class="fas fa-list-check mr-3 text-lg"></i>
+                                {{ __('Syllabus Status Overview') }}
+                            </x-nav-link>
+                            @endif
                             <x-nav-link href="{{ route('admin.obe.course-dashboard') }}" :active="request()->routeIs('admin.obe.course-dashboard')">
                                 <i class="fas fa-gauge-high mr-3 text-lg"></i>
                                 {{ __('6-OBE Course Dashboard') }}
@@ -734,6 +744,10 @@
 
                         {{-- ============ FACULTY ============ --}}
                         <p class="mt-3 px-3 text-[10px] font-bold text-indigo-300/80 uppercase tracking-wider border-b border-gray-700/60 pb-1">Faculty</p>
+                        <x-nav-link href="{{ route('guides.teacher') }}" :active="request()->routeIs('guides.teacher')">
+                            <i class="fas fa-circle-question mr-3 text-lg"></i>
+                            {{ __('Teacher Guides') }}
+                        </x-nav-link>
                         <x-nav-link href="{{ route('faculty.obe.program-report') }}" :active="request()->routeIs('faculty.obe.program-report')">
                             <i class="fas fa-file-lines mr-3 text-lg"></i>
                             {{ __('3-OBE Program Report') }}
@@ -742,7 +756,7 @@
                             <i class="fas fa-list-check mr-3 text-lg"></i>
                             {{ __('4-Assessment Setup') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit')">
+                        <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit') || request()->routeIs('faculty.syllabus.help')">
                             <i class="fas fa-file-lines mr-3 text-lg"></i>
                             {{ __('Course Syllabus') }}
                         </x-nav-link>

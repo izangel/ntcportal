@@ -253,6 +253,31 @@
                                                 <button type="button" wire:click="assignClo({{ $course->id }})" class="mt-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800">
                                                     + Assign CLO
                                                 </button>
+
+                                                @php
+                                                    $sourceBatches = $copySourceBatches->get($course->id) ?? collect();
+                                                @endphp
+                                                @if($sourceBatches->isNotEmpty())
+                                                    <div class="mt-3 rounded border border-indigo-100 bg-indigo-50/40 p-2">
+                                                        <div class="text-[10px] font-semibold uppercase tracking-wider text-indigo-700">Copy CLOs &amp; Mapping From Batch</div>
+                                                        <div class="mt-1.5 flex items-center gap-2">
+                                                            <select wire:model="copySourceBatch.{{ $course->id }}" class="w-full rounded-md border-gray-300 text-[10px] shadow-sm">
+                                                                <option value="">-- Batch --</option>
+                                                                @foreach($sourceBatches as $sourceBatch)
+                                                                    <option value="{{ $sourceBatch }}">Batch {{ $sourceBatch }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                            <button
+                                                                type="button"
+                                                                wire:click="copyClosFromBatch({{ $course->id }})"
+                                                                class="shrink-0 rounded-md bg-indigo-600 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-indigo-700"
+                                                            >
+                                                                Copy
+                                                            </button>
+                                                        </div>
+                                                        @error('copySourceBatch.'.$course->id) <div class="mt-1 text-[10px] text-rose-600">{{ $message }}</div> @enderror
+                                                    </div>
+                                                @endif
                                             </td>
                                             <td class="px-3 py-2 align-top">
                                                 @php

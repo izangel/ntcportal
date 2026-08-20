@@ -24,6 +24,7 @@ class ProgramCourseManager extends Component
     public $cloCode = '';
     public $cloDescription = '';
     public $cloTaxonomyId = null;
+    public $copySourceBatch = [];
 
     public function updatedSelectedProgramId($programId)
     {
@@ -154,6 +155,132 @@ class ProgramCourseManager extends Component
                 $po->id => ['level' => $level],
             ]);
         }
+    }
+
+    /**
+     * Copy the CLOs (and their CO-PO mapping) of the given course from another
+     * batch into the currently selected batch. CO-PO links are only re-attached
+     * to Program Outcomes of the target batch whose code matches an outcome the
+     * source CLO was mapped to — i.e. only when the POs are the same.
+     */
+    public function copyClosFromBatch($courseId): void
+    {
+        $this->validate([
+            'selectedProgramId' => 'required|exists:programs,id',
+            'selectedBatchYear' => 'required',
+        ]);
+
+        $courseId = (int) $courseId;
+
+        if (! Course::whereKey($courseId)->exists()) {
+            return;
+        }
+        $targetBatch = (string) $this->selectedBatchYear;
+        $sourceBatch = (string) ($this->copySourceBatch[$courseId] ?? '');
+
+        if ($sourceBatch === '' || $sourceBatch === $targetBatch) {
+            $this->addError('copySourceBatch.'.$courseId, 'Pick a different batch to copy CLOs from.');
+            return;
+        }
+
+        $course = Course::findOrFail($courseId);
+
+        $isAssigned = Program::findOrFail($this->selectedProgramId)
+            ->courses()
+            ->where('courses.id', $courseId)
+            ->where('course_program.effective_batch_year', $targetBatch)
+            ->exists();
+
+        if (! $isAssigned) {
+            $this->addError('copySourceBatch.'.$courseId, 'This course is not assigned to the selected batch yet.');
+            return;
+        }
+
+        $sourceClos = CourseLearningOutcome::with('programOutcomes')
+            ->where('course_id', $courseId)
+            ->where('effective_batch_year', $sourceBatch)
+            ->orderBy('code')
+            ->get();
+
+        if ($sourceClos->isEmpty()) {
+            session()->flash('error', "No CLOs found for {$course->code} in Batch {$sourceBatch}.");
+            return;
+        }
+
+        // Map the target batch's POs by code, so we only relink when the POs are the same.
+        $targetPosByCode = ProgramOutcome::query()
+            ->where('program_id', $this->selectedProgramId)
+            ->where('effective_batch_year', $targetBatch)
+            ->get()
+            ->keyBy('code');
+
+        $created = 0;
+        $updated = 0;
+        $mapped = 0;
+        $skippedMapping = 0;
+
+        DB::transaction(function () use (
+            $courseId,
+            $targetBatch,
+            $sourceClos,
+            $targetPosByCode,
+            &$created,
+            &$updated,
+            &$mapped,
+            &$skippedMapping
+        ) {
+            foreach ($sourceClos as $sourceClo) {
+                $targetClo = CourseLearningOutcome::query()
+                    ->where('course_id', $courseId)
+                    ->where('effective_batch_year', $targetBatch)
+                    ->where('code', $sourceClo->code)
+                    ->first();
+
+                if ($targetClo) {
+                    $targetClo->update([
+                        'description' => $sourceClo->description,
+                        'blooms_taxonomy_id' => $sourceClo->blooms_taxonomy_id,
+                    ]);
+                    $updated++;
+                } else {
+                    $targetClo = CourseLearningOutcome::create([
+                        'course_id' => $courseId,
+                        'code' => $sourceClo->code,
+                        'description' => $sourceClo->description,
+                        'blooms_taxonomy_id' => $sourceClo->blooms_taxonomy_id,
+                        'effective_batch_year' => $targetBatch,
+                    ]);
+                    $created++;
+                }
+
+                foreach ($sourceClo->programOutcomes as $sourcePo) {
+                    $targetPo = $targetPosByCode->get($sourcePo->code);
+
+                    // Only relink when a PO with the same code exists in this batch.
+                    if (! $targetPo) {
+                        $skippedMapping++;
+                        continue;
+                    }
+
+                    $targetClo->programOutcomes()->syncWithoutDetaching([
+                        $targetPo->id => ['level' => $sourcePo->pivot->level],
+                    ]);
+                    $mapped++;
+                }
+            }
+        });
+
+        $message = "Copied {$created} CLO(s), updated {$updated} existing CLO(s) from Batch {$sourceBatch} to Batch {$targetBatch} for {$course->code}.";
+
+        if ($mapped > 0) {
+            $message .= " Re-mapped {$mapped} CO-PO link(s) to the matching POs of Batch {$targetBatch}.";
+        } elseif ($skippedMapping > 0) {
+            $message .= " CO-PO mappings were NOT copied because no POs with matching codes exist for Batch {$targetBatch} yet. Add the POs for this batch first.";
+        } elseif ($sourceClos->sum(fn ($clo) => $clo->programOutcomes->count()) > 0) {
+            $message .= " No CO-PO links in the source batch were matched for this batch.";
+        }
+
+        session()->flash('success', $message);
     }
 
     private function refreshSelectedCourses(): void
@@ -492,6 +619,21 @@ class ProgramCourseManager extends Component
 
         $previousBatchWithCourses = $this->previousBatchWithCourses();
 
+        $copySourceBatches = collect();
+        if ($this->selectedProgramId && $this->selectedBatchYear) {
+            $assignedCourseIds = $currentBatchCourses->pluck('id')->toArray();
+
+            if ($assignedCourseIds) {
+                $copySourceBatches = CourseLearningOutcome::query()
+                    ->whereIn('course_id', $assignedCourseIds)
+                    ->where('effective_batch_year', '!=', (string) $this->selectedBatchYear)
+                    ->whereNotNull('effective_batch_year')
+                    ->get(['course_id', 'effective_batch_year'])
+                    ->groupBy('course_id')
+                    ->map(fn ($rows) => $rows->pluck('effective_batch_year')->unique()->sortDesc()->values());
+            }
+        }
+
         return view('livewire.admin.program-course-manager', [
             'programs' => $programs,
             'courses' => $courses,
@@ -500,6 +642,7 @@ class ProgramCourseManager extends Component
             'peos' => $peos,
             'programOutcomes' => $programOutcomes,
             'previousBatchWithCourses' => $previousBatchWithCourses,
+            'copySourceBatches' => $copySourceBatches,
             'taxonomies' => BloomsTaxonomy::orderBy('domain')->orderBy('code')->get(),
         ])->extends('layouts.admin')
             ->section('content');
