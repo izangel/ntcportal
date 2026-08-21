@@ -15,4 +15,9 @@ class TeacherGuideController extends Controller
     {
         return view('guides.teacher-manual');
     }
+
+    public function assessmentTasks(Request $request)
+    {
+        return view('guides.assessment-tasks');
+    }
 }

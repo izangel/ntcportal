@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -306,10 +306,6 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
-                        <i class="fas fa-file-import mr-3 text-lg"></i>
-                        {{ __('Grade Submission') }}
-                    </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-comment-dots mr-3 text-lg"></i>
                         {{ __('Course Evaluation') }}
@@ -464,10 +460,6 @@
                     <x-nav-link href="{{ route('assign.courseblocks') }}" :active="request()->routeIs('assign.courseblocks')">
                         <i class="fas fa-list-check mr-3 text-lg"></i>
                         {{ __('Section Load Manager') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
-                        <i class="fas fa-chalkboard-user mr-3 text-lg"></i>
-                        {{ __('Faculty Course Blocks') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('course-blocks.bulk-uploader') }}" :active="request()->routeIs('course-blocks.bulk-uploader')">
                         <i class="fas fa-cloud-arrow-up mr-3 text-lg"></i>

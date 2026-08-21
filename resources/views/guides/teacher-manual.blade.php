@@ -72,7 +72,7 @@
         <div class="space-y-2">
             {!! $step(1, 'Open <strong>Course Syllabus</strong>. Pick the School Year and Semester, then find your course block and its program.') !!}
             {!! $step(2, 'Click <strong>Prepare Syllabus</strong> (or <strong>Edit Syllabus</strong> if one exists). A class that serves several programs needs one syllabus per program.') !!}
-            {!! $step(3, 'Fill in Course Outcomes &amp; CO-PO Mapping, Assessment Tasks, Grading System (must total 100%), Textbooks and References, Course Requirements, and Classroom Policies.') !!}
+            {!! $step(3, 'Fill in Course Outcomes &amp; CO-PO Mapping, Assessment Tasks (weights must total 100% — the Grading System is derived from them), Textbooks and References, Course Requirements, and Classroom Policies.') !!}
             {!! $step(4, 'Complete the <strong>Learning Plan</strong> — one row per teaching week (learning outcomes, topics &amp; readings, activities, assessment tools). Examination weeks are pre-marked.') !!}
             {!! $step(5, 'Use <strong>Save Draft</strong> to keep progress at any time, then <strong>Submit</strong> and <strong>Confirm &amp; Submit</strong> when complete. Submitted syllabi are locked.') !!}
             {!! $step(6, 'If your Program Head returns it for revision, open it again (now editable), read the remarks, fix, and resubmit.') !!}
@@ -90,7 +90,7 @@
         <p class="text-sm text-gray-600 mb-4">Define the assessment tasks (and their items) for each course and batch, and link each item to a Course Learning Outcome (CLO).</p>
         <div class="space-y-2">
             {!! $step(1, 'Open <strong>Assessment Setup</strong>. Choose School Year and Semester, then select your course block.') !!}
-            {!! $step(2, 'Add a task: give it a <strong>title</strong>, choose a <strong>type</strong> (Exam, Quiz, Assignment, Project, or Practical), set its <strong>weight percentage</strong> and <strong>total marks</strong>. Save it.') !!}
+            {!! $step(2, 'Add a task: give it a <strong>title</strong>, choose a <strong>type</strong> (Exam, Quiz, Assignment, Project, or Practical), and set its <strong>weight percentage</strong>. Total marks are computed automatically from the items you map. Save it.') !!}
             {!! $step(3, 'Under that task, add <strong>assessment items</strong> — give each a name, its maximum marks, and map it to the relevant <strong>CLO</strong>.') !!}
             {!! $step(4, 'Edit or delete tasks anytime. Deleting a task also removes its mapped items.') !!}
             {!! $tip('Tasks are stored per course and batch year. Check that the batch shown matches the term you are preparing.') !!}

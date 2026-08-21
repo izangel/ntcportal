@@ -9,7 +9,6 @@ use App\Models\SyllabusLearningPlanItem;
 use App\Services\CourseSyllabusData;
 use App\Services\ObeSyllabusRules;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -19,15 +18,11 @@ class CourseSyllabusEditor extends Component
 
     public $programId = null;
 
-    public $grading_system = '';
-
     public $textbooks_references = '';
 
     public $course_requirements = '';
 
     public $classroom_policies = '';
-
-    public $grading_components = [];
 
     public $items = [];
 
@@ -59,38 +54,23 @@ class CourseSyllabusEditor extends Component
 
         $this->programId = $programId;
 
-        $syllabus = CourseSyllabus::with(['learningPlanItems', 'gradingComponents'])
+        $syllabus = CourseSyllabus::with(['learningPlanItems'])
             ->where('course_block_id', $block->id)
             ->where('program_id', $programId)
             ->first();
 
         if ($syllabus) {
-            $this->grading_system = (string) $syllabus->grading_system;
             $this->textbooks_references = (string) $syllabus->textbooks_references;
             $this->course_requirements = (string) $syllabus->course_requirements;
             $this->classroom_policies = (string) $syllabus->classroom_policies;
-$this->submittedAt = $syllabus->submitted_at;
+            $this->submittedAt = $syllabus->submitted_at;
             $this->revisionRequestedAt = $syllabus->revision_requested_at;
             $this->revisionRequestedBy = $syllabus->revision_requested_by_name;
             $this->revisionRemarks = $syllabus->revision_remarks;
 
-            $this->grading_components = $syllabus->gradingComponents
-                ->sortBy('sort_order')
-                ->map(fn ($component) => [
-                    'row_id' => (string) Str::uuid(),
-                    'assessment_type' => (string) $component->assessment_type,
-                    'percentage' => (float) $component->percentage,
-                ])
-                ->values()
-                ->toArray();
-
             $this->items = $this->learningPlanItems($syllabus);
         } else {
             $this->items = $this->blankLearningPlan();
-        }
-
-        if (empty($this->grading_components)) {
-            $this->grading_components = [$this->blankGradingComponent()];
         }
     }
 
@@ -180,79 +160,32 @@ $this->submittedAt = $syllabus->submitted_at;
         return $rows;
     }
 
-    private function blankGradingComponent(): array
-    {
-        return [
-            'row_id' => (string) Str::uuid(),
-            'assessment_type' => '',
-            'percentage' => 0,
-        ];
-    }
-
-    public function addGradingComponent(): void
-    {
-        if ($this->isSubmitted()) {
-            return;
-        }
-        $this->grading_components[] = $this->blankGradingComponent();
-    }
-
     /**
-     * Load a preset sample grading system.
+     * The grade recipe derived from the assessment tasks: each task's weight
+     * grouped by task type. The tasks are the single source of truth — this
+     * summary is what gets displayed and persisted as grading components.
+     *
+     * @return array<int, array{assessment_type: string, percentage: float, tasks: int}>
      */
-    public function loadGradingPreset($preset): void
+    public function gradingSummary(): array
     {
-        if ($this->isSubmitted()) {
-            return;
-        }
-        $presets = [
-            'lecture' => [
-                ['assessment_type' => 'First Exam', 'percentage' => 15],
-                ['assessment_type' => 'Second Exam', 'percentage' => 15],
-                ['assessment_type' => 'Third Exam', 'percentage' => 15],
-                ['assessment_type' => 'Fourth Exam', 'percentage' => 15],
-                ['assessment_type' => 'Quizzes & Recitation', 'percentage' => 10],
-                ['assessment_type' => 'Assignments & Seatwork', 'percentage' => 5],
-                ['assessment_type' => 'Final Project', 'percentage' => 25],
-            ],
-            'lecture_alt' => [
-                ['assessment_type' => 'First Exam', 'percentage' => 15],
-                ['assessment_type' => 'Second Exam', 'percentage' => 15],
-                ['assessment_type' => 'Third Exam', 'percentage' => 15],
-                ['assessment_type' => 'Fourth Exam', 'percentage' => 15],
-                ['assessment_type' => 'Quizzes & Recitation', 'percentage' => 10],
-                ['assessment_type' => 'Attendance & Participation', 'percentage' => 5],
-                ['assessment_type' => 'Final Project', 'percentage' => 25],
-            ],
-            'lab_flat' => [
-                ['assessment_type' => 'First Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Second Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Third Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Fourth Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Laboratory Exercises', 'percentage' => 15],
-                ['assessment_type' => 'Laboratory Exams / Skills Test', 'percentage' => 5],
-                ['assessment_type' => 'Laboratory Reports & Outputs', 'percentage' => 5],
-                ['assessment_type' => 'Final Project', 'percentage' => 15],
-            ],
-            'lab_split' => [
-                ['assessment_type' => 'First Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Second Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Third Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Fourth Exam (Lecture)', 'percentage' => 15],
-                ['assessment_type' => 'Quizzes & Recitation (Lecture)', 'percentage' => 5],
-                ['assessment_type' => 'Laboratory Performance & Exercises', 'percentage' => 15],
-                ['assessment_type' => 'Lab Reports & Final Output', 'percentage' => 5],
-                ['assessment_type' => 'Final Project', 'percentage' => 15],
-            ],
-        ];
+        $data = $this->data();
+        $tasks = $data ? $data->assessmentTasks() : collect();
 
-        if (! isset($presets[$preset])) {
-            return;
+        $groups = [];
+
+        foreach ($tasks->sortBy('id') as $task) {
+            $type = trim((string) $task->type) !== '' ? (string) $task->type : 'Others';
+
+            if (! isset($groups[$type])) {
+                $groups[$type] = ['assessment_type' => $type, 'percentage' => 0.0, 'tasks' => 0];
+            }
+
+            $groups[$type]['percentage'] += (float) $task->weight_percentage;
+            $groups[$type]['tasks']++;
         }
 
-        $this->grading_components = array_map(function ($row) {
-            return array_merge($row, ['row_id' => (string) Str::uuid()]);
-        }, $presets[$preset]);
+        return array_values($groups);
     }
 
     /**
@@ -273,26 +206,6 @@ $this->submittedAt = $syllabus->submitted_at;
 8. Make-up Examinations. Make-up exams are granted only for valid, documented reasons (e.g., illness with a medical certificate, approved school activity, or family emergency) and must be requested within one week after the missed examination.
 9. Safety in the Laboratory. (For courses with laboratory) Follow all safety rules at all times. Report accidents, breakage, or malfunctioning equipment to the instructor immediately. Unauthorized experiments or misuse of equipment may result in exclusion from the activity and a zero grade.
 10. Consultation. For questions or concerns about lessons, grades, or requirements, consult with the instructor during consultation hours or by appointment.";
-    }
-
-    public function removeGradingComponent($rowId): void
-    {
-        if ($this->isSubmitted()) {
-            return;
-        }
-        $this->grading_components = collect($this->grading_components)
-            ->reject(fn ($component) => ($component['row_id'] ?? null) == $rowId)
-            ->values()
-            ->all();
-
-        if (empty($this->grading_components)) {
-            $this->grading_components[] = $this->blankGradingComponent();
-        }
-    }
-
-    public function gradingTotal(): float
-    {
-        return (float) array_sum(array_column($this->grading_components, 'percentage'));
     }
 
     private function loadBlock($courseBlock): ?CourseBlock
@@ -382,11 +295,6 @@ $this->submittedAt = $syllabus->submitted_at;
 
         $program = Program::find($this->programId);
 
-        $gradingViolations = $this->gradingViolations();
-        foreach ($gradingViolations as $violation) {
-            $this->addError('grading_components', $violation);
-        }
-
         $ruleViolations = ObeSyllabusRules::violations($block, $program);
         foreach ($ruleViolations as $violation) {
             $this->addError('syllabus_rules', $violation);
@@ -397,7 +305,7 @@ $this->submittedAt = $syllabus->submitted_at;
             $this->addError('learning_plan', $violation);
         }
 
-        if (! empty($gradingViolations) || ! empty($ruleViolations) || ! empty($planViolations)) {
+        if (! empty($ruleViolations) || ! empty($planViolations)) {
             $this->addError('submission', 'Syllabus is incomplete and cannot be submitted. Fix the missing items above, save as a draft, and try again when everything is complete.');
 
             return true;
@@ -506,7 +414,6 @@ $this->submittedAt = $syllabus->submitted_at;
         );
 
         $syllabus->update([
-            'grading_system' => $this->grading_system,
             'textbooks_references' => $this->textbooks_references,
             'course_requirements' => $this->course_requirements,
             'classroom_policies' => $this->classroom_policies,
@@ -516,10 +423,10 @@ $this->submittedAt = $syllabus->submitted_at;
         $this->submittedAt = $syllabus->submitted_at;
 
         $syllabus->gradingComponents()->delete();
-        foreach (array_values($this->grading_components) as $i => $component) {
+        foreach ($this->gradingSummary() as $i => $component) {
             $syllabus->gradingComponents()->create([
-                'assessment_type' => $component['assessment_type'] ?? null,
-                'percentage' => (float) ($component['percentage'] ?? 0),
+                'assessment_type' => $component['assessment_type'],
+                'percentage' => round($component['percentage'], 2),
                 'sort_order' => $i,
             ]);
         }
@@ -537,40 +444,6 @@ $this->submittedAt = $syllabus->submitted_at;
                 'sort_order' => $i,
             ]);
         }
-    }
-
-    /**
-     * Validate the structured grading components: each must have an assessment
-     * type, a positive percentage, and all percentages must total exactly 100%.
-     *
-     * @return array<int, string>
-     */
-    private function gradingViolations(): array
-    {
-        $components = array_values($this->grading_components);
-
-        $violations = [];
-
-        foreach ($components as $index => $component) {
-            $type = trim((string) ($component['assessment_type'] ?? ''));
-            $percentage = (float) ($component['percentage'] ?? 0);
-
-            if ($type === '') {
-                $violations[] = 'Row '.($index + 1).': please provide an assessment/requirement type.';
-            }
-
-            if ($percentage <= 0) {
-                $violations[] = 'Row '.($index + 1).': percentage must be greater than 0.';
-            }
-        }
-
-        $total = (float) array_sum(array_column($components, 'percentage'));
-
-        if (abs($total - 100.0) > 0.001) {
-            $violations[] = "Grading percentages must total 100%; current total is {$total}%.";
-        }
-
-        return $violations;
     }
 
     public function data(): ?CourseSyllabusData

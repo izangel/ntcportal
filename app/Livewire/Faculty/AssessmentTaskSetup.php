@@ -28,8 +28,6 @@ class AssessmentTaskSetup extends Component
 
     public $taskWeight = '';
 
-    public $taskTotalMarks = '';
-
     public $itemName = '';
 
     public $itemCloId = null;
@@ -159,7 +157,6 @@ class AssessmentTaskSetup extends Component
             'taskTitle' => 'required|string|max:100',
             'taskType' => 'required|in:Exam,Quiz,Assignment,Project,Practical',
             'taskWeight' => 'required|numeric|min:0.01|max:100',
-            'taskTotalMarks' => 'required|numeric|min:0.01',
         ]);
 
         $data = [
@@ -167,7 +164,7 @@ class AssessmentTaskSetup extends Component
             'title' => $this->taskTitle,
             'type' => $this->taskType,
             'weight_percentage' => $this->taskWeight,
-            'total_marks' => $this->taskTotalMarks,
+            'total_marks' => 0,
             'effective_batch_year' => $batchYear,
         ];
 
@@ -213,7 +210,6 @@ class AssessmentTaskSetup extends Component
         $this->taskTitle = $task->title;
         $this->taskType = $task->type;
         $this->taskWeight = (string) $task->weight_percentage;
-        $this->taskTotalMarks = (string) $task->total_marks;
         $this->resetErrorBag();
     }
 
@@ -224,7 +220,7 @@ class AssessmentTaskSetup extends Component
 
     private function resetTaskForm(): void
     {
-        $this->reset(['editingTaskId', 'taskTitle', 'taskType', 'taskWeight', 'taskTotalMarks']);
+        $this->reset(['editingTaskId', 'taskTitle', 'taskType', 'taskWeight']);
         $this->resetErrorBag();
     }
 
@@ -266,6 +262,8 @@ class AssessmentTaskSetup extends Component
             'max_marks' => $this->itemMarks,
             'effective_batch_year' => $batchYear,
         ]);
+
+        $task->update(['total_marks' => (float) $task->items()->sum('max_marks')]);
 
         $this->reset(['itemName', 'itemCloId', 'itemMarks']);
         $this->toast('success', 'Assessment item mapped to the selected CLO.');

@@ -34,7 +34,7 @@
                 'icon' => 'fa-pen-to-square',
                 'color' => 'bg-blue-50 border-blue-100 text-blue-700',
                 'guides' => [
-                    ['title' => 'Assessment Tasks Setup', 'desc' => 'Define the assessment tasks and items linked to each course outcome so they show up in the syllabus and score entry.', 'manual' => "$manualBase#assessment-tasks", 'href' => route('faculty.assessment-tasks'), 'icon' => 'fa-list-check'],
+                    ['title' => 'Assessment Tasks by CLO & Assessment Item', 'desc' => 'Create assessment tasks, map each assessment item to a course learning outcome (CLO), and link them to your syllabus and score entry.', 'manual' => route('guides.teacher.assessment-tasks'), 'href' => route('faculty.assessment-tasks'), 'icon' => 'fa-list-check'],
                     ['title' => 'Assessment Scores', 'desc' => 'Enter student scores for each assessment task as the term progresses.', 'manual' => "$manualBase#assessment-scores", 'href' => route('faculty.assessment-scores'), 'icon' => 'fa-table'],
                 ],
             ],

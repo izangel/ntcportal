@@ -50,7 +50,6 @@ use App\Http\Controllers\SubstituteAcknowledgementController;
 use App\Livewire\AssignCourses;
 use App\Livewire\AssignCoursesIndividual;
 use App\Livewire\CourseBlockManager;
-use App\Livewire\FacultyCourseBlockView;
 use App\Livewire\Admin\FacultyCourseListView;
 use App\Livewire\CourseBlockBulkUploader;
 use App\Livewire\FacultyCourseLoad;
@@ -192,7 +191,6 @@ Route::middleware([
         Route::get('/assignment/assign-courses', AssignCourses::class)->name('assign.courses');
         Route::get('/assignment/individual', AssignCoursesIndividual::class)->name('assign.individual');
         Route::get('course-blocks', CourseBlockManager::class)->name('course-blocks');
-        Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
 
         Route::get('/enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
         Route::post('/enrollments', [EnrollmentController::class, 'store'])->name('enrollments.store');
@@ -493,8 +491,6 @@ Route::middleware([
     Route::get('/faculty/course-load/view', [FacultyCourseController::class, 'showLoad'])->name('faculty.course_load.show');
     Route::get('/my-course-load', FacultyCourseLoad::class)->name('faculty.course-load');
 
-    Route::get('faculty/course-blocks', FacultyCourseBlockView::class)->name('faculty.course-blocks');
-
     // Student Dashboard/Courses Route
     Route::get('/my-courses', [StudentCourseController::class, 'index'])
         ->name('student.courses');
@@ -612,6 +608,7 @@ Route::middleware([
         Route::get('/faculty/syllabus/help', [SyllabusManualController::class, 'show'])->name('faculty.syllabus.help');
         Route::get('/guides/teachers', [TeacherGuideController::class, 'show'])->name('guides.teacher');
         Route::get('/guides/teachers/manual', [TeacherGuideController::class, 'manual'])->name('guides.teacher.manual');
+        Route::get('/guides/teachers/assessment-tasks', [TeacherGuideController::class, 'assessmentTasks'])->name('guides.teacher.assessment-tasks');
         Route::get('/faculty/syllabus', FacultySyllabus::class)->name('faculty.syllabus.index');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}/print', [CourseSyllabusPrintController::class, 'show'])->name('faculty.syllabus.print');
         Route::get('/faculty/syllabus/{courseBlock}/{program?}', CourseSyllabusEditor::class)->name('faculty.syllabus.edit');
