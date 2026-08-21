@@ -31,6 +31,9 @@ class DashboardController extends Controller
         $activeSemester = Semester::where('is_active', 1)->first();
         $semesterName = $activeSemester ? $this->getSemesterName($activeSemester->name) : 'N/A';
         $activeAYId = $activeSemester ? $activeSemester->academic_year_id : null;
+        $activeSemesterLabel = $activeSemester
+            ? $semesterName . ' Semester, AY ' . $activeSemester->academicYear->start_year . '-' . $activeSemester->academicYear->end_year
+            : 'No active semester set';
 
         
        
@@ -257,7 +260,7 @@ class DashboardController extends Controller
         }
 
         $viewData = array_merge(
-            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek'),
+            compact('user', 'notifications', 'recentDates', 'leavesByDay', 'daysOfWeek', 'activeSemester', 'semesterName', 'activeSemesterLabel'),
             ['recentUpdates' => SystemUpdate::orderBy('release_date', 'desc')->orderBy('created_at', 'desc')->take(5)->get()],
             $staffData,
             $studentData
