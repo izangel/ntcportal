@@ -19,7 +19,7 @@
             <select id="academic_year_id" name="academic_year_id" required
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                 @foreach($academicYears as $year)
-                    <option value="{{ $year->id }}">{{ $year->start_year }}-{{ $year->end_year }}</option>
+                    <option value="{{ $year->id }}" {{ (old('academic_year_id') ?: $activeAyId) == $year->id ? 'selected' : '' }}>{{ $year->start_year }}-{{ $year->end_year }}</option>
                 @endforeach
             </select>
         </div>
@@ -60,10 +60,10 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
          <div>
             <label for="section_id" class="block text-sm font-medium text-gray-700">Section</label>
-            <select id="section_id" name="section_id" required
+            <select id="section_id" name="section_id" data-section-filter required
                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                 @foreach($sections as $section)
-                    <option value="{{ $section->id }}">{{ $section->program->name }}-{{ $section->name }}</option>
+                    <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}">{{ $section->program->name }}-{{ $section->name }}</option>
                 @endforeach
             </select>
         </div>
@@ -87,5 +87,7 @@
         </button>
     </div>
 </form>
+
+@include('partials.section-filter')
 
 @endsection

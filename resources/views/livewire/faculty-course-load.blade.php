@@ -55,13 +55,10 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
-                                <a href="{{ route('faculty.course-blocks', ['selectedBlockId' => $block['id']]) }}" 
-                                   class="inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded hover:bg-indigo-700 transition">
-                                    Go to Grading
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                    </svg>
-                                </a>
+                                <button type="button" disabled
+                                    class="inline-flex items-center px-3 py-1.5 bg-gray-200 text-gray-500 text-xs font-bold rounded cursor-not-allowed">
+                                    Grading (coming soon)
+                                </button>
                             </td>
                         </tr>
                     @empty

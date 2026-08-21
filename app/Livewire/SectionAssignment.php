@@ -22,7 +22,7 @@ public function render()
 {
     return view('livewire.section-assignment', [
         'academicYears' => AcademicYear::all(),
-        'sections'      => Section::all(),
+        'sections'      => Section::when($this->academic_year_id, fn ($q) => $q->where('academic_year_id', $this->academic_year_id))->get(),
         'semesters'     => ['1st Semester', '2nd Semester', 'Summer'],
         'assigned'      => $this->getAssignedStudents(),
         'allStudents'   => Student::orderBy('last_name')->get(),

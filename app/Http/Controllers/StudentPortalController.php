@@ -15,12 +15,17 @@ class StudentPortalController extends Controller
     public function index(Request $request)
 {
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
-    $sections = Section::orderBy('name', 'asc')->get();
 
     $selectedYear = $request->input('academic_year_id');
     $selectedSemester = $request->input('semester');
     $selectedSection = $request->input('section_id');
     $searchTerm = $request->input('search'); // Capture the search string
+
+    // Filter sections to the selected year (defaulting to the active academic year)
+    $activeAyId = AcademicYear::where('is_active', true)->value('id');
+    $sections = Section::orderBy('name', 'asc')
+        ->when($selectedYear ?: $activeAyId, fn ($q, $ay) => $q->where('academic_year_id', $ay))
+        ->get();
 
     $students = Student::query()
         ->when($selectedYear && $selectedSemester, function ($query) use ($selectedYear, $selectedSemester, $selectedSection, $searchTerm) {

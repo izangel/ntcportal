@@ -14,10 +14,27 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Sections List</h3>
 
-                <div class="mb-4">
+                <div class="mb-4 flex flex-col md:flex-row md:items-center gap-3">
                     <a href="{{ route('sections.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150">
                         Add New Section
                     </a>
+                    <a href="{{ route('sections.copy.form') }}" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150">
+                        Copy Sections From Another Year
+                    </a>
+
+                    <form action="{{ route('sections.index') }}" method="GET" class="md:ml-auto">
+                        <select name="academic_year_id" onchange="this.form.submit()" class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            <option value="" {{ $defaultAyId ? '' : 'selected' }}>All Academic Years</option>
+                            @foreach ($ays as $ay)
+                                <option value="{{ $ay->id }}" {{ $defaultAyId == $ay->id ? 'selected' : '' }}>
+                                    {{ $ay->start_year }}-{{ $ay->end_year }}
+                                    @if ($activeAy && $activeAy->id == $ay->id)
+                                        (Active)
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
                 </div>
 
                 @if (session('success'))

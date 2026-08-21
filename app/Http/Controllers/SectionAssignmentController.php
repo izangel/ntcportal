@@ -10,7 +10,10 @@ class SectionAssignmentController extends Controller
     public function index(Request $request)
     {
         $academicYears = AcademicYear::all();
-        $sections = Section::all();
+        $activeAyId = AcademicYear::where('is_active', true)->value('id');
+        $sections = Section::query()
+            ->when($activeAyId, fn ($q) => $q->where('academic_year_id', $activeAyId))
+            ->get();
         $semesters = ['1st Semester', '2nd Semester', 'Summer'];
 
         // Filter assignments based on dropdowns

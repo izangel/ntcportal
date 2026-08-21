@@ -35,26 +35,40 @@ class StudentController extends Controller
     {
         $context = $this->getCurrentContext();
         $activeAYId = $context['ay']->id ?? null;
-        $activeSem = $context['semester'];
-        
-        // Normalize semester strings for the query
-        $currentSem = $this->formatSemester($activeSem);
-        $altSem = str_contains($activeSem, 'Second') ? '2nd Semester' : '1st Semester';
+        $activeSem = $this->formatSemester($context['semester']);
 
-        // 1. FILTER DROPDOWN & SIDEBAR (College Only)
+        // Selected filters, defaulting to the active academic year + active semester
+        $selectedAYId = $request->filled('academic_year_id') ? (int) $request->academic_year_id : $activeAYId;
+        $selectedSem = $request->filled('semester') ? $request->semester : $activeSem;
+
+        // Semester variations catch "1st", "1st Semester", "2nd", "2nd Semester"
+        $shortSem = str_replace(' Semester', '', $selectedSem);
+        $longSem = $shortSem . ' Semester';
+        $semVariations = array_values(array_unique([$selectedSem, $shortSem, $longSem]));
+
+        $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
+        $selectedAy = $selectedAYId ? AcademicYear::find($selectedAYId) : null;
+        $semesters = ['1st Semester', '2nd Semester', 'Summer'];
+
+        // 1. FILTER DROPDOWN & SIDEBAR (College Only) - scoped to the selected AY
         $sections = Section::join('programs', 'sections.program_id', '=', 'programs.id')
             ->where('programs.name', 'NOT LIKE', '%Grade%')
             ->where('programs.name', 'NOT LIKE', '%SHS%')
             ->select('sections.*')
             ->with('program')
+            ->when($selectedAYId, fn ($q) => $q->where('sections.academic_year_id', $selectedAYId))
+            ->orderBy('programs.name')
+            ->orderBy('sections.name')
             ->get();
 
-        // 2. MAIN STUDENT QUERY
+        // 2. MAIN STUDENT QUERY (driven by selected AY + semester)
         $studentsQuery = Student::with(['user', 'sections.program'])
-            ->join('section_student', function($join) use ($activeAYId, $currentSem) {
-                $join->on('students.id', '=', 'section_student.student_id')
-                     ->where('section_student.academic_year_id', '=', $activeAYId)
-                     ->where('section_student.semester', 'like', $currentSem . '%');
+            ->join('section_student', function($join) use ($selectedAYId, $semVariations) {
+                $join->on('students.id', '=', 'section_student.student_id');
+                if ($selectedAYId) {
+                    $join->where('section_student.academic_year_id', '=', $selectedAYId);
+                }
+                $join->whereIn('section_student.semester', $semVariations);
             })
             ->join('sections', 'section_student.section_id', '=', 'sections.id')
             ->join('programs', 'sections.program_id', '=', 'programs.id');
@@ -78,6 +92,8 @@ class StudentController extends Controller
 
         $stats = [
             'total' => (clone $studentsQuery)->distinct('students.id')->count(),
+            'male' => (clone $studentsQuery)->where('students.gender', 'Male')->distinct('students.id')->count(),
+            'female' => (clone $studentsQuery)->where('students.gender', 'Female')->distinct('students.id')->count(),
         ];
 
         $students = $studentsQuery
@@ -94,7 +110,10 @@ class StudentController extends Controller
 
         $students->appends($request->all());
 
-        return view('students.index', compact('students', 'sections', 'context', 'stats', 'currentSem'));
+        return view('students.index', compact(
+            'students', 'sections', 'context', 'stats',
+            'academicYears', 'semesters', 'selectedAYId', 'selectedSem', 'selectedAy', 'activeAYId', 'activeSem'
+        ));
     }
 public function bulkPromote(Request $request)
 {
@@ -227,6 +246,7 @@ public function bulkPromote(Request $request)
             ->orderBy('programs.name')
             ->orderBy('sections.name')
             ->select('sections.*')
+            ->when($context['ay']?->id, fn ($q) => $q->where('sections.academic_year_id', $context['ay']->id))
             ->get();
 
         return view('students.create', compact('context', 'sections'));
@@ -326,8 +346,15 @@ public function bulkPromote(Request $request)
             ->where('semester', $sem)
             ->value('section_id');
 
-        $sections = Section::with('program')->get();
-        
+        $sections = Section::with('program')
+            ->where(function ($q) use ($ayId, $currentSectionId) {
+                $q->where('academic_year_id', $ayId);
+                if ($currentSectionId) {
+                    $q->orWhere('id', $currentSectionId);
+                }
+            })
+            ->get();
+
         return view('students.edit', compact('student', 'sections', 'currentSectionId', 'context'));
     }
 
@@ -520,7 +547,9 @@ public function bulkPromote(Request $request)
     public function showPromoteForm(Request $request)
 {
     $context = $this->getCurrentContext();
-    $sections = Section::with('program')->get();
+    $sections = Section::with('program')
+        ->when($context['ay']?->id, fn ($q) => $q->where('academic_year_id', $context['ay']->id))
+        ->get();
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
     // 1. Capture filter inputs

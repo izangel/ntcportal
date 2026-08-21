@@ -14,6 +14,9 @@ use App\Models\ProgramOutcome;
  *   1. Assessment task weights for a course+batch must total 100%.
  *   2. Every course learning outcome must be mapped to at least one Program
  *      Outcome of the syllabus program and to at least one assessment item.
+ *
+ * A task's total marks are not validated — they are derived automatically
+ * from its items' max_marks.
  */
 class ObeSyllabusRules
 {
@@ -36,6 +39,11 @@ class ObeSyllabusRules
         $violations = array_merge(
             $violations,
             self::cloMappingViolations($block->course_id, $batch, $program)
+        );
+
+        $violations = array_merge(
+            $violations,
+            self::taskCloMappingViolations($block->course_id, $batch)
         );
 
         return $violations;
@@ -113,6 +121,30 @@ class ObeSyllabusRules
 
             if (!$hasItem) {
                 $violations[] = "{$clo->code} has no mapped assessment item.";
+            }
+        }
+
+        return $violations;
+    }
+
+    /**
+     * Rule 3: each assessment task must have at least one item mapped to a
+     * CLO, so that every assessment is relevant to a course learning outcome.
+     *
+     * @return array<int, string>
+     */
+    public static function taskCloMappingViolations(int $courseId, ?string $batch): array
+    {
+        $tasks = AssessmentTask::with('items')
+            ->where('course_id', $courseId)
+            ->where('effective_batch_year', $batch)
+            ->get();
+
+        $violations = [];
+
+        foreach ($tasks as $task) {
+            if ($task->items->isEmpty()) {
+                $violations[] = "{$task->title} has no mapped assessment item; every assessment task must map to a CLO.";
             }
         }
 

@@ -102,8 +102,12 @@ class EnrollOldStudentModal extends Component
 
     public function render()
     {
+        $activeAY = AcademicYear::where('is_active', true)->first();
+
         return view('livewire.enroll-old-student-modal', [
-            'sections' => Section::with('program')->get()
+            'sections' => Section::with('program')
+                ->when($activeAY, fn ($q) => $q->where('academic_year_id', $activeAY->id))
+                ->get()
         ]);
     }
 }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -306,10 +306,6 @@
                     <i class="fas fa-chevron-down text-xs transform transition duration-200" :class="{'rotate-180': open, 'rotate-0': !open}"></i>
                 </button>
                 <div x-show="open" x-collapse.duration.300ms>
-                    <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
-                        <i class="fas fa-file-import mr-3 text-lg"></i>
-                        {{ __('Grade Submission') }}
-                    </x-nav-link>
                     <x-nav-link href="#">
                         <i class="fas fa-comment-dots mr-3 text-lg"></i>
                         {{ __('Course Evaluation') }}
@@ -465,10 +461,6 @@
                         <i class="fas fa-list-check mr-3 text-lg"></i>
                         {{ __('Section Load Manager') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('faculty.course-blocks') }}" :active="request()->routeIs('faculty.course-blocks')">
-                        <i class="fas fa-chalkboard-user mr-3 text-lg"></i>
-                        {{ __('Faculty Course Blocks') }}
-                    </x-nav-link>
                     <x-nav-link href="{{ route('course-blocks.bulk-uploader') }}" :active="request()->routeIs('course-blocks.bulk-uploader')">
                         <i class="fas fa-cloud-arrow-up mr-3 text-lg"></i>
                         {{ __('Course Blocks Bulk Uploader') }}
@@ -513,9 +505,13 @@
                         <i class="fas fa-table-columns mr-3 text-lg"></i>
                         {{ __('Manage Sections') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('academic_years.index') }}" :active="request()->routeIs('academic_years.*')">
+                    <x-nav-link href="{{ route('academic_years.index') }}" :active="request()->routeIs('academic_years.index')">
                         <i class="fas fa-calendar-check mr-3 text-lg"></i>
                         {{ __('Manage Academic Years') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('academic_years.setup') }}" :active="request()->routeIs('academic_years.setup')">
+                        <i class="fas fa-list-check mr-3 text-lg"></i>
+                        {{ __('Academic Year Setup') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('semesters.index') }}" :active="request()->routeIs('semesters.*')">
                         <i class="fas fa-timeline mr-3 text-lg"></i>
@@ -562,6 +558,10 @@
                     <x-nav-link href="{{ route('admin.system-updates') }}" :active="request()->routeIs('admin.system-updates')">
                         <i class="fas fa-circle-info mr-3 text-lg"></i>
                         {{ __('Manage System Updates') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('admin.user-accounts.index') }}" :active="request()->routeIs('admin.user-accounts.*')">
+                        <i class="fas fa-user-lock mr-3 text-lg"></i>
+                        {{ __('Manage User Accounts') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('leave_applications.index') }}" :active="request()->routeIs('leave_applications.*')">
                         <i class="fas fa-plane-departure mr-3 text-lg"></i>
@@ -710,6 +710,12 @@
                                 {{ __('Syllabus Approvals (AH)') }}
                             </x-nav-link>
                             @endif
+                            @if($isPh || Auth::user()->hasRole('academic_head'))
+                            <x-nav-link href="{{ route('syllabus.submission-status') }}" :active="request()->routeIs('syllabus.submission-status')">
+                                <i class="fas fa-list-check mr-3 text-lg"></i>
+                                {{ __('Syllabus Status Overview') }}
+                            </x-nav-link>
+                            @endif
                             <x-nav-link href="{{ route('admin.obe.course-dashboard') }}" :active="request()->routeIs('admin.obe.course-dashboard')">
                                 <i class="fas fa-gauge-high mr-3 text-lg"></i>
                                 {{ __('6-OBE Course Dashboard') }}
@@ -730,6 +736,10 @@
 
                         {{-- ============ FACULTY ============ --}}
                         <p class="mt-3 px-3 text-[10px] font-bold text-indigo-300/80 uppercase tracking-wider border-b border-gray-700/60 pb-1">Faculty</p>
+                        <x-nav-link href="{{ route('guides.teacher') }}" :active="request()->routeIs('guides.teacher')">
+                            <i class="fas fa-circle-question mr-3 text-lg"></i>
+                            {{ __('Teacher Guides') }}
+                        </x-nav-link>
                         <x-nav-link href="{{ route('faculty.obe.program-report') }}" :active="request()->routeIs('faculty.obe.program-report')">
                             <i class="fas fa-file-lines mr-3 text-lg"></i>
                             {{ __('3-OBE Program Report') }}
@@ -738,7 +748,7 @@
                             <i class="fas fa-list-check mr-3 text-lg"></i>
                             {{ __('4-Assessment Setup') }}
                         </x-nav-link>
-                        <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit')">
+                        <x-nav-link href="{{ route('faculty.syllabus.index') }}" :active="request()->routeIs('faculty.syllabus.index') || request()->routeIs('faculty.syllabus.edit') || request()->routeIs('faculty.syllabus.help')">
                             <i class="fas fa-file-lines mr-3 text-lg"></i>
                             {{ __('Course Syllabus') }}
                         </x-nav-link>
@@ -790,9 +800,10 @@
 {{-- Main Content Area --}}
 <main class="flex-1 p-6 sm:p-8">
 
-   
-    
-                    @yield('content')
+    @if(Auth::user()->hasRole('academic_head') || Auth::user()->hasRole('registrar') || Auth::user()->hasRole('hr') || Auth::user()->hasRole('admin') || Auth::user()->hasRole('program_head_shs'))
+        @include('partials.year-setup-banner')
+    @endif
+                            @yield('content')
 
                     
                 </main>

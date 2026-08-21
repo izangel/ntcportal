@@ -46,10 +46,10 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Section</label>
-                            <select name="section_id" required class="block w-full border-gray-300 rounded-lg text-sm shadow-sm focus:ring-blue-500">
+                            <select name="section_id" data-section-filter required class="block w-full border-gray-300 rounded-lg text-sm shadow-sm focus:ring-blue-500">
                                 <option value="">Select Section</option>
                                 @foreach($sections as $section)
-                                    <option value="{{ $section->id }}" {{ old('section_id') == $section->id ? 'selected' : '' }}>
+                                    <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}" {{ old('section_id') == $section->id ? 'selected' : '' }}>
                                         {{ $section->program->name }} : {{ $section->name }}
                                     </option>
                                 @endforeach
@@ -61,7 +61,7 @@
                                 <label class="block text-xs font-semibold text-gray-600 uppercase mb-2">Year</label>
                                 <select name="academic_year_id" required class="block w-full border-gray-300 rounded-lg text-sm shadow-sm">
                                     @foreach($academicYears as $ay)
-                                        <option value="{{ $ay->id }}">{{ $ay->start_year }}-{{ $ay->end_year }}</option>
+                                        <option value="{{ $ay->id }}" {{ (old('academic_year_id') ?: $activeAyId) == $ay->id ? 'selected' : '' }}>{{ $ay->start_year }}-{{ $ay->end_year }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -176,4 +176,6 @@
         </div>
     </div>
 </div>
+
+@include('partials.section-filter')
 @endsection

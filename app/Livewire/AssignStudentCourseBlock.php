@@ -3,7 +3,8 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use App\Models\{Student, CourseBlock, AcademicYear, Section};
+use App\Models\{Student, CourseBlock, AcademicYear, Semester, Section};
+use App\Services\AcademicYearSetup;
 use Illuminate\Support\Facades\DB;
 
 class AssignStudentCourseBlock extends Component
@@ -15,6 +16,22 @@ class AssignStudentCourseBlock extends Component
     public $search = '';
     public $student_search = '';
     public $found_students = [];
+
+    public function mount()
+    {
+        $activeYear = AcademicYearSetup::activeYear();
+        $this->academic_year_id = $activeYear?->id;
+
+        $activeSemester = Semester::where('is_active', true)->first();
+        if ($activeSemester) {
+            $this->semester = $this->normalizeSemester($activeSemester->name);
+        }
+    }
+
+    private function normalizeSemester($name)
+    {
+        return str_replace(['First', 'Second'], ['1st', '2nd'], (string) $name);
+    }
 
     public function updatedAcademicYearId() { $this->resetSelection(); }
     public function updatedSemester() { $this->resetSelection(); }
@@ -155,7 +172,9 @@ class AssignStudentCourseBlock extends Component
             'semesters'     => ['1st Semester', '2nd Semester', 'Summer'],
             'courseBlocks'  => $courseBlocks,
             'sectionTemplateBlocks' => $sectionTemplateBlocks,
-            'sections'      => Section::with('program')->get(), // Added with('program') for efficiency
+            'sections'      => Section::with('program')
+                ->when($this->academic_year_id, fn ($q) => $q->where('academic_year_id', $this->academic_year_id))
+                ->get(), // Added with('program') for efficiency
             'students'      => $this->getStudentsInTargetSection(),
         ])->extends('layouts.plain')->section('content');
     }

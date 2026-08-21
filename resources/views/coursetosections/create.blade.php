@@ -22,7 +22,7 @@
                         <select id="academic_year_id" name="academic_year_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">-- Select AY --</option>
                             @foreach ($academicYears as $academicYear)
-                                <option value="{{ $academicYear->id }}" {{ old('academic_year_id') == $academicYear->id ? 'selected' : '' }}>
+                                <option value="{{ $academicYear->id }}" {{ (old('academic_year_id') ?: $activeAyId) == $academicYear->id ? 'selected' : '' }}>
                                     {{ $academicYear->start_year }}-({{ $academicYear->end_year }})
                                 </option>
                             @endforeach
@@ -57,10 +57,10 @@
 
                     <div class="mt-4">
                         <x-label for="section_id" value="{{ __('Program and Section') }}" />
-                        <select id="section_id" name="section_id" class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <select id="section_id" name="section_id" data-section-filter class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                             <option value="">-- Select Program and Section --</option>
                             @foreach ($sections as $section)
-                                <option value="{{ $section->id }}" {{ old('section_id') == $section->id ? 'selected' : '' }}>
+                                <option value="{{ $section->id }}" data-ay="{{ $section->academic_year_id }}" {{ old('section_id') == $section->id ? 'selected' : '' }}>
                                     {{ $section->program->name }}-({{ $section->name }})
                                 </option>
                             @endforeach
@@ -74,6 +74,8 @@
                         </x-button>
                     </div>
                 </form>
+
+                @include('partials.section-filter')
             </div>
         </div>
     </div>

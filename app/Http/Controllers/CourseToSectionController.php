@@ -50,10 +50,11 @@ class CourseToSectionController extends Controller
     {
          $academicYears = AcademicYear::orderBy('start_year')->get();
         $courses = Course::orderBy('code')->get();
+        $activeAyId = AcademicYear::where('is_active', true)->value('id');
         $sections = Section::with('program')->orderBy('name')->get();
         
 
-        return view('coursetosections.create', compact('academicYears', 'courses', 'sections'));
+        return view('coursetosections.create', compact('academicYears', 'courses', 'sections', 'activeAyId'));
     }
 
     /**
