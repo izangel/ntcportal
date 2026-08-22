@@ -694,6 +694,14 @@
                                 <i class="fas fa-book-open mr-3 text-lg"></i>
                                 {{ __('2-Program Course Manager') }}
                             </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.clos') }}" :active="request()->routeIs('admin.obe.clos')">
+                                <i class="fas fa-list-check mr-3 text-lg"></i>
+                                {{ __('2b-CLO Manager') }}
+                            </x-nav-link>
+                            <x-nav-link href="{{ route('admin.obe.copo-mapping') }}" :active="request()->routeIs('admin.obe.copo-mapping')">
+                                <i class="fas fa-table mr-3 text-lg"></i>
+                                {{ __('2c-CO-PO Mapping (Excel Paste)') }}
+                            </x-nav-link>
                             <x-nav-link href="{{ route('admin.obe.program-report') }}" :active="request()->routeIs('admin.obe.program-report')">
                                 <i class="fas fa-file-lines mr-3 text-lg"></i>
                                 {{ __('3-OBE Program Report') }}

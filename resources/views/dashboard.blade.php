@@ -33,7 +33,24 @@
 @section('content')
 <div class="py-12">
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-8">
-        
+
+        {{-- Active Semester & Academic Year Banner --}}
+        <div class="flex flex-wrap items-center gap-3 rounded-xl border border-indigo-200 bg-gradient-to-r from-indigo-50 to-white px-5 py-4">
+            @if(isset($activeSemester) && $activeSemester)
+                <span class="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-1.5 text-sm font-bold text-white shadow-sm">
+                    <i class="fas fa-calendar-check"></i> {{ $activeSemester->name }}
+                </span>
+                <span class="text-sm font-semibold text-indigo-800">
+                    Active Semester &middot; Academic Year {{ $activeSemester->academicYear->start_year }}-{{ $activeSemester->academicYear->end_year }}
+                </span>
+            @else
+                <span class="inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-sm font-bold text-amber-700 border border-amber-200">
+                    <i class="fas fa-triangle-exclamation"></i> No active semester set
+                </span>
+                <span class="text-sm font-semibold text-amber-800">Set an active semester under Manage Academic Years.</span>
+            @endif
+        </div>
+
         {{-- 1. Welcome & Notifications Section --}}
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="lg:col-span-2">
