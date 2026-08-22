@@ -18,7 +18,7 @@
                 </button>
             @endforeach
             @if($selectedCategory)
-                <button type="button" wire:click="setCategory('{{ $selectedCategory }}')"
+                <button type="button" wire:click="clearCategory"
                     class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700">
                     <i class="fas fa-xmark"></i> Clear
                 </button>

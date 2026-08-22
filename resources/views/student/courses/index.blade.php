@@ -80,7 +80,7 @@
                                         </span>
                                     @else
                                         <button 
-                                            @click="showEvalModal = true; courseId = '{{ $block->course->id }}'; courseName = '{{ $block->course->name }}'; rating = 0"
+                                            @click="showEvalModal = true; courseId = {{ \Illuminate\Support\Js::from($block->course->id) }}; courseName = {{ \Illuminate\Support\Js::from($block->course->name) }}; rating = 0"
                                             class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-xl shadow-md shadow-indigo-100 transition-all uppercase tracking-tighter"
                                         >
                                             Evaluate

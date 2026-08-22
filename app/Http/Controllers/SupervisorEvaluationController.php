@@ -22,8 +22,23 @@ class SupervisorEvaluationController extends Controller
         return view('supervisor.evaluations.index', compact('subordinates'));
     }
 
+    /**
+     * Ensure the logged-in supervisor owns this assignment of type 'supervisor'.
+     */
+    private function authorizeSupervisor(PeerAssignment $assignment): void
+    {
+        if ($assignment->assignment_type !== 'supervisor') {
+            abort(403, 'Unauthorized actions.');
+        }
+        if ($assignment->peer_id != Auth::user()->employee->id) {
+            abort(403, 'Unauthorized actions.');
+        }
+    }
+
     public function create(PeerAssignment $assignment)
     {
+        $this->authorizeSupervisor($assignment);
+
         if ($assignment->is_completed) {
             return back()->with('error', 'Evaluation already completed.');
         }
@@ -32,14 +47,24 @@ class SupervisorEvaluationController extends Controller
 
     public function store(Request $request, PeerAssignment $assignment)
     {
-        $request->validate(['ratings' => 'required|array']);
+        $this->authorizeSupervisor($assignment);
+
+        if ($assignment->is_completed) {
+            return back()->with('error', 'Evaluation already completed.');
+        }
+
+        $request->validate([
+            'ratings' => 'required|array|min:1',
+            'ratings.*' => 'required|numeric|min:0|max:100',
+            'comments' => 'nullable|string|max:1000',
+        ]);
         
-        $ratings = $request->ratings;
+        $ratings = array_values($request->ratings);
         $meanScore = array_sum($ratings) / count($ratings);
 
         Evaluation::create([
             'teacher_id' => $assignment->teacher_id,
-            'evaluator_id' => Auth::id(),
+            'evaluator_id' => Auth::user()->employee->id,
             'evaluator_type' => 'supervisor',
             'academic_year_id' => $assignment->academic_year_id,
             'semester' => $assignment->semester,

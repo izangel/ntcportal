@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Employee;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeIndex extends Component
 {
@@ -84,8 +85,16 @@ class EmployeeIndex extends Component
         }
 
         $this->validate([
-            'bulkRole' => 'required|in:teacher,staff,admin,hr,academic_head'
+            'bulkRole' => 'required|in:teacher,staff,admin,hr,academic_head',
+            'selectedEmployees' => 'required|array',
+            'selectedEmployees.*' => 'exists:employees,id',
         ]);
+
+        // Defense in depth: only the admin role may assign admin/hr privileges.
+        if (in_array($this->bulkRole, ['admin', 'hr'], true) && ! Auth::user()->hasRole('admin')) {
+            session()->flash('error', 'Only the administrator can assign admin or HR roles.');
+            return;
+        }
 
         Employee::whereIn('id', $this->selectedEmployees)->update([
             'role' => $this->bulkRole
@@ -104,6 +113,17 @@ class EmployeeIndex extends Component
     {
         if (empty($this->selectedEmployees)) {
             session()->flash('error', 'Execution blocked: No employee rows were selected.');
+            return;
+        }
+
+        $this->validate([
+            'selectedEmployees' => 'required|array',
+            'selectedEmployees.*' => 'exists:employees,id',
+        ]);
+
+        // Defense in depth: only admin, HR, or academic head may bulk-archive.
+        if (! Auth::user()->hasRole('admin') && ! Auth::user()->hasRole('hr') && ! Auth::user()->hasRole('academic_head')) {
+            session()->flash('error', 'You are not authorized to archive employee records.');
             return;
         }
 

@@ -263,7 +263,6 @@ class AssessmentTaskSetup extends Component
                 ->where('effective_batch_year', $batchYear)
                 ->firstOrFail();
 
-
             $item->update([
                 'course_learning_outcome_id' => $clo->id,
                 'item_name' => $this->itemName,

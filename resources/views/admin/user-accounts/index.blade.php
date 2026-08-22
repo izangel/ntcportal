@@ -22,14 +22,14 @@
     @if(session('success'))
         <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl flex items-center text-sm">
             <svg class="w-5 h-5 mr-2 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
-            {!! session('success') !!}
+            {{ session('success') }}
         </div>
     @endif
 
     @if(session('error'))
         <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center text-sm">
             <svg class="w-5 h-5 mr-2 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
-            {!! session('error') !!}
+            {{ session('error') }}
         </div>
     @endif
 
@@ -158,7 +158,7 @@
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <form action="{{ route('admin.user-accounts.create-student', $student->id) }}" method="POST"
-                                      onsubmit="return confirm('Create a login account for {{ $student->first_name }} {{ $student->last_name }}?');">
+                                      onsubmit="return confirm({{ \Illuminate\Support\Js::from('Create a login account for ' . $student->first_name . ' ' . $student->last_name . '?') }});">
                                     @csrf
                                     <button type="submit" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-100 hover:bg-indigo-100 transition">
                                         Create Account
