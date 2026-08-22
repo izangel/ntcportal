@@ -40,6 +40,31 @@
             </div>
         </div>
 
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Filter courses offered in Academic Year</label>
+                <select wire:model.live="filterAcademicYearId" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All Academic Years</option>
+                    @foreach($offeredAcademicYears as $offeredAy)
+                        <option value="{{ $offeredAy->id }}">{{ $offeredAy->start_year }} - {{ $offeredAy->end_year }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Semester</label>
+                <select wire:model.live="filterSemester" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All Semesters</option>
+                    @foreach($offeredSemesters as $offeredSem)
+                        <option value="{{ $offeredSem }}">{{ $offeredSem }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <p class="md:col-span-2 text-xs text-gray-500">
+                When an Academic Year and Semester are selected, only the courses <strong>actually offered</strong> in that term
+                (i.e. having course blocks for this program) are shown below.
+            </p>
+        </div>
+
         @if($selectedProgramId)
             @php
                 $selectedProgram = $programs->firstWhere('id', $selectedProgramId);
