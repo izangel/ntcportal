@@ -22,6 +22,8 @@ class AssessmentTaskSetup extends Component
 
     public $editingTaskId = null;
 
+    public $editingItemId = null;
+
     public $taskTitle = '';
 
     public $taskType = 'Exam';
@@ -255,19 +257,102 @@ class AssessmentTaskSetup extends Component
             ->where('effective_batch_year', $batchYear)
             ->firstOrFail();
 
-        AssessmentItem::create([
-            'assessment_task_id' => $task->id,
-            'course_learning_outcome_id' => $clo->id,
-            'item_name' => $this->itemName,
-            'max_marks' => $this->itemMarks,
-            'effective_batch_year' => $batchYear,
-        ]);
+        if ($this->editingItemId) {
+            $item = AssessmentItem::whereKey($this->editingItemId)
+                ->where('assessment_task_id', $task->id)
+                ->where('effective_batch_year', $batchYear)
+                ->firstOrFail();
+
+
+            $item->update([
+                'course_learning_outcome_id' => $clo->id,
+                'item_name' => $this->itemName,
+                'max_marks' => $this->itemMarks,
+            ]);
+
+            $this->toast('success', 'Assessment item updated.');
+        } else {
+            AssessmentItem::create([
+                'assessment_task_id' => $task->id,
+                'course_learning_outcome_id' => $clo->id,
+                'item_name' => $this->itemName,
+                'max_marks' => $this->itemMarks,
+                'effective_batch_year' => $batchYear,
+            ]);
+
+            $this->toast('success', 'Assessment item mapped to the selected CLO.');
+        }
 
         $task->update(['total_marks' => (float) $task->items()->sum('max_marks')]);
 
-        $this->reset(['itemName', 'itemCloId', 'itemMarks']);
-        $this->toast('success', 'Assessment item mapped to the selected CLO.');
+        $this->reset(['itemName', 'itemCloId', 'itemMarks', 'editingItemId']);
         $this->dispatch('assessment-tasks-updated');
+    }
+
+    public function editItem(int $itemId): void
+    {
+        if ($this->locked) {
+            return;
+        }
+        $item = $this->findItem($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $this->editingItemId = $item->id;
+        $this->selectedTaskId = (string) $item->assessment_task_id;
+        $this->itemName = $item->item_name;
+        $this->itemCloId = (string) $item->course_learning_outcome_id;
+        $this->itemMarks = (string) $item->max_marks;
+        $this->resetErrorBag();
+    }
+
+    public function cancelEditItem(): void
+    {
+        $this->reset(['itemName', 'itemCloId', 'itemMarks', 'editingItemId', 'selectedTaskId']);
+        $this->resetErrorBag();
+    }
+
+    public function deleteItem(int $itemId): void
+    {
+        if ($this->locked) {
+            return;
+        }
+        $item = $this->findItem($itemId);
+        if (! $item) {
+            return;
+        }
+
+        $taskId = $item->assessment_task_id;
+        $item->delete();
+
+        $task = AssessmentTask::whereKey($taskId)->first();
+        if ($task) {
+            $task->update(['total_marks' => (float) $task->items()->sum('max_marks')]);
+        }
+
+        if ((int) $this->editingItemId === $itemId) {
+            $this->reset(['itemName', 'itemCloId', 'itemMarks', 'editingItemId']);
+        }
+
+        $this->toast('success', 'Assessment item deleted.');
+        $this->dispatch('assessment-tasks-updated');
+    }
+
+    private function findItem(int $itemId): ?AssessmentItem
+    {
+        $block = $this->selectedBlock();
+        if (! $block) {
+            return null;
+        }
+
+        return AssessmentItem::whereKey($itemId)
+            ->where('effective_batch_year', $this->blockBatchYear($block))
+            ->whereHas('task', function ($q) use ($block) {
+                $q->where('course_id', $block->course_id)
+                    ->where('effective_batch_year', $this->blockBatchYear($block));
+            })
+            ->first();
     }
 
     public function deleteTask(int $taskId): void
