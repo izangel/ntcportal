@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\AcademicYear;
+use App\Models\Semester;
 use Illuminate\Http\Request;
    // Add this at the top of your controller
 use App\Models\Section;
@@ -16,15 +17,19 @@ class StudentPortalController extends Controller
 {
     $academicYears = AcademicYear::orderBy('start_year', 'desc')->get();
 
-    $selectedYear = $request->input('academic_year_id');
-    $selectedSemester = $request->input('semester');
+    // Default filters to the active academic year + active semester
+    $activeSemester = Semester::with('academicYear')->where('is_active', true)->first();
+    $activeAyId = $activeSemester?->academic_year_id ?? AcademicYear::where('is_active', true)->value('id');
+    $activeSemesterValue = $activeSemester ? $this->semesterValue($activeSemester->name) : null;
+
+    $selectedYear = $request->input('academic_year_id') ?: $activeAyId;
+    $selectedSemester = $request->filled('semester') ? $request->input('semester') : $activeSemesterValue;
     $selectedSection = $request->input('section_id');
     $searchTerm = $request->input('search'); // Capture the search string
 
-    // Filter sections to the selected year (defaulting to the active academic year)
-    $activeAyId = AcademicYear::where('is_active', true)->value('id');
+    // Filter sections to the selected year
     $sections = Section::orderBy('name', 'asc')
-        ->when($selectedYear ?: $activeAyId, fn ($q, $ay) => $q->where('academic_year_id', $ay))
+        ->when($selectedYear, fn ($q, $ay) => $q->where('academic_year_id', $ay))
         ->get();
 
     $students = Student::query()
@@ -59,6 +64,17 @@ class StudentPortalController extends Controller
         'selectedYear', 'selectedSemester', 'selectedSection', 'searchTerm'
     ));
 }
+
+    /**
+     * Map an active semester name to the section_student / dropdown value
+     * convention: "First Semester" -> "1st", "Second Semester" -> "2nd Semester".
+     */
+    private function semesterValue(string $name): string
+    {
+        return str_contains($name, 'First') || $name === '1st'
+            ? '1st'
+            : (str_contains($name, 'Second') || $name === '2nd' ? '2nd Semester' : 'Summer');
+    }
 
 // Add this method to handle the section change
 public function updateSection(Request $request, Student $student)
