@@ -5,6 +5,7 @@ namespace App\Livewire\Admin;
 use Livewire\Component;
 use App\Models\Program;
 use App\Models\Course;
+use App\Models\CourseBlock;
 use App\Models\AcademicYear;
 use App\Models\BloomsTaxonomy;
 use App\Models\CourseLearningOutcome;
@@ -25,6 +26,8 @@ class ProgramCourseManager extends Component
     public $cloDescription = '';
     public $cloTaxonomyId = null;
     public $copySourceBatch = [];
+    public $filterAcademicYearId = null;
+    public $filterSemester = '';
 
     public function updatedSelectedProgramId($programId)
     {
@@ -121,6 +124,31 @@ class ProgramCourseManager extends Component
         $this->cloTaxonomyId = $clo->blooms_taxonomy_id;
         $this->resetErrorBag();
         $this->dispatch('scroll-to-clo-form');
+    }
+
+    public function deleteClo($id): void
+    {
+        $clo = CourseLearningOutcome::query()
+            ->whereKey($id)
+            ->where('effective_batch_year', $this->selectedBatchYear ?: null)
+            ->first();
+
+        if (! $clo) {
+            return;
+        }
+
+        $course = $clo->course()->first();
+
+        DB::transaction(function () use ($clo) {
+            $clo->programOutcomes()->detach();
+            $clo->delete();
+        });
+
+        if ($this->editingCloId === $clo->id) {
+            $this->resetCloForm();
+        }
+
+        session()->flash('success', "CLO {$clo->code} deleted" . ($course ? " from {$course->code}" : '') . '.');
     }
 
     public function resetCloForm(): void
@@ -447,6 +475,97 @@ class ProgramCourseManager extends Component
             ->value('effective_batch_year');
     }
 
+    /**
+     * The list of semester names to match a stored semester value against,
+     * tolerating the "1st", "1st Semester", "First Semester" variations in use.
+     */
+    private function semesterVariants(string $raw): array
+    {
+        $n = strtolower(trim($raw));
+
+        if (str_contains($n, 'summer') || str_contains($n, '3rd')) {
+            return ['Summer', 'summer', '3rd'];
+        }
+
+        if (str_contains($n, 'second') || str_contains($n, '2nd') || $n === '2') {
+            return ['2nd', '2nd Semester', 'Second Semester'];
+        }
+
+        return ['1st', '1st Semester', 'First Semester'];
+    }
+
+    /**
+     * Academic years in which this program actually offers courses (has course
+     * blocks linked to its sections), for the "Offered in" filter dropdowns.
+     */
+    private function offeredAcademicYears(): \Illuminate\Support\Collection
+    {
+        if (! $this->selectedProgramId) {
+            return collect();
+        }
+
+        $ayIds = CourseBlock::query()
+            ->whereHas('sections', function ($q) {
+                $q->where('program_id', $this->selectedProgramId);
+            })
+            ->distinct()
+            ->pluck('academic_year_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        return AcademicYear::whereIn('id', $ayIds)
+            ->orderBy('start_year', 'desc')
+            ->get();
+    }
+
+    /**
+     * Semester labels in which the selected program offers courses during the
+     * chosen academic year, normalized to "1st", "2nd Semester", "Summer".
+     */
+    private function offeredSemesters(): \Illuminate\Support\Collection
+    {
+        if (! $this->selectedProgramId || ! $this->filterAcademicYearId) {
+            return collect();
+        }
+
+        $rawSemesters = CourseBlock::query()
+            ->where('academic_year_id', $this->filterAcademicYearId)
+            ->whereHas('sections', function ($q) {
+                $q->where('program_id', $this->selectedProgramId);
+            })
+            ->distinct()
+            ->pluck('semester')
+            ->filter();
+
+        $labels = collect();
+        foreach ($rawSemesters as $raw) {
+            $labels->push($this->normalizeSemesterLabel((string) $raw));
+        }
+
+        return $labels->filter()->unique()->values();
+    }
+
+    private function normalizeSemesterLabel(string $raw): string
+    {
+        $n = strtolower(trim($raw));
+
+        if (str_contains($n, 'summer') || str_contains($n, '3rd')) {
+            return 'Summer';
+        }
+
+        if (str_contains($n, 'second') || str_contains($n, '2nd') || $n === '2') {
+            return '2nd Semester';
+        }
+
+        return '1st Semester';
+    }
+
+    public function updatedFilterAcademicYearId()
+    {
+        $this->filterSemester = '';
+    }
+
     public function render()
     {
         $programs = Program::orderBy('name')->get();
@@ -481,6 +600,28 @@ class ProgramCourseManager extends Component
                         },
                     ])
                     ->get();
+
+                // Narrow to courses actually OFFERED in the selected academic year + semester.
+                if ($this->filterAcademicYearId && $this->filterSemester) {
+                    $variants = $this->semesterVariants($this->filterSemester);
+
+                    $offeredCourseIds = CourseBlock::query()
+                        ->where('academic_year_id', $this->filterAcademicYearId)
+                        ->whereIn('semester', $variants)
+                        ->whereHas('sections', function ($q) {
+                            $q->where('program_id', $this->selectedProgramId);
+                        })
+                        ->pluck('course_id')
+                        ->unique();
+
+                    if ($offeredCourseIds->isNotEmpty()) {
+                        $currentBatchCourses = $currentBatchCourses
+                            ->filter(fn ($course) => $offeredCourseIds->contains($course->id))
+                            ->values();
+                    } else {
+                        $currentBatchCourses = collect();
+                    }
+                }
 
                 foreach ($currentBatchCourses as $course) {
                     $course->setRelation(
@@ -643,6 +784,8 @@ class ProgramCourseManager extends Component
             'programOutcomes' => $programOutcomes,
             'previousBatchWithCourses' => $previousBatchWithCourses,
             'copySourceBatches' => $copySourceBatches,
+            'offeredAcademicYears' => $this->offeredAcademicYears(),
+            'offeredSemesters' => $this->offeredSemesters(),
             'taxonomies' => BloomsTaxonomy::orderBy('domain')->orderBy('code')->get(),
         ])->extends('layouts.admin')
             ->section('content');

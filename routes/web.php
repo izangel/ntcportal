@@ -96,6 +96,8 @@ use App\Livewire\Admin\CloSetup;
 use App\Livewire\Admin\CurriculumMatrix;
 use App\Livewire\Admin\AssessmentSetup;
 use App\Livewire\Admin\ProgramCourseManager;
+use App\Livewire\Admin\CloManager;
+use App\Livewire\Admin\CoPoMappingPaste;
 use App\Livewire\Admin\ProgramBatchReport;
 
 use App\Livewire\Admin\ObeCourseDashboard;
@@ -364,6 +366,8 @@ Route::middleware([
     Route::middleware(['role:academic_head|registrar|hr|admin|program_head_shs'])->group(function () {
         Route::get('/admin/obe/setup', ObeSetup::class)->name('admin.obe.setup');
         Route::get('/admin/obe/program-courses', ProgramCourseManager::class)->name('admin.obe.program-courses');
+        Route::get('/admin/obe/clos', CloManager::class)->name('admin.obe.clos');
+        Route::get('/admin/obe/copo-mapping', CoPoMappingPaste::class)->name('admin.obe.copo-mapping');
         Route::get('/admin/obe/program-report', ProgramBatchReport::class)->name('admin.obe.program-report');
         Route::get('/admin/obe/course-dashboard', ObeCourseDashboard::class)->name('admin.obe.course-dashboard');
         Route::get('/admin/obe/program-matrix', ProgramOverviewMatrix::class)->name('admin.obe.program-matrix');

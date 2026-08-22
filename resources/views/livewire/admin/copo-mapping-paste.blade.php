@@ -1,0 +1,131 @@
+<div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">CO-PO Mapping (Paste from Excel)</h1>
+        <p class="text-sm text-gray-600">Bulk-set the CLO &rarr; PO levels for one course by copying the matrix straight from Excel.</p>
+    </div>
+
+    @if($parseMessage)
+        <div class="mb-4 p-4 text-sm rounded-lg border {{ $parseType === 'success' ? 'text-emerald-800 bg-emerald-100 border-emerald-200' : ($parseType === 'error' ? 'text-rose-800 bg-rose-100 border-rose-200' : 'text-sky-800 bg-sky-100 border-sky-200') }}">
+            {{ $parseMessage }}
+        </div>
+    @endif
+
+    {{-- Filters --}}
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Degree Program</label>
+                <select wire:model.live="selectedProgramId" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">-- Choose a Program --</option>
+                    @foreach($programs as $program)
+                        <option value="{{ $program->id }}">{{ $program->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Batch / Cohort</label>
+                <select wire:model.live="selectedBatchYear" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">All Batches</option>
+                    @foreach($batchOptions as $batchOption)
+                        <option value="{{ $batchOption }}">Batch {{ $batchOption }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Course</label>
+                <select wire:model.live="selectedCourseId" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">-- Choose a Course --</option>
+                    @foreach($courses as $course)
+                        <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
+    @if($selectedCourseId)
+        {{-- Current matrix --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                <h3 class="text-sm font-bold text-gray-800">Current Co-PO Mapping</h3>
+                <p class="mt-0.5 text-xs text-gray-500">I — Introduced, E — Enabling, D — Demonstrating</p>
+            </div>
+            @if($currentMatrix->isNotEmpty() && $programOutcomes->isNotEmpty())
+                <div class="overflow-x-auto p-5">
+                    <table class="min-w-full border-collapse text-xs">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="border-r border-gray-200 px-3 py-2 text-left font-bold text-gray-500">CLO</th>
+                                @foreach($programOutcomes as $po)
+                                    <th class="border-r border-gray-200 px-2 py-2 text-center font-bold text-gray-700" title="{{ $po->description }}">{{ $po->code }}</th>
+                                @endforeach
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($currentMatrix as $row)
+                                <tr>
+                                    <td class="border-r border-gray-200 px-3 py-2 align-top">
+                                        <span class="font-bold text-indigo-700">{{ $row['clo']->code }}</span>
+                                        <span class="block text-gray-500">{{ $row['clo']->description }}</span>
+                                    </td>
+                                    @foreach($row['levels'] as $cell)
+                                        @php
+                                            $style = match ($cell['stored']) {
+                                                'I' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                                'G' => 'bg-amber-100 text-amber-800 border-amber-200',
+                                                'A' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                                default => 'text-gray-300',
+                                            };
+                                        @endphp
+                                        <td class="border-r border-gray-200 px-2 py-2 text-center font-bold {{ $cell['display'] ? '' : '' }}">
+                                            <span class="inline-flex h-7 w-7 items-center justify-center rounded border {{ $style }}">{{ $cell['display'] ?: '—' }}</span>
+                                        </td>
+                                    @endforeach
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="p-8 text-center text-sm text-gray-400 italic">No CLOs or POs available to display for this course and batch.</div>
+            @endif
+        </div>
+
+        {{-- Paste box --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-800">Paste the matrix from Excel</h3>
+                    <p class="mt-0.5 text-xs text-gray-500">
+                        Copy the CLO x PO cells from Excel (each row a CLO, each column a PO, cells I/E/D or blank), then paste here.
+                    </p>
+                </div>
+                <button type="button" wire:click="generateTemplate" class="rounded-md border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100">
+                    Generate Template
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 mb-3">
+                    <strong>Format:</strong> first row is the header — an optional row label cell, then the PO codes. Each following row is a CLO code, then one cell per PO with <strong>I</strong>, <strong>E</strong>, or <strong>D</strong> (blank = no mapping). Tab-separated, one CLO per line.
+                </div>
+                <textarea wire:model="pastedText" rows="10" spellcheck="false"
+                    placeholder="CLO&#09;PO1&#09;PO2&#09;PO3&#10;CLO-01&#09;I&#09;&#09;E&#10;CLO-02&#09;&#09;D&#09;&#10;CLO-03&#09;E&#09;D&#09;"
+                    class="w-full font-mono rounded-md border-gray-300 text-sm shadow-sm"></textarea>
+                <div class="mt-4 flex items-center gap-3">
+                    <button type="button" wire:click="applyMapping" wire:loading.attr="disabled"
+                        class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+                        Apply Mapping
+                    </button>
+                    @if($applied > 0)
+                        <span class="text-sm font-semibold text-emerald-700">{{ $applied }} mapping(s) applied.</span>
+                    @endif
+                    <span wire:loading wire:target="applyMapping" class="text-sm text-gray-500">Applying…</span>
+                </div>
+            </div>
+        </div>
+    @else
+        <div class="bg-white rounded-lg shadow-sm border border-dashed border-gray-300 p-12 text-center text-gray-500">
+            Select a program, batch, and course to view and edit its CO-PO mapping.
+        </div>
+    @endif
+</div>
