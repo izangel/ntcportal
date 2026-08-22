@@ -123,6 +123,31 @@ class ProgramCourseManager extends Component
         $this->dispatch('scroll-to-clo-form');
     }
 
+    public function deleteClo($id): void
+    {
+        $clo = CourseLearningOutcome::query()
+            ->whereKey($id)
+            ->where('effective_batch_year', $this->selectedBatchYear ?: null)
+            ->first();
+
+        if (! $clo) {
+            return;
+        }
+
+        $course = $clo->course()->first();
+
+        DB::transaction(function () use ($clo) {
+            $clo->programOutcomes()->detach();
+            $clo->delete();
+        });
+
+        if ($this->editingCloId === $clo->id) {
+            $this->resetCloForm();
+        }
+
+        session()->flash('success', "CLO {$clo->code} deleted" . ($course ? " from {$course->code}" : '') . '.');
+    }
+
     public function resetCloForm(): void
     {
         $this->reset(['cloCourseId', 'editingCloId', 'cloCode', 'cloDescription', 'cloTaxonomyId']);

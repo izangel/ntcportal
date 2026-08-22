@@ -160,6 +160,12 @@
                                                                 <button type="button" wire:click="editClo({{ $clo->id }})" class="shrink-0 font-semibold text-indigo-600 hover:text-indigo-800">
                                                                     Edit
                                                                 </button>
+                                                                <button type="button"
+                                                                    wire:click="deleteClo({{ $clo->id }})"
+                                                                    wire:confirm="Delete CLO {{ $clo->code }}? This also removes its CO-PO mappings, assessment items, and any recorded student marks for those items."
+                                                                    class="shrink-0 font-semibold text-rose-600 hover:text-rose-800">
+                                                                    Delete
+                                                                </button>
                                                             </div>
                                                             <div class="rounded border border-gray-200 bg-gray-50 p-2 text-xs">
                                                                 <div class="text-[10px] text-gray-600">
@@ -401,7 +407,13 @@
                                                         <span class="mt-2 inline-block rounded bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-600">{{ $clo->bloomsTaxonomy->code }}: {{ $clo->bloomsTaxonomy->level }}</span>
                                                     @endif
                                                 </div>
-                                                <button type="button" wire:click="editClo({{ $clo->id }})" class="shrink-0 text-[10px] font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
+                                                <div class="flex shrink-0 items-center gap-2">
+                                                    <button type="button" wire:click="editClo({{ $clo->id }})" class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
+                                                    <button type="button"
+                                                        wire:click="deleteClo({{ $clo->id }})"
+                                                        wire:confirm="Delete CLO {{ $clo->code }}? This also removes its CO-PO mappings, assessment items, and any recorded student marks for those items."
+                                                        class="text-[10px] font-semibold text-rose-600 hover:text-rose-800">Delete</button>
+                                                </div>
                                             </div>
                                         </td>
                                         @foreach($programOutcomes as $po)
