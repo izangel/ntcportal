@@ -172,10 +172,16 @@
             </div>
 
             <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-                <h2 class="mb-2 text-base font-bold text-gray-900">Map Assessment Item to CLO</h2>
+                <div class="mb-2 flex items-center justify-between">
+                    <h2 class="text-base font-bold text-gray-900">{{ $editingItemId ? 'Edit Assessment Item' : 'Map Assessment Item to CLO' }}</h2>
+                    @if($editingItemId)
+                        <button type="button" wire:click="cancelEditItem" class="text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
+                    @endif
+                </div>
                 <div class="mb-4 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs leading-relaxed text-gray-600">
                     <p><i class="fas fa-circle-info mr-1 text-emerald-600"></i>Add each question or section as its own item mapped to <strong>one CLO</strong>. Every CLO must be covered by at least one item, or the syllabus cannot be submitted.</p>
-                    <p class="mt-1">The task's total marks update automatically as you add items — no need to know them upfront.</p>
+                    <p class="mt-1">The task's total marks update automatically as you add or edit items — no need to know them upfront.</p>
+                    <p class="mt-1">You can also <strong>Edit</strong> or <strong>Delete</strong> an existing item from its task's item list below.</p>
                     @php
                         $mappedTask = $selectedTaskId ? $tasks->firstWhere('id', (int) $selectedTaskId) : null;
                     @endphp
@@ -201,7 +207,7 @@
                         @endforeach
                     </select>
                     <input type="number" step="0.01" wire:model="itemMarks" placeholder="Maximum marks" class="w-full rounded-lg border-gray-300 text-sm">
-                    <button class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Map Item to CLO</button>
+                    <button class="w-full rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">{{ $editingItemId ? 'Update Item' : 'Map Item to CLO' }}</button>
                 </form>
             </div>
         </div>
@@ -226,9 +232,20 @@
                         </div>
                         <div class="mt-3 space-y-1 border-t border-gray-200 pt-2">
                             @forelse($task->items as $item)
-                                <div class="flex justify-between text-xs text-gray-700">
-                                    <span>{{ $item->item_name }} -> {{ $item->clo->code ?? 'CLO' }}</span>
-                                    <span>{{ $item->max_marks }} marks</span>
+                                <div class="flex items-center justify-between gap-2 text-xs text-gray-700">
+                                    <span class="min-w-0">{{ $item->item_name }} -> {{ $item->clo->code ?? 'CLO' }}</span>
+                                    <span class="flex shrink-0 items-center gap-3">
+                                        <span class="text-gray-500">{{ number_format((float) $item->max_marks, 2) }} marks</span>
+                                        @if(!$locked)
+                                            <span class="flex items-center gap-2">
+                                                <button type="button" wire:click="editItem({{ $item->id }})" class="font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
+                                                <button type="button"
+                                                    wire:click="deleteItem({{ $item->id }})"
+                                                    wire:confirm="Delete assessment item '{{ $item->item_name }}'? This also removes any recorded student marks for it."
+                                                    class="font-semibold text-rose-600 hover:text-rose-800">Delete</button>
+                                            </span>
+                                        @endif
+                                    </span>
                                 </div>
                             @empty
                                 <span class="text-xs italic text-gray-400">No CLO items mapped yet.</span>
