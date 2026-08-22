@@ -82,8 +82,9 @@ class CourseAttainmentController extends Controller
 
         $session = CourseBlock::findOrFail($request->course_block_id);
 
-        // Security check: Ensure faculty owns this course
-        if ($session->faculty_id !== Auth::id()) {
+        // Security check: Ensure the faculty owns this course block.
+        // faculty_id stores an employee id, so compare against the user's employee id.
+        if (! Auth::user()->employee || $session->faculty_id !== Auth::user()->employee->id) {
             abort(403);
         }
 

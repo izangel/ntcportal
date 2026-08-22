@@ -21,6 +21,33 @@ use App\Exports\LeaveApplicationsExport;
 class LeaveApplicationController extends Controller
 {
     /**
+     * Whether the current user may manage the given leave application.
+     * Employees may only manage their own; HR/admin/academic heads may manage all.
+     */
+    private function canManage(LeaveApplication $leaveApplication): bool
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->hasRole('hr') || $user->hasRole('admin') || $user->hasRole('academic_head')) {
+            return true;
+        }
+
+        return $user->employee && $user->employee->id === $leaveApplication->employee_id;
+    }
+
+    /**
+     * Abort unless the current user may manage the given leave application.
+     */
+    private function authorizeManage(LeaveApplication $leaveApplication): void
+    {
+        abort_unless($this->canManage($leaveApplication), 403, 'You are not allowed to manage this leave application.');
+    }
+
+    /**
      * Display a listing of leave applications for the logged-in employee.
      */
     public function index(Request $request)
@@ -212,6 +239,11 @@ private function calculateWorkDays($startDate, $endDate)
 
     // HR Direct Recording is ONLY true if HR is filing for someone ELSE
     $isHrDirectRecording = ($isHrRole && !$isSelfFiling);
+
+    // Guard: non-HR users may only file leave for themselves.
+    if (! $isHrRole && ! $isSelfFiling) {
+        abort(403, 'You may only file leave applications for yourself.');
+    }
 
     // 2. Dynamic Validation Rules
     $rules = [
@@ -407,6 +439,8 @@ public function edit(LeaveApplication $leaveApplication)
 
     public function update(Request $request, LeaveApplication $leaveApplication)
     {
+        $this->authorizeManage($leaveApplication);
+
         $rules = [
             'employee_id' => 'required|exists:employees,id',
             'reason' => 'required|string|max:1000',
@@ -507,6 +541,8 @@ public function edit(LeaveApplication $leaveApplication)
 
     public function destroy(LeaveApplication $leaveApplication)
     {
+        $this->authorizeManage($leaveApplication);
+
         if ($leaveApplication->approval_status !== 'pending') {
             return redirect()->route('leave_applications.index')
                              ->with('error', 'Only pending leave applications can be deleted.');
@@ -634,6 +670,8 @@ public function exportExcel(Request $request)
      */
     public function cancel(LeaveApplication $leaveApplication)
     {
+        $this->authorizeManage($leaveApplication);
+
         // Check if already cancelled
         if ($leaveApplication->approval_status === 'cancelled') {
             return redirect()->back()->with('error', 'This application is already cancelled.');

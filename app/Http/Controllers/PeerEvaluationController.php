@@ -50,12 +50,22 @@ class PeerEvaluationController extends Controller
      */
     public function store(Request $request, PeerAssignment $assignment)
     {
+        // Security check: Ensure the logged-in user is actually assigned to this peer
+        if ($assignment->peer_id != Auth::user()->employee->id) {
+            abort(403, 'Unauthorized actions.');
+        }
+
+        if ($assignment->is_completed) {
+            return redirect()->route('faculty.peer-evaluations.index')->with('error', 'Evaluation already submitted.');
+        }
+
         $request->validate([
-            'ratings' => 'required|array',
+            'ratings' => 'required|array|min:1',
+            'ratings.*' => 'required|numeric|min:0|max:100',
             'comments' => 'nullable|string|max:1000',
         ]);
 
-        $ratings = $request->ratings;
+        $ratings = array_values($request->ratings);
         $meanScore = array_sum($ratings) / count($ratings);
         
         // Get the Employee ID instead of User ID

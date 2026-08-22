@@ -19,6 +19,21 @@ class LeaveApplicationManager extends Component
 {
     use WithPagination;
 
+    /**
+     * Whether the current user may manage the given leave application
+     * (their own, or any application for HR/admin/academic heads).
+     */
+    private function canManage(LeaveApplication $leaveApplication): bool
+    {
+        $user = Auth::user();
+
+        if ($user->hasRole('hr') || $user->hasRole('admin') || $user->hasRole('academic_head')) {
+            return true;
+        }
+
+        return $user->employee && $user->employee->id === $leaveApplication->employee_id;
+    }
+
     // --- VIEW STATE CONTROLLER ---
     public $isCreating = false; 
     public $isHrRecordingMode = false; 
@@ -280,7 +295,12 @@ class LeaveApplicationManager extends Component
         // --- DETERMINE PERSISTENCE MODE (EDIT VS NEW) ---
         if ($this->editingApplicationId) {
             $leaveApplication = LeaveApplication::findOrFail($this->editingApplicationId);
-            
+
+            // Ownership guard: only the owner, HR, admin, or academic head may save.
+            if (! $this->canManage($leaveApplication)) {
+                abort(403, 'You are not allowed to manage this leave application.');
+            }
+
             // Final validation structural shield wrap
             if ($leaveApplication->approval_status !== 'pending') {
                 session()->flash('error', 'Write Protection Error: This row has been updated outside this frame and is locked.');
@@ -405,6 +425,12 @@ class LeaveApplicationManager extends Component
         $this->resetFormFields();
         
         $application = LeaveApplication::with('classesToMiss')->findOrFail($id);
+
+        // Security Barrier Check: only employees managing their own pending
+        // application, or HR/admin/academic heads, may open it for editing.
+        if (! $this->canManage($application)) {
+            abort(403, 'You are not allowed to manage this leave application.');
+        }
 
         // Security Barrier Check: Guard against manual DOM injection hacks on approved data sets
         if ($application->approval_status !== 'pending') {

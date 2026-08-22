@@ -71,6 +71,11 @@ class CourseAttainmentReport extends Component
 
     private function persist(string $status): void
     {
+        // Re-verify ownership on every write; Livewire state can be tampered with.
+        $block = CourseBlock::find($this->courseBlockId);
+        abort_unless($block, 403);
+        abort_unless($block->faculty_id === Auth::user()?->employee?->id, 403);
+
         $this->validate([
             'actionPlans.*.issue' => 'nullable|string|max:1000',
             'actionPlans.*.action' => 'nullable|string|max:1000',

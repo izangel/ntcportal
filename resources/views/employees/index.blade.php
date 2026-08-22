@@ -13,7 +13,7 @@
 
                 @if (session('password_success'))
                     <div class="bg-amber-100 border border-amber-400 text-amber-900 px-4 py-3 rounded relative mb-4 shadow-sm" role="alert">
-                        <span class="block sm:inline">{!! session('password_success') !!}</span>
+                        <span class="block sm:inline">{{ session('password_success') }}</span>
                     </div>
                 @endif
 

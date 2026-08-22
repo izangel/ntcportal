@@ -241,7 +241,7 @@
                                                 <button type="button" wire:click="editItem({{ $item->id }})" class="font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
                                                 <button type="button"
                                                     wire:click="deleteItem({{ $item->id }})"
-                                                    wire:confirm="Delete assessment item '{{ $item->item_name }}'? This also removes any recorded student marks for it."
+                                                    wire:confirm="{{ __('Delete assessment item :name? This also removes any recorded student marks for it.', ['name' => $item->item_name]) }}"
                                                     class="font-semibold text-rose-600 hover:text-rose-800">Delete</button>
                                             </span>
                                         @endif

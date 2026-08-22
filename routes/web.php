@@ -486,9 +486,13 @@ Route::middleware([
     Route::put('/profile/password', [ChangePasswordController::class, 'update'])
         ->name('profile.password.update');
 
-    Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])
-        ->name('faculty-loadings.delete');
-    Route::resource('faculty-loadings', FacultyLoadingController::class);
+    Route::middleware('role:academic_head|registrar|hr|admin|program_head_shs|program_head|program_head_college')->group(function () {
+        Route::get('faculty-loadings/{id}/delete', [FacultyLoadingController::class, 'delete'])
+            ->name('faculty-loadings.delete');
+        Route::resource('faculty-loadings', FacultyLoadingController::class)->only([
+            'index', 'create', 'store', 'edit', 'update', 'destroy',
+        ]);
+    });
 
     // Faculty Course Load
     Route::get('/faculty/course-load', [FacultyCourseController::class, 'index'])->name('faculty.course_load');

@@ -88,10 +88,10 @@ class EmployeeController extends Controller
             'password' => Hash::make($newPassword),
         ]);
 
-        // Swapped to markdown-safe HTML parsing using standard line-breaks for clean presentation
+        // Plain-text flash (rendered escaped in the view).
         return redirect()->route('employees.index')->with(
             'password_success',
-            "Password for <strong>{$employee->user->email}</strong> has been reset to: <code class='bg-gray-100 p-1 rounded font-bold text-red-600'>{$newPassword}</code>. Please copy and share this securely right now."
+            "Password for {$employee->user->email} has been reset to: {$newPassword}. Please copy and share this securely right now."
         );
     }
 

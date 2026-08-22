@@ -147,6 +147,9 @@ class StudentCourseController extends Controller
             ->where('semester', $semesterName)
             ->first();
 
+        // Security: only evaluate courses the student is actually enrolled in.
+        abort_unless($enrollment, 403, 'You are not enrolled in this course for the current term.');
+
         if ($enrollment) {
             $block = CourseBlock::where('course_id', $request->course_id)
                 ->where('academic_year_id', $activeSem->academic_year_id)

@@ -18,6 +18,20 @@ class StudentEvaluationController extends Controller
         };
     }
 
+    /**
+     * Verify the logged-in student is actually enrolled in this course block.
+     * Aborts 403 otherwise.
+     */
+    private function authorizeEnrollment(CourseBlock $courseBlock, Student $student): void
+    {
+        $enrolled = DB::table('student_courseblock')
+            ->where('student_id', $student->id)
+            ->where('course_block_id', $courseBlock->id)
+            ->exists();
+
+        abort_unless($enrolled, 403, 'You are not enrolled in this course block.');
+    }
+
     public function index()
 {
     try {
@@ -85,7 +99,8 @@ class StudentEvaluationController extends Controller
     public function store(Request $request, CourseBlock $courseBlock)
     {
         $request->validate([
-            'ratings' => 'required|array',
+            'ratings' => 'required|array|min:1',
+            'ratings.*' => 'required|numeric|min:0|max:100',
             'aspects_helped' => 'nullable|string|max:2000',
             'aspects_improved' => 'nullable|string|max:2000',
             'comments' => 'nullable|string|max:1000',
@@ -93,14 +108,32 @@ class StudentEvaluationController extends Controller
 
         $student = \App\Models\Student::where('user_id', auth()->id())->first();
 
+        abort_unless($student, 403, 'Student record not found.');
+
+        // Security: student must be enrolled in this block to evaluate it.
+        $this->authorizeEnrollment($courseBlock, $student);
+
+        // Security: prevent duplicate evaluations for the same block.
+        $alreadyEvaluated = \App\Models\FacultyEvaluation::where([
+            'student_id'      => $student->id,
+            'course_block_id' => $courseBlock->id,
+        ])->exists();
+
+        if ($alreadyEvaluated) {
+            return redirect()->route('student.evaluations.index')
+                ->with('error', 'You have already evaluated this course.');
+        }
+
+        $ratings = array_values($request->ratings);
+
         // Calculate the mean_score from the ratings array
-        $meanScore = array_sum($request->ratings) / count($request->ratings);
+        $meanScore = array_sum($ratings) / count($ratings);
 
         // Save to the NEW faculty_evaluations table
         \App\Models\FacultyEvaluation::create([
             'student_id'       => $student->id,
             'course_block_id'  => $courseBlock->id, // This is the key link
-            'ratings'          => $request->ratings,
+            'ratings'          => $ratings,
             'mean_score'       => $meanScore,
             'aspects_helped'   => $request->aspects_helped,
             'aspects_improved' => $request->aspects_improved,
@@ -113,6 +146,10 @@ class StudentEvaluationController extends Controller
 
     public function create(CourseBlock $courseBlock)
     {
+        $student = \App\Models\Student::where('user_id', auth()->id())->first();
+        abort_unless($student, 403, 'Student record not found.');
+        $this->authorizeEnrollment($courseBlock, $student);
+
         // Eager load relations to show Course Name and Faculty Name on the form
         $courseBlock->load(['course', 'faculty']);
 

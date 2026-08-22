@@ -82,7 +82,7 @@ class UserAccountController extends Controller
             'email' => $email,
         ]);
 
-        return back()->with('success', "Created account for {$user->name}: <strong>{$user->email}</strong> (default password: <code>northlink</code>).");
+        return back()->with('success', "Created account for {$user->name} ({$email}); default password: northlink.");
     }
 
     private function buildEmail(Student $student)
