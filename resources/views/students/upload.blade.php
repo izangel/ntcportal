@@ -20,7 +20,8 @@
                     <ul class="ml-4 list-disc list-inside space-y-0.5">
                         <li><code class="bg-blue-100 px-1 rounded">first_name</code> (required)</li>
                         <li><code class="bg-blue-100 px-1 rounded">last_name</code> (required)</li>
-                        <li><code class="bg-blue-100 px-1 rounded">email</code> (optional — if blank, a login account is generated as <code class="bg-blue-100 px-1 rounded">lastnamefirstname@northlink.edu.ph</code>)</li>
+                        <li><code class="bg-blue-100 px-1 rounded">student_id</code> (the school ID, e.g. <code class="bg-blue-100 px-1 rounded">2024-0001</code>) — used as the unique key; rows with the same ID update instead of adding a duplicate. Leave blank when the ID is unknown (name + birthday are used instead).</li>
+                        <li><code class="bg-blue-100 px-1 rounded">email</code> (optional — if blank, a unique login email is generated automatically, e.g. <code class="bg-blue-100 px-1 rounded">lastnamefirstname@northlink.edu.ph</code>)</li>
                         <li><code class="bg-blue-100 px-1 rounded">middle_name</code> (optional)</li>
                         <li><code class="bg-blue-100 px-1 rounded">gender</code> (optional)</li>
                         <li><code class="bg-blue-100 px-1 rounded">contact_number</code> (optional)</li>
@@ -28,7 +29,7 @@
                         <li><code class="bg-blue-100 px-1 rounded">birthday</code> (optional — <code class="bg-blue-100 px-1 rounded">YYYY-MM-DD</code>)</li>
                         <li><code class="bg-blue-100 px-1 rounded">password</code> (optional — defaults to <code class="bg-blue-100 px-1 rounded">northlink</code>)</li>
                     </ul>
-                    <p class="mt-1">A student user account is created automatically for each row and linked to the student record. Students already registered are skipped.</p>
+                    <p class="mt-1">A student user account is created automatically for each row and linked to the student record. Each row is matched by <code class="bg-blue-100 px-1 rounded">student_id</code>; without it, by name + birthday. Duplicate rows inside the same file are skipped and reported.</p>
                 </div>
 
                 {{-- Success message with icon --}}

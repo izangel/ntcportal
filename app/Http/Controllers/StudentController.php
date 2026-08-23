@@ -415,36 +415,91 @@ public function bulkPromote(Request $request)
             $records = $csv->getRecords();
 
             $processed = 0;
+            $created = 0;
+            $updated = 0;
+            $duplicates = 0;
+            $errors = [];
+            $seenEmails = [];
+            $seenStudentKey = [];
 
             // Hash the default password once and reuse it for every row; bcrypt
             // is intentionally slow, so hashing per row is what hits the 30s limit.
             $defaultPasswordHash = Hash::make('northlink');
 
-            DB::transaction(function () use ($records, &$processed, $defaultPasswordHash) {
+            DB::transaction(function () use ($records, &$processed, &$created, &$updated, &$duplicates, &$errors, &$seenEmails, &$seenStudentKey, $defaultPasswordHash) {
                 foreach ($records as $record) {
-                    $firstName = trim((string) ($record['first_name'] ?? ''));
-                    $lastName = trim((string) ($record['last_name'] ?? ''));
-                    $email = strtolower(trim((string) ($record['email'] ?? '')));
+                    // Normalise the header/column keys to lowercase so casing
+                    // differences in the uploaded file (e.g. "BirthDate" vs
+                    // "birthday") never matter.
+                    $row = [];
+                    foreach ($record as $key => $value) {
+                        $row[strtolower(
+                            preg_replace('/[\x00-\x1F\x80-\xFF]/', '', trim((string) $key))
+                        )] = $value;
+                    }
+
+                    $firstName = trim((string) ($row['first_name'] ?? ''));
+                    $lastName = trim((string) ($row['last_name'] ?? ''));
+                    $email = strtolower(trim((string) ($row['email'] ?? '')));
 
                     if ($firstName === '' || $lastName === '') {
+                        $errors[] = 'Row with missing first/last name skipped.';
                         continue;
                     }
 
-                    // Generate a placeholder email for students uploaded without
-                    // one so they still get a login account.
-                    if ($email === '') {
-                        $slug = strtolower(preg_replace('/[^a-z0-9]/', '', $lastName.$firstName));
-                        $email = ($slug !== '' ? $slug : 'student').'@northlink.edu.ph';
+                    $middleName = trim((string) ($row['middle_name'] ?? ''));
+                    $contactNumber = trim((string) ($row['contact_number'] ?? ''));
+                    $studentId = trim((string) ($row['student_id'] ?? $row['studentid'] ?? ''));
+                    $studentIdName = trim((string) ($row['student_id_name'] ?? ''));
+                    $birthday = trim((string) ($row['birthday'] ?? ''));
+                    $gender = trim((string) ($row['gender'] ?? ''));
+
+                    // Reject rows whose birthday is present but not a real date
+                    // instead of letting the model's date cast crash the import.
+                    $birthdayParsed = null;
+                    if ($birthday !== '') {
+                        try {
+                            $birthdayParsed = \Carbon\Carbon::parse($birthday)->toDateString();
+                        } catch (\Throwable $e) {
+                            $errors[] = "Invalid birthday '{$birthday}' for {$firstName} {$lastName}; row skipped.";
+                            continue;
+                        }
                     }
 
-                    $middleName = trim((string) ($record['middle_name'] ?? ''));
-                    $contactNumber = trim((string) ($record['contact_number'] ?? ''));
-                    $studentIdName = trim((string) ($record['student_id_name'] ?? ''));
-                    $birthday = trim((string) ($record['birthday'] ?? ''));
-                    $gender = trim((string) ($record['gender'] ?? ''));
+                    // --- Unique identity for the student record ---
+                    // Prefer the school ID; fall back to name + birthday.
+                    if ($studentId !== '') {
+                        $studentKey = 'id:'.strtolower($studentId);
+                    } else {
+                        $studentKey = 'name:'.strtolower($firstName.'|'.$lastName.'|'.($birthdayParsed ?? ''));
+                    }
 
-                    // Create the student's user account (skips if the email already exists).
-                    $password = trim((string) ($record['password'] ?? ''));
+                    // Duplicate rows within the same file are skipped rather than
+                    // creating/re-updating the same student twice.
+                    if (isset($seenStudentKey[$studentKey])) {
+                        $duplicates++;
+                        continue;
+                    }
+                    $seenStudentKey[$studentKey] = true;
+
+                    // --- Generate a guaranteed-unique email per row ---
+                    // Base it on name when the CSV has no email column, then append
+                    // a counter if it collides with an existing/login-used address.
+                    if ($email === '') {
+                        $slug = strtolower(preg_replace('/[^a-z0-9]/i', '', $lastName.$firstName));
+                        $base = ($slug !== '' ? $slug : 'student').'@northlink.edu.ph';
+
+                        $i = 1;
+                        $email = $base;
+                        while (User::where('email', $email)->exists() || in_array($email, $seenEmails, true)) {
+                            $i++;
+                            $email = ($slug !== '' ? $slug : 'student').$i.'@northlink.edu.ph';
+                        }
+                    }
+                    $seenEmails[] = $email;
+
+                    // Create the student's user account (skips if the email exists).
+                    $password = trim((string) ($row['password'] ?? ''));
                     $user = User::firstOrCreate(
                         ['email' => $email],
                         [
@@ -455,27 +510,49 @@ public function bulkPromote(Request $request)
                         ]
                     );
 
-                    // Create (or update) the student and link it to the user account.
-                    Student::updateOrCreate(
-                        ['email' => $email],
-                        [
-                            'user_id' => $user->id,
-                            'first_name' => $firstName,
-                            'middle_name' => $middleName !== '' ? $middleName : null,
-                            'last_name' => $lastName,
-                            'email' => $email,
-                            'contact_number' => $contactNumber !== '' ? $contactNumber : null,
-                            'student_id_name' => $studentIdName !== '' ? $studentIdName : null,
-                            'birthday' => $birthday !== '' ? $birthday : null,
-                            'gender' => $gender !== '' ? $gender : null,
-                        ]
-                    );
+                    // --- Find or create the student by its unique key ---
+                    if ($studentId !== '') {
+                        $existingStudent = Student::where('student_id', $studentId)->first();
+                    } else {
+                        $existingStudent = Student::where('first_name', $firstName)
+                            ->where('last_name', $lastName)
+                            ->when($birthdayParsed, fn ($q) => $q->where('birthday', $birthdayParsed))
+                            ->first();
+                    }
+
+                    $data = [
+                        'user_id' => $user->id,
+                        'student_id' => $studentId !== '' ? $studentId : null,
+                        'first_name' => $firstName,
+                        'middle_name' => $middleName !== '' ? $middleName : null,
+                        'last_name' => $lastName,
+                        'email' => $email,
+                        'contact_number' => $contactNumber !== '' ? $contactNumber : null,
+                        'student_id_name' => $studentIdName !== '' ? $studentIdName : null,
+                        'birthday' => $birthdayParsed,
+                        'gender' => $gender !== '' ? $gender : null,
+                    ];
+
+                    if ($existingStudent) {
+                        $existingStudent->update($data);
+                        $updated++;
+                    } else {
+                        Student::create($data);
+                        $created++;
+                    }
 
                     $processed++;
                 }
             });
 
-            return redirect()->back()->with('success', "Imported {$processed} student(s). A user account was created for each student.");
+            $uniqueEmails = collect($seenEmails)->unique()->count();
+
+            $message = "Processed {$processed} CSV row(s) into the '".DB::connection()->getDatabaseName()."' database: {$created} new student(s) created, {$updated} existing student(s) updated, {$duplicates} duplicate row(s) skipped in this file. {$uniqueEmails} unique email(s) were used.";
+            if (! empty($errors)) {
+                $message .= ' '.count($errors)." row(s) skipped: ".implode(' ', array_slice($errors, 0, 5)).(count($errors) > 5 ? ' (and more)' : '');
+            }
+
+            return redirect()->back()->with('success', $message);
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['csv_error' => $e->getMessage()]);
         }
