@@ -485,6 +485,10 @@
                         <i class="fas fa-file-csv mr-3 text-lg"></i>
                         {{ __('Upload Students (CSV)') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('students.masterlist') }}" :active="request()->routeIs('students.masterlist')">
+                        <i class="fas fa-clipboard-list mr-3 text-lg"></i>
+                        {{ __('Student Masterlist (Duplicates)') }}
+                    </x-nav-link>
                      <x-nav-link href="{{ route('students.studentportal') }}" :active="request()->routeIs('students.studentportal')">
                         <i class="fas fa-people-group mr-3 text-lg"></i>
                         {{ __('Manage Student Sections') }}

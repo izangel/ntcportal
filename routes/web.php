@@ -99,6 +99,7 @@ use App\Livewire\Admin\ProgramCourseManager;
 use App\Livewire\Admin\CloManager;
 use App\Livewire\Admin\CoPoMappingPaste;
 use App\Livewire\Admin\ProgramBatchReport;
+use App\Livewire\Admin\StudentMasterlist;
 
 use App\Livewire\Admin\ObeCourseDashboard;
 use App\Livewire\Admin\ProgramOverviewMatrix;
@@ -188,6 +189,7 @@ Route::middleware([
         Route::get('/students/upload', [StudentController::class, 'showUploadForm'])->name('students.upload.form');
         Route::post('/students/import', [StudentController::class, 'import'])->name('students.import');
         Route::get('/students/export', [StudentController::class, 'export'])->name('students.export');
+        Route::get('/students/masterlist', StudentMasterlist::class)->name('students.masterlist');
         Route::resource('students', StudentController::class);
         
         Route::get('/assignment/assign-courses', AssignCourses::class)->name('assign.courses');
