@@ -4,6 +4,7 @@ namespace App\Livewire\Admin;
 
 use App\Models\Student;
 use App\Models\User;
+use App\Models\Semester;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
@@ -26,11 +27,18 @@ class StudentMasterlist extends Component
 
     public $q = '';
 
+    public $scope = 'active'; // active | all
+
     public $showDuplicatesOnly = false;
 
     public $duplicateType = 'all'; // all | email | student_id | name
 
     public function updatedQ()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedScope()
     {
         $this->resetPage();
     }
@@ -150,6 +158,38 @@ class StudentMasterlist extends Component
     }
 
     /**
+     * The currently active semester (and its academic year), so the default
+     * view can be scoped to students enrolled in that term.
+     *
+     * @return array{ayId: ?int, label: string, variants: array}
+     */
+    private function activeSemester(): array
+    {
+        $semester = Semester::with('academicYear')->where('is_active', true)->first();
+
+        if (! $semester) {
+            return ['ayId' => null, 'label' => 'no active semester', 'variants' => []];
+        }
+
+        $ay = $semester->academicYear;
+        $label = $ay
+            ? "{$ay->start_year}-{$ay->end_year} · {$semester->name}"
+            : $semester->name;
+
+        $n = strtolower(trim($semester->name));
+        $variants = [];
+        if (str_contains($n, 'summer') || str_contains($n, '3rd') || str_contains($n, 'summer semester')) {
+            $variants = ['Summer', 'summer', '3rd'];
+        } elseif (str_contains($n, 'second') || str_contains($n, '2nd') || $n === '2') {
+            $variants = ['2nd', '2nd Semester', 'Second Semester'];
+        } else {
+            $variants = ['1st', '1st Semester', 'First Semester'];
+        }
+
+        return ['ayId' => (int) $semester->academic_year_id, 'label' => $label, 'variants' => $variants];
+    }
+
+    /**
      * Load all students, compute duplicate group membership in-memory, and
      * attach the flags used by the view. The dataset (~<2000 rows) is small
      * enough that this avoids N+1 queries.
@@ -158,10 +198,50 @@ class StudentMasterlist extends Component
      */
     public function buildMasterlist(): array
     {
+        $active = $this->activeSemester();
+
+        // When scoped to the active semester, first find the students enrolled
+        // in that term (section_student pivoted on AY + semester variants), and
+        // their section so the list can be sorted by section.
+        $activeEnrolled = collect();
+        $school = $active['ayId'] ? DB::table('section_student as ss')
+            ->join('sections as sec', 'sec.id', '=', 'ss.section_id')
+            ->leftJoin('programs as p', 'p.id', '=', 'sec.program_id')
+            ->where('ss.academic_year_id', $active['ayId'])
+            ->whereIn('ss.semester', $active['variants'])
+            ->select('ss.student_id', 'sec.name as section_name', 'p.name as program_name', 'sec.id as section_id')
+            ->get() : collect();
+
+        // Primary sort order: by section (program then section) when scoped to active.
         $students = Student::with('sections.program')
+            ->when('active' === $this->scope && $active['ayId'], fn ($q) => $q->whereIn('id', $activeEnrolled->pluck('student_id')))
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get();
+            ->get()
+            // Add section sort key from the active-semester pivot.
+            ->map(function ($s) use ($activeEnrolled, $active) {
+                $row = $activeEnrolled->firstWhere('student_id', $s->id);
+                $s->setAttribute('active_section_name', $row->section_name ?? null);
+                $s->setAttribute('active_program_name', $row->program_name ?? null);
+                $s->setAttribute('active_section_id', $row->section_id ?? null);
+                return $s;
+            })
+            ->filter(fn ($s) => 'all' === $this->scope || $s->active_section_id !== null)
+            // Sort by section (program then section) when scoped to the active
+            // semester; otherwise keep the name order.
+            ->sortBy(function ($s) {
+                if ('active' === $this->scope) {
+                    return [
+                        ($s->active_program_name ?? 'ZZ'),
+                        ($s->active_section_name ?? 'ZZ'),
+                        strtolower($s->last_name),
+                        strtolower($s->first_name),
+                    ];
+                }
+
+                return [strtolower($s->last_name), strtolower($s->first_name)];
+            })
+            ->values();
 
         $emailGroups = $students->filter(fn ($s) => $this->keyEmail($s) !== '')
             ->groupBy(fn ($s) => $this->keyEmail($s))
@@ -174,18 +254,15 @@ class StudentMasterlist extends Component
         $nameGroups = $students->groupBy(fn ($s) => $this->keyName($s))
             ->filter(fn ($g) => $g->count() > 1);
 
-        $sections = $students->each(function ($s) {
-            $programs = $s->sections
-                ->pluck('program.name')
-                ->filter()
-                ->unique()
-                ->implode(', ');
-
-            $s->setAttribute('programs', $programs);
-            $s->setAttribute('section_names', $s->sections->pluck('name')->filter()->unique()->implode(', '));
+        $students->each(function ($s) {
+            if ('active' === $this->scope && $s->active_section_name) {
+                $s->setAttribute('programs', $s->active_program_name ?? '');
+                $s->setAttribute('section_names', $s->active_section_name);
+            } else {
+                $s->setAttribute('programs', $s->sections->pluck('program.name')->filter()->unique()->implode(', '));
+                $s->setAttribute('section_names', $s->sections->pluck('name')->filter()->unique()->implode(', '));
+            }
         });
-
-        $duplicateRecords = [];
 
         foreach ($students as $s) {
             $flags = [];
@@ -259,6 +336,8 @@ class StudentMasterlist extends Component
         return view('livewire.admin.student-masterlist', [
             'students' => $data['students']->values(),
             'totals' => $data['totals'],
+            'activeSemester' => $this->activeSemester(),
+            'scope' => $this->scope,
         ])->extends('layouts.admin')
             ->section('content');
     }
