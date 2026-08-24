@@ -135,7 +135,7 @@
                 'learningPlan' => [
                     'title' => 'Complete the 18-week Learning Plan',
                     'hint' => 'Fill every teaching week (examination weeks are pre-filled).',
-                    'done' => collect($items)->every(function ($item, $index) {
+                    'done' => collect($items)->every(function ($item, $index) use ($examWeeks) {
                         if (isset($examWeeks[$index + 1])) { return true; }
                         return trim((string) ($item['learning_outcomes'] ?? '')) !== ''
                             && trim((string) ($item['topics_readings'] ?? '')) !== ''
