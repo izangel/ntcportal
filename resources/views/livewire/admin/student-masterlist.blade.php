@@ -1,8 +1,18 @@
 <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Student Masterlist</h1>
-        <p class="text-sm text-gray-600">Every student in the registry, with duplicate records flagged by email, school ID, or full name.</p>
+        <p class="text-sm text-gray-600">Students enrolled in the active semester, with duplicate records flagged by email, school ID, or full name.</p>
     </div>
+
+    @if($activeSemester['ayId'])
+        <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-indigo-100 px-4 py-1.5 text-xs font-bold text-indigo-700">
+            <i class="fas fa-calendar-check"></i> Active semester: {{ $activeSemester['label'] }} — showing students enrolled in that term
+        </div>
+    @else
+        <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-amber-100 px-4 py-1.5 text-xs font-bold text-amber-700">
+            <i class="fas fa-triangle-exclamation"></i> No active semester is set — showing all students.
+        </div>
+    @endif
 
     @if (session()->has('success'))
         <div class="mb-4 p-4 text-sm text-emerald-800 bg-emerald-100 rounded-lg border border-emerald-200">{{ session('success') }}</div>
@@ -37,7 +47,17 @@
     </div>
 
     {{-- Filters --}}
-    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col md:flex-row md:items-center gap-3">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col lg:flex-row lg:items-center gap-3">
+        <div class="flex items-center gap-1 rounded-lg border border-gray-200 p-1">
+            <button type="button" wire:click="$set('scope', 'active')"
+                class="rounded-md px-3 py-1.5 text-xs font-bold transition {{ $scope === 'active' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">
+                <i class="fas fa-user-graduate mr-1"></i>Active Semester
+            </button>
+            <button type="button" wire:click="$set('scope', 'all')"
+                class="rounded-md px-3 py-1.5 text-xs font-bold transition {{ $scope === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50' }}">
+                <i class="fas fa-users mr-1"></i>All Students
+            </button>
+        </div>
         <div class="flex-1">
             <input type="text" wire:model.live.debounce.300ms="q" placeholder="Search name, ID, or email..."
                 class="w-full rounded-md border-gray-300 shadow-sm text-sm">
