@@ -28,6 +28,7 @@ class CoPoMappingPaste extends Component
 
     public $sourceProgramId = null;
     public $sourceBatchYear = null;
+    public $sourceCourseId = null;
 
     public $pastedText = '';
     public $parseMessage = null;
@@ -55,6 +56,16 @@ class CoPoMappingPaste extends Component
     public function updatedSelectedCourseId()
     {
         $this->reset(['pastedText', 'parseMessage', 'parseType', 'applied']);
+    }
+
+    public function updatedSourceProgramId()
+    {
+        $this->reset(['sourceCourseId']);
+    }
+
+    public function updatedSourceBatchYear()
+    {
+        $this->reset(['sourceCourseId']);
     }
 
     /**
@@ -305,21 +316,27 @@ class CoPoMappingPaste extends Component
             return;
         }
 
-        $course = Course::find($this->selectedCourseId);
+        $targetCourse = Course::find($this->selectedCourseId);
 
-        // Target-side CLOs (of this course for the target batch).
-        $targetClos = $this->courseClos($course)
-            ->keyBy(fn ($clo) => strtoupper(trim((string) $clo->code)));
+        // Allow copying from a differently-named source course (e.g. an
+        // equivalent course in another program); default to the target course.
+        $sourceCourse = $this->sourceCourseId
+            ? Course::find($this->sourceCourseId)
+            : $targetCourse;
 
-        if ($targetClos->isEmpty()) {
+        if (! $sourceCourse) {
             $this->parseType = 'error';
-            $this->parseMessage = "{$course->code} has no CLOs for the target batch. Add them first, or use Copy CLOs & Mapping from the Program Course Manager.";
+            $this->parseMessage = 'Select a source course to copy from.';
             return;
         }
 
-        // Source-side CLOs (of this course for the source program + batch).
+        // Target-side CLOs (of the target course for the target batch).
+        $targetClos = $this->courseClos($targetCourse)
+            ->keyBy(fn ($clo) => strtoupper(trim((string) $clo->code)));
+
+        // Source-side CLOs (of the source course for the source program + batch).
         $sourceClos = CourseLearningOutcome::with('programOutcomes')
-            ->where('course_id', $course->id)
+            ->where('course_id', $sourceCourse->id)
             ->where('effective_batch_year', $sourceBatch)
             ->orderBy('code')
             ->get()
@@ -327,8 +344,14 @@ class CoPoMappingPaste extends Component
 
         if ($sourceClos->isEmpty()) {
             $this->parseType = 'error';
-            $this->parseMessage = "No CLOs found for {$course->code} in the source program/batch (Batch {$sourceBatch}).";
+            $this->parseMessage = "No CLOs found for {$sourceCourse->code} in the source program/batch (Batch {$sourceBatch}).";
             return;
+        }
+
+        if ($targetClos->isEmpty()) {
+            // The target may have no CLOs yet — that's fine; they'll be created
+            // from the source below.
+            $targetClos = collect();
         }
 
         // Target POs keyed by code so we only link matching outcomes.
@@ -349,14 +372,14 @@ class CoPoMappingPaste extends Component
         $skippedPo = 0;
         $skippedClo = 0;
 
-        DB::transaction(function () use ($sourceClos, $targetClos, $targetPosByCode, $course, $targetBatch, &$mapped, &$createdClos, &$skippedPo, &$skippedClo) {
+        DB::transaction(function () use ($sourceClos, $targetClos, $targetPosByCode, $targetCourse, $targetBatch, &$mapped, &$createdClos, &$skippedPo, &$skippedClo) {
             foreach ($sourceClos as $code => $sourceClo) {
                 $targetClo = $targetClos->get($code);
 
                 if (! $targetClo) {
                     // The CLO doesn't exist in the target yet — copy it in.
                     $targetClo = CourseLearningOutcome::create([
-                        'course_id' => $course->id,
+                        'course_id' => $targetCourse->id,
                         'code' => $sourceClo->code,
                         'description' => $sourceClo->description,
                         'blooms_taxonomy_id' => $sourceClo->blooms_taxonomy_id,
@@ -386,10 +409,10 @@ class CoPoMappingPaste extends Component
 
         $messages = [];
         if ($createdClos > 0) {
-            $messages[] = "Copied {$createdClos} CLO(s) from {$this->sourceLabel()} into the target batch.";
+            $messages[] = "Copied {$createdClos} CLO(s) from {$this->sourceLabel()} ({$sourceCourse->code}) into the target batch.";
         }
         if ($mapped > 0) {
-            $messages[] = "Copied {$mapped} CLO→PO mapping(s) into the current program/batch.";
+            $messages[] = "Copied {$mapped} CLO→PO mapping(s) into {$targetCourse->code}.";
         } elseif ($createdClos === 0) {
             $messages[] = 'Nothing to copy — no matching CLO↔PO pairs were found.';
         }
@@ -524,6 +547,27 @@ class CoPoMappingPaste extends Component
             ->get();
     }
 
+    /**
+     * Courses assigned to the source program + batch, so the user may pick a
+     * differently-named but equivalent course to copy CLOs from.
+     */
+    private function sourceCourses(): \Illuminate\Support\Collection
+    {
+        if (! $this->sourceProgramId) {
+            return collect();
+        }
+
+        return Program::findOrFail($this->sourceProgramId)
+            ->courses()
+            ->when($this->sourceBatchYear, function ($query) {
+                $query->where('course_program.effective_batch_year', $this->sourceBatchYear);
+            }, function ($query) {
+                $query->whereNull('course_program.effective_batch_year');
+            })
+            ->orderBy('courses.code')
+            ->get();
+    }
+
     private function programOutcomes(): \Illuminate\Support\Collection
     {
         if (! $this->selectedProgramId) {
@@ -579,6 +623,7 @@ class CoPoMappingPaste extends Component
             'courses' => $courses,
             'currentMatrix' => $currentMatrix,
             'programOutcomes' => $this->selectedCourseId ? $this->programOutcomes() : collect(),
+            'sourceCourses' => $this->sourceCourses(),
             'taxonomies' => BloomsTaxonomy::orderBy('domain')->orderBy('code')->get(),
         ])->extends('layouts.admin')
             ->section('content');

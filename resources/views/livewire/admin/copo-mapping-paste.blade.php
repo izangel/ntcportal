@@ -148,15 +148,16 @@
             <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
                 <h3 class="text-sm font-bold text-gray-800">Copy CLOs &amp; CO-PO Mapping from another Program &amp; Batch</h3>
                 <p class="mt-0.5 text-xs text-gray-500">
-                    Reuse the same course's CLOs (and their CLO→PO levels) from another program/batch (e.g. carry BSIS's setup into DIT).
+                    Reuse CLOs (and their CLO→PO levels) from another program/batch — pick the source course, which may be
+                    a differently-coded but equivalent course (e.g. "Professional Issues in Computing" vs "Social and Professional Issues").
                     Missing CLOs are created and mappings are copied for POs with a matching code.
                 </p>
             </div>
             <div class="p-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Source Degree Program</label>
-                        <select wire:model="sourceProgramId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        <select wire:model.live="sourceProgramId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
                             <option value="">-- Source Program --</option>
                             @foreach($programs as $program)
                                 <option value="{{ $program->id }}">{{ $program->name }}</option>
@@ -165,12 +166,22 @@
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700">Source Batch / Cohort</label>
-                        <select wire:model="sourceBatchYear" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        <select wire:model.live="sourceBatchYear" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
                             <option value="">-- Source Batch --</option>
                             @foreach($batchOptions as $batchOption)
                                 <option value="{{ $batchOption }}">Batch {{ $batchOption }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Source Course</label>
+                        <select wire:model="sourceCourseId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            <option value="">-- Use the target course ({!! $courses->firstWhere('id', $selectedCourseId)->code ?? '' !!}) --</option>
+                            @foreach($sourceCourses as $course)
+                                <option value="{{ $course->id }}">{{ $course->code }} - {{ $course->name }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-0.5 text-[10px] text-gray-400">Leave blank to copy from the same course in the source program.</p>
                     </div>
                 </div>
                 <div class="mt-4 flex items-center gap-3">
