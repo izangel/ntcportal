@@ -25,6 +25,9 @@ class CoPoMappingPaste extends Component
     public $selectedBatchYear = null;
     public $selectedCourseId = null;
 
+    public $sourceProgramId = null;
+    public $sourceBatchYear = null;
+
     public $pastedText = '';
     public $parseMessage = null;
     public $parseType = 'info';
@@ -174,6 +177,128 @@ class CoPoMappingPaste extends Component
 
         $this->parseType = ($applied > 0 || $cleared > 0) ? 'success' : 'info';
         $this->parseMessage = implode(' ', $messages);
+    }
+
+    /**
+     * Copy the CO-PO mapping for the selected course from a source program +
+     * batch into the current program + batch. CLOs are matched by code and POs
+     * by code, so the mapping is only copied to target POs with a matching code.
+     */
+    public function copyFromProgramBatch(): void
+    {
+        $this->validate([
+            'selectedProgramId' => 'required|exists:programs,id',
+            'selectedBatchYear' => 'required',
+            'selectedCourseId' => 'required|exists:courses,id',
+            'sourceProgramId' => 'required|exists:programs,id',
+            'sourceBatchYear' => 'required',
+        ]);
+
+        $targetBatch = (string) $this->selectedBatchYear;
+        $sourceBatch = (string) $this->sourceBatchYear;
+
+        if (
+            (int) $this->sourceProgramId === (int) $this->selectedProgramId
+            && $sourceBatch === $targetBatch
+        ) {
+            $this->parseType = 'error';
+            $this->parseMessage = 'The source program and batch must differ from the target.';
+            return;
+        }
+
+        $course = Course::find($this->selectedCourseId);
+
+        // Target-side CLOs (of this course for the target batch).
+        $targetClos = $this->courseClos($course)
+            ->keyBy(fn ($clo) => strtoupper(trim((string) $clo->code)));
+
+        if ($targetClos->isEmpty()) {
+            $this->parseType = 'error';
+            $this->parseMessage = "{$course->code} has no CLOs for the target batch. Add them first, or use Copy CLOs & Mapping from the Program Course Manager.";
+            return;
+        }
+
+        // Source-side CLOs (of this course for the source program + batch).
+        $sourceClos = CourseLearningOutcome::with('programOutcomes')
+            ->where('course_id', $course->id)
+            ->where('effective_batch_year', $sourceBatch)
+            ->orderBy('code')
+            ->get()
+            ->keyBy(fn ($clo) => strtoupper(trim((string) $clo->code)));
+
+        if ($sourceClos->isEmpty()) {
+            $this->parseType = 'error';
+            $this->parseMessage = "No CLOs found for {$course->code} in the source program/batch (Batch {$sourceBatch}).";
+            return;
+        }
+
+        // Target POs keyed by code so we only link matching outcomes.
+        $targetPosByCode = ProgramOutcome::query()
+            ->where('program_id', $this->selectedProgramId)
+            ->where('effective_batch_year', $targetBatch)
+            ->get()
+            ->keyBy(fn ($po) => strtoupper(trim((string) $po->code)));
+
+        if ($targetPosByCode->isEmpty()) {
+            $this->parseType = 'error';
+            $this->parseMessage = 'The target program/batch has no Program Outcomes to map to.';
+            return;
+        }
+
+        $mapped = 0;
+        $skippedPo = 0;
+        $skippedClo = 0;
+
+        DB::transaction(function () use ($sourceClos, $targetClos, $targetPosByCode, &$mapped, &$skippedPo, &$skippedClo) {
+            foreach ($sourceClos as $code => $sourceClo) {
+                $targetClo = $targetClos->get($code);
+
+                if (! $targetClo) {
+                    $skippedClo++;
+                    continue;
+                }
+
+                $sync = [];
+                foreach ($sourceClo->programOutcomes as $sourcePo) {
+                    $targetPo = $targetPosByCode->get(strtoupper(trim((string) $sourcePo->code)));
+
+                    if (! $targetPo) {
+                        $skippedPo++;
+                        continue;
+                    }
+
+                    $sync[$targetPo->id] = ['level' => $sourcePo->pivot->level];
+                }
+
+                if ($sync) {
+                    $targetClo->programOutcomes()->syncWithoutDetaching($sync);
+                    $mapped += count($sync);
+                }
+            }
+        });
+
+        $messages = [];
+        if ($mapped > 0) {
+            $messages[] = "Copied {$mapped} CLO→PO mapping(s) from {$this->sourceLabel()} into the current program/batch.";
+        } else {
+            $messages[] = 'Nothing to copy — no matching CLO↔PO pairs were found.';
+        }
+        if ($skippedPo > 0) {
+            $messages[] = "Skipped {$skippedPo} link(s) where the source PO has no same-code PO in the target.";
+        }
+        if ($skippedClo > 0) {
+            $messages[] = "Skipped {$skippedClo} CLO(s) with no same-code CLO in the target.";
+        }
+
+        $this->parseType = $mapped > 0 ? 'success' : 'info';
+        $this->parseMessage = implode(' ', $messages);
+    }
+
+    private function sourceLabel(): string
+    {
+        $program = Program::find($this->sourceProgramId);
+
+        return trim(($program->name ?? 'Program') . ' · Batch ' . $this->sourceBatchYear);
     }
 
     /**

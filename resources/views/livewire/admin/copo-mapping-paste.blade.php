@@ -91,6 +91,48 @@
             @endif
         </div>
 
+        {{-- Copy from another program/batch --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                <h3 class="text-sm font-bold text-gray-800">Copy CO-PO Mapping from another Program &amp; Batch</h3>
+                <p class="mt-0.5 text-xs text-gray-500">
+                    Reuse the mapping for the same course from another program/batch (e.g. carry BSIS's setup into DIT).
+                    CLOs and POs are matched by code, so only matching outcomes are copied.
+                </p>
+            </div>
+            <div class="p-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Source Degree Program</label>
+                        <select wire:model="sourceProgramId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            <option value="">-- Source Program --</option>
+                            @foreach($programs as $program)
+                                <option value="{{ $program->id }}">{{ $program->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Source Batch / Cohort</label>
+                        <select wire:model="sourceBatchYear" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            <option value="">-- Source Batch --</option>
+                            @foreach($batchOptions as $batchOption)
+                                <option value="{{ $batchOption }}">Batch {{ $batchOption }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-3">
+                    <button type="button" wire:click="copyFromProgramBatch" wire:loading.attr="disabled"
+                        class="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
+                        Copy Mapping to Current Program/Batch
+                    </button>
+                    <span class="text-xs text-gray-500">
+                        Copying into: {{ $courses->firstWhere('id', $selectedCourseId)->code ?? '' }} · {{ $programs->firstWhere('id', $selectedProgramId)->name ?? '' }} · Batch {{ $selectedBatchYear }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
         {{-- Paste box --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between flex-wrap gap-2">
