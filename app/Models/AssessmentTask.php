@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssessmentTask extends Model
 {
-    protected $fillable = ['course_id', 'title', 'type', 'weight_percentage', 'total_marks', 'effective_batch_year'];
+    protected $fillable = ['course_id', 'title', 'type', 'weight_percentage', 'total_marks', 'effective_batch_year', 'sort_order'];
 
     public function course(): BelongsTo
     {
