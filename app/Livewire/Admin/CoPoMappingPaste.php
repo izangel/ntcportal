@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Program;
 use App\Models\Course;
 use App\Models\AcademicYear;
+use App\Models\BloomsTaxonomy;
 use App\Models\ProgramOutcome;
 use App\Models\CourseLearningOutcome;
 use Illuminate\Support\Facades\DB;
@@ -33,14 +34,22 @@ class CoPoMappingPaste extends Component
     public $parseType = 'info';
     public $applied = 0;
 
+    // Add/edit CLO form state.
+    public $editingCloId = null;
+    public $cloCode = '';
+    public $cloDescription = '';
+    public $cloTaxonomyId = null;
+
     public function updatedSelectedProgramId()
     {
         $this->reset(['selectedCourseId', 'pastedText', 'parseMessage', 'parseType', 'applied']);
+        $this->resetCloForm();
     }
 
     public function updatedSelectedBatchYear()
     {
         $this->reset(['selectedCourseId', 'pastedText', 'parseMessage', 'parseType', 'applied']);
+        $this->resetCloForm();
     }
 
     public function updatedSelectedCourseId()
@@ -79,6 +88,96 @@ class CoPoMappingPaste extends Component
         $this->pastedText = implode("\n", $lines);
         $this->parseType = 'info';
         $this->parseMessage = 'Template generated. Copy it into Excel, edit the I/E/D cells, then paste it back here and click "Apply Mapping".';
+    }
+
+    public function saveClo(): void
+    {
+        $this->validate([
+            'selectedProgramId' => 'required|exists:programs,id',
+            'selectedCourseId' => 'required|exists:courses,id',
+            'cloCode' => 'required|string|max:20',
+            'cloDescription' => 'required|string|min:10',
+            'cloTaxonomyId' => 'required|exists:blooms_taxonomies,id',
+        ]);
+
+        $course = Course::findOrFail($this->selectedCourseId);
+
+        $isAssignedToProgram = Program::findOrFail($this->selectedProgramId)
+            ->courses()
+            ->when($this->selectedBatchYear, function ($query) {
+                $query->where('course_program.effective_batch_year', $this->selectedBatchYear);
+            })
+            ->where('courses.id', $course->id)
+            ->exists();
+
+        if (! $isAssignedToProgram) {
+            $this->addError('selectedCourseId', 'This course is not assigned to the selected program and batch.');
+            return;
+        }
+
+        $data = [
+            'course_id' => $course->id,
+            'code' => $this->cloCode,
+            'description' => $this->cloDescription,
+            'blooms_taxonomy_id' => $this->cloTaxonomyId,
+            'effective_batch_year' => $this->selectedBatchYear ?: null,
+        ];
+
+        if ($this->editingCloId) {
+            CourseLearningOutcome::findOrFail($this->editingCloId)->update($data);
+            $message = 'CLO updated successfully.';
+        } else {
+            CourseLearningOutcome::create($data);
+            $message = "CLO {$this->cloCode} added to {$course->code}.";
+        }
+
+        $this->resetCloForm();
+        $this->parseType = 'success';
+        $this->parseMessage = $message;
+    }
+
+    public function editClo(int $cloId): void
+    {
+        $clo = CourseLearningOutcome::query()
+            ->whereKey($cloId)
+            ->where('effective_batch_year', $this->selectedBatchYear ?: null)
+            ->firstOrFail();
+
+        $this->editingCloId = $clo->id;
+        $this->cloCode = (string) $clo->code;
+        $this->cloDescription = (string) $clo->description;
+        $this->cloTaxonomyId = $clo->blooms_taxonomy_id;
+        $this->resetErrorBag();
+    }
+
+    public function deleteClo(int $cloId): void
+    {
+        $clo = CourseLearningOutcome::query()
+            ->whereKey($cloId)
+            ->where('effective_batch_year', $this->selectedBatchYear ?: null)
+            ->first();
+
+        if (! $clo) {
+            return;
+        }
+
+        DB::transaction(function () use ($clo) {
+            $clo->programOutcomes()->detach();
+            $clo->delete();
+        });
+
+        $this->parseType = 'success';
+        $this->parseMessage = "CLO {$clo->code} deleted.";
+
+        if ((int) $this->editingCloId === $clo->id) {
+            $this->resetCloForm();
+        }
+    }
+
+    private function resetCloForm(): void
+    {
+        $this->reset(['editingCloId', 'cloCode', 'cloDescription', 'cloTaxonomyId']);
+        $this->resetErrorBag();
     }
 
     public function applyMapping(): void
@@ -246,16 +345,24 @@ class CoPoMappingPaste extends Component
         }
 
         $mapped = 0;
+        $createdClos = 0;
         $skippedPo = 0;
         $skippedClo = 0;
 
-        DB::transaction(function () use ($sourceClos, $targetClos, $targetPosByCode, &$mapped, &$skippedPo, &$skippedClo) {
+        DB::transaction(function () use ($sourceClos, $targetClos, $targetPosByCode, $course, $targetBatch, &$mapped, &$createdClos, &$skippedPo, &$skippedClo) {
             foreach ($sourceClos as $code => $sourceClo) {
                 $targetClo = $targetClos->get($code);
 
                 if (! $targetClo) {
-                    $skippedClo++;
-                    continue;
+                    // The CLO doesn't exist in the target yet — copy it in.
+                    $targetClo = CourseLearningOutcome::create([
+                        'course_id' => $course->id,
+                        'code' => $sourceClo->code,
+                        'description' => $sourceClo->description,
+                        'blooms_taxonomy_id' => $sourceClo->blooms_taxonomy_id,
+                        'effective_batch_year' => $targetBatch,
+                    ]);
+                    $createdClos++;
                 }
 
                 $sync = [];
@@ -278,9 +385,12 @@ class CoPoMappingPaste extends Component
         });
 
         $messages = [];
+        if ($createdClos > 0) {
+            $messages[] = "Copied {$createdClos} CLO(s) from {$this->sourceLabel()} into the target batch.";
+        }
         if ($mapped > 0) {
-            $messages[] = "Copied {$mapped} CLO→PO mapping(s) from {$this->sourceLabel()} into the current program/batch.";
-        } else {
+            $messages[] = "Copied {$mapped} CLO→PO mapping(s) into the current program/batch.";
+        } elseif ($createdClos === 0) {
             $messages[] = 'Nothing to copy — no matching CLO↔PO pairs were found.';
         }
         if ($skippedPo > 0) {
@@ -290,7 +400,7 @@ class CoPoMappingPaste extends Component
             $messages[] = "Skipped {$skippedClo} CLO(s) with no same-code CLO in the target.";
         }
 
-        $this->parseType = $mapped > 0 ? 'success' : 'info';
+        $this->parseType = ($mapped > 0 || $createdClos > 0) ? 'success' : 'info';
         $this->parseMessage = implode(' ', $messages);
     }
 
@@ -469,6 +579,7 @@ class CoPoMappingPaste extends Component
             'courses' => $courses,
             'currentMatrix' => $currentMatrix,
             'programOutcomes' => $this->selectedCourseId ? $this->programOutcomes() : collect(),
+            'taxonomies' => BloomsTaxonomy::orderBy('domain')->orderBy('code')->get(),
         ])->extends('layouts.admin')
             ->section('content');
     }

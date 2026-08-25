@@ -65,7 +65,16 @@
                             @foreach($currentMatrix as $row)
                                 <tr>
                                     <td class="border-r border-gray-200 px-3 py-2 align-top">
-                                        <span class="font-bold text-indigo-700">{{ $row['clo']->code }}</span>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="font-bold text-indigo-700">{{ $row['clo']->code }}</span>
+                                            <div class="flex shrink-0 items-center gap-1.5">
+                                                <button type="button" wire:click="editClo({{ $row['clo']->id }})" class="text-[10px] font-semibold text-indigo-600 hover:text-indigo-800">Edit</button>
+                                                <button type="button"
+                                                    wire:click="deleteClo({{ $row['clo']->id }})"
+                                                    wire:confirm="Delete CLO {{ $row['clo']->code }}? This also removes its CO-PO mappings."
+                                                    class="text-[10px] font-semibold text-rose-600 hover:text-rose-800">Delete</button>
+                                            </div>
+                                        </div>
                                         <span class="block text-gray-500">{{ $row['clo']->description }}</span>
                                     </td>
                                     @foreach($row['levels'] as $cell)
@@ -91,13 +100,56 @@
             @endif
         </div>
 
+        {{-- Add / Edit CLO --}}
+        <div class="bg-white rounded-lg shadow-sm border border-indigo-200 mb-6 overflow-hidden">
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-800">{{ $editingCloId ? 'Edit CLO' : 'Add a CLO to the Course' }}</h3>
+                    <p class="mt-0.5 text-xs text-gray-500">
+                        Add a course learning outcome for <strong>{{ $courses->firstWhere('id', $selectedCourseId)->code ?? 'this course' }}</strong>
+                        · Batch {{ $selectedBatchYear }}. New CLOs start unmapped until you paste or copy the I/E/D matrix.
+                    </p>
+                </div>
+                @if($editingCloId)
+                    <button type="button" wire:click="resetCloForm" class="text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
+                @endif
+            </div>
+            <div class="p-5">
+                <form wire:submit.prevent="saveClo" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">CLO Code</label>
+                        <input type="text" wire:model="cloCode" placeholder="CLO-04" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        @error('cloCode') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700">Description</label>
+                        <input type="text" wire:model="cloDescription" placeholder="Describe the learning outcome" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                        @error('cloDescription') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Bloom's Taxonomy</label>
+                        <select wire:model="cloTaxonomyId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            <option value="">-- Select --</option>
+                            @foreach($taxonomies as $taxonomy)
+                                <option value="{{ $taxonomy->id }}">{{ $taxonomy->code }} - {{ $taxonomy->level }}</option>
+                            @endforeach
+                        </select>
+                        @error('cloTaxonomyId') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                    </div>
+                    <button type="submit" class="md:col-span-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                        {{ $editingCloId ? 'Update CLO' : 'Add CLO' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
         {{-- Copy from another program/batch --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                <h3 class="text-sm font-bold text-gray-800">Copy CO-PO Mapping from another Program &amp; Batch</h3>
+                <h3 class="text-sm font-bold text-gray-800">Copy CLOs &amp; CO-PO Mapping from another Program &amp; Batch</h3>
                 <p class="mt-0.5 text-xs text-gray-500">
-                    Reuse the mapping for the same course from another program/batch (e.g. carry BSIS's setup into DIT).
-                    CLOs and POs are matched by code, so only matching outcomes are copied.
+                    Reuse the same course's CLOs (and their CLO→PO levels) from another program/batch (e.g. carry BSIS's setup into DIT).
+                    Missing CLOs are created and mappings are copied for POs with a matching code.
                 </p>
             </div>
             <div class="p-5">
@@ -124,7 +176,7 @@
                 <div class="mt-4 flex items-center gap-3">
                     <button type="button" wire:click="copyFromProgramBatch" wire:loading.attr="disabled"
                         class="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700">
-                        Copy Mapping to Current Program/Batch
+                        Copy CLOs &amp; Mapping to Current Program/Batch
                     </button>
                     <span class="text-xs text-gray-500">
                         Copying into: {{ $courses->firstWhere('id', $selectedCourseId)->code ?? '' }} · {{ $programs->firstWhere('id', $selectedProgramId)->name ?? '' }} · Batch {{ $selectedBatchYear }}
