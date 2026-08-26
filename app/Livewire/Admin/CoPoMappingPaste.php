@@ -773,7 +773,9 @@ class CoPoMappingPaste extends Component
             $clos = $this->courseClos($course);
             $programOutcomes = $this->programOutcomes();
 
-            if ($course && $programOutcomes->isNotEmpty()) {
+            // Render the CLO rows even when this course/batch has no Program
+            // Outcomes yet — so freshly-added CLOs are always visible.
+            if ($course) {
                 foreach ($clos as $clo) {
                     $row = ['clo' => $clo, 'levels' => collect()];
                     foreach ($programOutcomes as $po) {
