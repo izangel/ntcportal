@@ -4,11 +4,18 @@
         <p class="text-sm text-gray-600">Bulk-set the CLO &rarr; PO levels for one course by copying the matrix straight from Excel.</p>
     </div>
 
-    @if($parseMessage)
-        <div class="mb-4 p-4 text-sm rounded-lg border {{ $parseType === 'success' ? 'text-emerald-800 bg-emerald-100 border-emerald-200' : ($parseType === 'error' ? 'text-rose-800 bg-rose-100 border-rose-200' : 'text-sky-800 bg-sky-100 border-sky-200') }}">
-            {{ $parseMessage }}
+@if($parseMessage)
+    <div x-data="{ show: true }" x-show="show" x-transition
+        class="fixed top-20 left-1/2 z-50 w-full max-w-xl -translate-x-1/2 px-4">
+        <div class="flex items-start justify-between gap-3 rounded-xl p-4 text-sm shadow-lg border {{ $parseType === 'success' ? 'text-emerald-900 bg-emerald-50 border-emerald-200 shadow-emerald-200/50' : ($parseType === 'error' ? 'text-rose-900 bg-rose-50 border-rose-200 shadow-rose-200/50' : 'text-sky-900 bg-sky-50 border-sky-200 shadow-sky-200/50') }}">
+            <div class="flex items-start gap-2">
+                <i class="fas {{ $parseType === 'success' ? 'fa-circle-check text-emerald-600' : ($parseType === 'error' ? 'fa-circle-exclamation text-rose-600' : 'fa-circle-info text-sky-600') }} mt-0.5"></i>
+                <span class="leading-relaxed">{{ $parseMessage }}</span>
+            </div>
+            <button type="button" @click="show = false" class="shrink-0 text-xs text-gray-400 hover:text-gray-600"><i class="fas fa-xmark"></i></button>
         </div>
-    @endif
+    </div>
+@endif
 
     {{-- Filters --}}
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
