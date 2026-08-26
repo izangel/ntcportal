@@ -257,15 +257,30 @@ class CoPoMappingPaste extends Component
 
         DB::transaction(function () use ($lines, $course, $taxonomies, $existing, &$created, &$updated, &$skipped, &$errors) {
             foreach ($lines as $line) {
-                // Split on tabs, otherwise commas (so descriptions with commas survive tabbed pastes).
-                $cells = str_contains($line, "\t")
-                    ? preg_split('/\t+/', $line)
-                    : preg_split('/,/', $line);
-
-                $cells = array_values(array_filter(array_map('trim', $cells), fn ($c) => $c !== ''));
-                $code = strtoupper(trim((string) ($cells[0] ?? '')));
-                $description = trim((string) ($cells[1] ?? ''));
-                $taxonomyRaw = trim((string) ($cells[2] ?? ''));
+                // Expect Code | Description | Bloom's Taxonomy. Prefer tabs when
+                // present (descriptions often contain commas); fall back to a
+                // comma split with the LAST cell treated as taxonomy.
+                if (str_contains($line, "\t")) {
+                    $cells = preg_split('/\t+/', $line);
+                    $cells = array_values(array_filter(array_map('trim', $cells), fn ($c) => $c !== ''));
+                    $code = strtoupper(trim((string) ($cells[0] ?? '')));
+                    $description = trim((string) ($cells[1] ?? ''));
+                    $taxonomyRaw = trim((string) ($cells[2] ?? ''));
+                } else {
+                    $parts = preg_split('/,/', $line);
+                    $parts = array_values(array_filter(array_map('trim', $parts), fn ($c) => $c !== ''));
+                    $code = strtoupper(trim((string) ($parts[0] ?? '')));
+                    // Everything between the code and the last cell is part of the
+                    // description; the last cell is the taxonomy (only when it
+                    // looks like a taxonomy, otherwise it stays part of the text).
+                    $descriptionParts = array_slice($parts, 1);
+                    $last = count($descriptionParts) > 0 ? array_pop($descriptionParts) : '';
+                    $taxonomyRaw = $this->matchTaxonomy($last, $taxonomies) ? $last : '';
+                    if ($taxonomyRaw === '') {
+                        $descriptionParts[] = $last;
+                    }
+                    $description = implode(', ', $descriptionParts);
+                }
 
                 if ($code === '' || $description === '') {
                     $errors[] = "Skipped row '{$line}' — code and description are both required.";
@@ -279,11 +294,20 @@ class CoPoMappingPaste extends Component
                     continue;
                 }
 
+                // blooms_taxonomy_id is NOT NULL in the schema, so an empty taxonomy
+                // falls back to the first level (C1 - Remembering) when available.
+                $taxonomy = $taxonomy ?? $taxonomies->first();
+
+                if (! $taxonomy) {
+                    $errors[] = "Row {$code}: no Bloom's taxonomy configured in the system to assign.";
+                    continue;
+                }
+
                 $data = [
                     'course_id' => $course->id,
                     'code' => $code,
                     'description' => $description,
-                    'blooms_taxonomy_id' => $taxonomy?->id,
+                    'blooms_taxonomy_id' => $taxonomy->id,
                     'effective_batch_year' => $this->selectedBatchYear ?: null,
                 ];
 
