@@ -102,6 +102,30 @@
                         </tbody>
                     </table>
                 </div>
+            @elseif($programOutcomes->isEmpty())
+                <div class="p-8 text-center">
+                    <div class="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-xl text-amber-600">
+                        <i class="fas fa-triangle-exclamation"></i>
+                    </div>
+                    <p class="text-sm font-bold text-amber-800">No Program Outcomes for this program &amp; batch</p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Add Program Outcomes first (via
+                        <a href="{{ route('admin.obe.setup') }}" class="font-bold text-amber-700 underline hover:text-amber-800">OBE Configuration</a>)
+                        before you can map CLOs to POs. You can still <strong>add CLOs</strong> below — they'll appear here
+                        once POs exist for {{ $programs->firstWhere('id', $selectedProgramId)->name ?? 'this program' }} · Batch {{ $selectedBatchYear }}.
+                    </p>
+                </div>
+            @elseif($currentMatrix->isEmpty())
+                <div class="p-8 text-center">
+                    <div class="mx-auto mb-3 inline-flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 text-xl text-indigo-600">
+                        <i class="fas fa-list-check"></i>
+                    </div>
+                    <p class="text-sm font-bold text-gray-700">No CLOs for this course &amp; batch</p>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Add your course learning outcomes using the <strong>Add a CLO</strong> or
+                        <strong>Add many CLOs by pasting</strong> boxes below, or copy them from another program/batch.
+                    </p>
+                </div>
             @else
                 <div class="p-8 text-center text-sm text-gray-400 italic">No CLOs or POs available to display for this course and batch.</div>
             @endif
