@@ -100,73 +100,82 @@
             @endif
         </div>
 
-        {{-- Add / Edit CLO --}}
-        <div class="bg-white rounded-lg shadow-sm border border-indigo-200 mb-6 overflow-hidden">
-            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between">
+        {{-- Add / Edit CLO (collapsible) --}}
+        <div x-data="{ open: {{ $editingCloId ? 'true' : 'false' }} }" class="bg-white rounded-lg shadow-sm border border-indigo-200 mb-6 overflow-hidden">
+            <button type="button" @click="open = !open" class="w-full border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between text-left hover:bg-indigo-50/50 transition">
                 <div>
                     <h3 class="text-sm font-bold text-gray-800">{{ $editingCloId ? 'Edit CLO' : 'Add a CLO to the Course' }}</h3>
                     <p class="mt-0.5 text-xs text-gray-500">
                         Add a course learning outcome for <strong>{{ $courses->firstWhere('id', $selectedCourseId)->code ?? 'this course' }}</strong>
-                        · Batch {{ $selectedBatchYear }}. New CLOs start unmapped until you paste or copy the I/E/D matrix.
+                        · Batch {{ $selectedBatchYear }}. Click to {{ $editingCloId ? 'edit' : 'add' }}.
                     </p>
                 </div>
-                @if($editingCloId)
-                    <button type="button" wire:click="resetCloForm" class="text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
-                @endif
-            </div>
-            <div class="p-5">
-                <form wire:submit.prevent="saveClo" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">CLO Code</label>
-                        <input type="text" wire:model="cloCode" placeholder="CLO-04" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
-                        @error('cloCode') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-medium text-gray-700">Description</label>
-                        <input type="text" wire:model="cloDescription" placeholder="Describe the learning outcome" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
-                        @error('cloDescription') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700">Bloom's Taxonomy</label>
-                        <select wire:model="cloTaxonomyId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
-                            <option value="">-- Select --</option>
-                            @foreach($taxonomies as $taxonomy)
-                                <option value="{{ $taxonomy->id }}">{{ $taxonomy->code }} - {{ $taxonomy->level }}</option>
-                            @endforeach
-                        </select>
-                        @error('cloTaxonomyId') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
-                    </div>
-                    <button type="submit" class="md:col-span-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
-                        {{ $editingCloId ? 'Update CLO' : 'Add CLO' }}
-                    </button>
-                </form>
+                <i class="fas fa-chevron-down text-xs text-gray-400 transition transform" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+            <div x-show="open">
+                <div class="p-5">
+                    @if($editingCloId)
+                        <button type="button" wire:click="resetCloForm" class="mb-3 text-xs font-semibold text-gray-500 hover:text-gray-700">Cancel</button>
+                    @endif
+                    <form wire:submit.prevent="saveClo" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">CLO Code</label>
+                            <input type="text" wire:model="cloCode" placeholder="CLO-04" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            @error('cloCode') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-700">Description</label>
+                            <input type="text" wire:model="cloDescription" placeholder="Describe the learning outcome" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                            @error('cloDescription') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Bloom's Taxonomy</label>
+                            <select wire:model="cloTaxonomyId" class="mt-1 w-full rounded-md border-gray-300 text-sm shadow-sm">
+                                <option value="">-- Select --</option>
+                                @foreach($taxonomies as $taxonomy)
+                                    <option value="{{ $taxonomy->id }}">{{ $taxonomy->code }} - {{ $taxonomy->level }}</option>
+                                @endforeach
+                            </select>
+                            @error('cloTaxonomyId') <span class="text-xs text-red-600">{{ $message }}</span> @enderror
+                        </div>
+                        <button type="submit" class="md:col-span-4 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">
+                            {{ $editingCloId ? 'Update CLO' : 'Add CLO' }}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
-        {{-- Paste CLOs --}}
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
-            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
-                <h3 class="text-sm font-bold text-gray-800">Add many CLOs by pasting</h3>
-                <p class="mt-0.5 text-xs text-gray-500">
-                    Paste rows from Excel — one CLO per line, <strong>Code</strong> then <strong>Description</strong> then
-                    <strong>Bloom's Taxonomy</strong> (e.g. <code>CLO-04</code>, <code>Design database schemas</code>, <code>C1</code>).
-                </p>
-            </div>
-            <div class="p-5">
-                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 mb-3">
-                    <strong>Format:</strong> tab- or comma-separated, one CLO per line (the first line may be a header, which is skipped).
-                    Bloom's Taxonomy accepts a code like <code>C1</code>, <code>A2</code>, <code>P1</code>, a level name like
-                    <code>Remembering</code>, or leave it blank. Rows whose code already exists are updated.
+        {{-- Paste CLOs (collapsible) --}}
+        <div x-data="{ open: false }" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <button type="button" @click="open = !open" class="w-full border-b border-gray-200 bg-gray-50 px-5 py-3 flex items-center justify-between text-left hover:bg-gray-100 transition">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-800">Add many CLOs by pasting</h3>
+                    <p class="mt-0.5 text-xs text-gray-500">
+                        Paste rows from Excel — one CLO per line, <strong>Code</strong> then <strong>Description</strong> then
+                        <strong>Bloom's Taxonomy</strong> (e.g. <code>CLO-04</code>, <code>Design database schemas</code>, <code>C1</code>).
+                        Click to open.
+                    </p>
                 </div>
-                <textarea wire:model="cloPasteText" rows="7" spellcheck="false"
-                    placeholder="CLO-04&#09;Design database schemas&#09;C1&#10;CLO-05&#09;Implement SQL queries&#09;Applying&#10;CLO-06&#09;Evaluate system performance&#09;"
-                    class="w-full font-mono rounded-md border-gray-300 text-sm shadow-sm"></textarea>
-                <div class="mt-3">
-                    <button type="button" wire:click="addClosFromPaste" wire:loading.attr="disabled"
-                        class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
-                        Add CLOs
-                    </button>
-                    <span wire:loading wire:target="addClosFromPaste" class="text-sm text-gray-500 ml-2">Adding…</span>
+                <i class="fas fa-chevron-down text-xs text-gray-400 transition transform" :class="open ? 'rotate-180' : ''"></i>
+            </button>
+            <div x-show="open">
+                <div class="p-5">
+                    <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 mb-3">
+                        <strong>Format:</strong> tab- or comma-separated, one CLO per line (the first line may be a header, which is skipped).
+                        Bloom's Taxonomy accepts a code like <code>C1</code>, <code>A2</code>, <code>P1</code>, a level name like
+                        <code>Remembering</code>, or leave it blank. Rows whose code already exists are updated.
+                    </div>
+                    <textarea wire:model="cloPasteText" rows="7" spellcheck="false"
+                        placeholder="CLO-04&#09;Design database schemas&#09;C1&#10;CLO-05&#09;Implement SQL queries&#09;Applying&#10;CLO-06&#09;Evaluate system performance&#09;"
+                        class="w-full font-mono rounded-md border-gray-300 text-sm shadow-sm"></textarea>
+                    <div class="mt-3">
+                        <button type="button" wire:click="addClosFromPaste" wire:loading.attr="disabled"
+                            class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+                            Add CLOs
+                        </button>
+                        <span wire:loading wire:target="addClosFromPaste" class="text-sm text-gray-500 ml-2">Adding…</span>
+                    </div>
                 </div>
             </div>
         </div>
