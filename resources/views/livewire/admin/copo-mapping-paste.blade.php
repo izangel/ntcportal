@@ -143,6 +143,34 @@
             </div>
         </div>
 
+        {{-- Paste CLOs --}}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
+            <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">
+                <h3 class="text-sm font-bold text-gray-800">Add many CLOs by pasting</h3>
+                <p class="mt-0.5 text-xs text-gray-500">
+                    Paste rows from Excel — one CLO per line, <strong>Code</strong> then <strong>Description</strong> then
+                    <strong>Bloom's Taxonomy</strong> (e.g. <code>CLO-04</code>, <code>Design database schemas</code>, <code>C1</code>).
+                </p>
+            </div>
+            <div class="p-5">
+                <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 mb-3">
+                    <strong>Format:</strong> tab- or comma-separated, one CLO per line (the first line may be a header, which is skipped).
+                    Bloom's Taxonomy accepts a code like <code>C1</code>, <code>A2</code>, <code>P1</code>, a level name like
+                    <code>Remembering</code>, or leave it blank. Rows whose code already exists are updated.
+                </div>
+                <textarea wire:model="cloPasteText" rows="7" spellcheck="false"
+                    placeholder="CLO-04&#09;Design database schemas&#09;C1&#10;CLO-05&#09;Implement SQL queries&#09;Applying&#10;CLO-06&#09;Evaluate system performance&#09;"
+                    class="w-full font-mono rounded-md border-gray-300 text-sm shadow-sm"></textarea>
+                <div class="mt-3">
+                    <button type="button" wire:click="addClosFromPaste" wire:loading.attr="disabled"
+                        class="rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700">
+                        Add CLOs
+                    </button>
+                    <span wire:loading wire:target="addClosFromPaste" class="text-sm text-gray-500 ml-2">Adding…</span>
+                </div>
+            </div>
+        </div>
+
         {{-- Copy from another program/batch --}}
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 overflow-hidden">
             <div class="border-b border-gray-200 bg-gray-50 px-5 py-3">

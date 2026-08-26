@@ -41,6 +41,9 @@ class CoPoMappingPaste extends Component
     public $cloDescription = '';
     public $cloTaxonomyId = null;
 
+    // Bulk CLO paste state.
+    public $cloPasteText = '';
+
     public function updatedSelectedProgramId()
     {
         $this->reset(['selectedCourseId', 'pastedText', 'parseMessage', 'parseType', 'applied']);
@@ -189,6 +192,150 @@ class CoPoMappingPaste extends Component
     {
         $this->reset(['editingCloId', 'cloCode', 'cloDescription', 'cloTaxonomyId']);
         $this->resetErrorBag();
+    }
+
+    /**
+     * Bulk-add CLOs from a pasted grid.
+     *
+     * Expected format (tab or comma separated, one CLO per line):
+     *   CLO Code | Description | Bloom's Taxonomy
+     * The taxonomy cell accepts a code (e.g. C1), "C2 - Understanding", or a
+     * keyword (e.g. "Analyzing"); it may also be left blank.
+     */
+    public function addClosFromPaste(): void
+    {
+        $this->validate([
+            'selectedProgramId' => 'required|exists:programs,id',
+            'selectedCourseId' => 'required|exists:courses,id',
+            'cloPasteText' => 'required|string',
+        ]);
+
+        $course = Course::findOrFail($this->selectedCourseId);
+
+        $isAssignedToProgram = Program::findOrFail($this->selectedProgramId)
+            ->courses()
+            ->when($this->selectedBatchYear, function ($query) {
+                $query->where('course_program.effective_batch_year', $this->selectedBatchYear);
+            })
+            ->where('courses.id', $course->id)
+            ->exists();
+
+        if (! $isAssignedToProgram) {
+            $this->addError('selectedCourseId', 'This course is not assigned to the selected program and batch.');
+            return;
+        }
+
+        $taxonomies = BloomsTaxonomy::all();
+
+        $lines = preg_split('/\r\n|\r|\n/', trim($this->cloPasteText));
+        $lines = array_values(array_filter(array_map('trim', $lines), fn ($l) => $l !== ''));
+
+        if (empty($lines)) {
+            $this->parseType = 'error';
+            $this->parseMessage = 'No CLO rows detected in the pasted content.';
+            return;
+        }
+
+        $existing = $this->courseClos($course)
+            ->pluck('code')
+            ->map(fn ($c) => strtoupper(trim((string) $c)))
+            ->flip();
+
+        // Skip a header row (e.g. "Code, Description, Bloom's Taxonomy").
+        $firstCells = str_contains($lines[0], "\t")
+            ? preg_split('/\t+/', $lines[0])
+            : preg_split('/,/', $lines[0]);
+        $firstLower = strtolower(trim((string) ($firstCells[0] ?? '')));
+        if (in_array($firstLower, ['code', 'clo code', 'clo_code', 'clocode'], true)) {
+            array_shift($lines);
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+        $errors = [];
+
+        DB::transaction(function () use ($lines, $course, $taxonomies, $existing, &$created, &$updated, &$skipped, &$errors) {
+            foreach ($lines as $line) {
+                // Split on tabs, otherwise commas (so descriptions with commas survive tabbed pastes).
+                $cells = str_contains($line, "\t")
+                    ? preg_split('/\t+/', $line)
+                    : preg_split('/,/', $line);
+
+                $cells = array_values(array_filter(array_map('trim', $cells), fn ($c) => $c !== ''));
+                $code = strtoupper(trim((string) ($cells[0] ?? '')));
+                $description = trim((string) ($cells[1] ?? ''));
+                $taxonomyRaw = trim((string) ($cells[2] ?? ''));
+
+                if ($code === '' || $description === '') {
+                    $errors[] = "Skipped row '{$line}' — code and description are both required.";
+                    continue;
+                }
+
+                $taxonomy = $taxonomyRaw !== '' ? $this->matchTaxonomy($taxonomyRaw, $taxonomies) : null;
+
+                if ($taxonomyRaw !== '' && ! $taxonomy) {
+                    $errors[] = "Row {$code}: unknown Bloom's taxonomy '{$taxonomyRaw}' (use a code like C1, or a level name).";
+                    continue;
+                }
+
+                $data = [
+                    'course_id' => $course->id,
+                    'code' => $code,
+                    'description' => $description,
+                    'blooms_taxonomy_id' => $taxonomy?->id,
+                    'effective_batch_year' => $this->selectedBatchYear ?: null,
+                ];
+
+                if ($existing->has($code)) {
+                    $clo = CourseLearningOutcome::where('course_id', $course->id)
+                        ->where('effective_batch_year', $this->selectedBatchYear ?: null)
+                        ->whereRaw('UPPER(TRIM(code)) = ?', [$code])
+                        ->firstOrFail();
+                    $clo->update($data);
+                    $updated++;
+                } else {
+                    CourseLearningOutcome::create($data);
+                    $created++;
+                }
+            }
+        });
+
+        $messages = [];
+        if ($created > 0) {
+            $messages[] = "Added {$created} new CLO(s) to {$course->code}.";
+        }
+        if ($updated > 0) {
+            $messages[] = "Updated {$updated} existing CLO(s).";
+        }
+        if ($created === 0 && $updated === 0) {
+            $messages[] = 'No CLOs were added or updated.';
+        }
+        if (! empty($errors)) {
+            $messages[] = implode(' ', array_slice($errors, 0, 4)) . (count($errors) > 4 ? " (+".(count($errors) - 4)." more)" : '');
+        }
+
+        $this->parseType = ($created > 0 || $updated > 0) ? 'success' : 'info';
+        $this->parseMessage = implode(' ', $messages);
+        $this->cloPasteText = '';
+    }
+
+    private function matchTaxonomy(string $raw, $taxonomies): ?BloomsTaxonomy
+    {
+        $v = strtolower(trim($raw));
+        $code = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $raw));
+
+        // Exact code match first (e.g. "C1", "A2", "P1").
+        $byCode = $taxonomies->first(fn ($t) => strtoupper(trim($t->code)) === $code);
+        if ($byCode) {
+            return $byCode;
+        }
+
+        // Fuzzy keyword match against code, level, or domain.
+        return $taxonomies->first(function ($t) use ($v, $code) {
+            $haystack = strtolower($t->code . ' ' . $t->level . ' ' . $t->domain);
+            return str_contains($haystack, $v) || $code === $t->level;
+        });
     }
 
     public function applyMapping(): void
