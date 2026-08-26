@@ -615,9 +615,9 @@ class CoPoMappingPaste extends Component
 
         if ($this->selectedBatchYear) {
             $query->where('effective_batch_year', $this->selectedBatchYear);
-        } else {
-            $query->whereNull('effective_batch_year');
         }
+        // With "All Batches" selected, include every version of the course's
+        // CLOs (batch-versioned and unversioned) — matching the CLO Manager.
 
         return $query->with('programOutcomes')->orderBy('code')->get();
     }
